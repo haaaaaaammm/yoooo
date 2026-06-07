@@ -1,10 +1,12 @@
 import Image from "next/image";
+import Link from "next/link";
 export default function Home() {
   return (
   <div className="bg-white m-20">
-    <a href="/deathclock" className=" hover:underline text-blue-500 hover:text-blue-700 block">deathclock</a>
+    <Link href="/deathclock" className=" hover:underline text-blue-500 hover:text-blue-700 block">deathclock</Link>
     <a href="https://www.instagram.com/haaaaaaaaaammmm" className=" hover:underline text-blue-500 hover:text-blue-700 block">instagram</a>
     <a href="https://x.com/haaaaaaaammmmm" className=" hover:underline text-blue-500 hover:text-blue-700 block">twitter</a>
+    <Link href="/nohaydiferenciasentreestoyunpoemario" className=" hover:underline text-blue-500 hover:text-blue-700 block">no hay diferencias entre esto y un poemario</Link>
     <Image src="/images/VISANAME.png" alt="name" width={300} height={300}/>
   </div>
   );
