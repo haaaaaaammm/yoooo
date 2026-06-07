@@ -10,6 +10,11 @@ import {
   useState,
 } from "react";
 
+import {
+  ARCHIVE_ALLOWED_IMAGE_TYPES,
+  ARCHIVE_IMAGE_MAX_SIZE_BYTES,
+} from "@/lib/archive";
+
 import { createArchivePostAction } from "./actions";
 
 type SelectedImage = {
@@ -203,6 +208,22 @@ function moveItem(items: SelectedImage[], fromIndex: number, toIndex: number) {
   return nextItems;
 }
 
+function validateSelectedFile(file: File) {
+  if (
+    !ARCHIVE_ALLOWED_IMAGE_TYPES.includes(
+      file.type as (typeof ARCHIVE_ALLOWED_IMAGE_TYPES)[number]
+    )
+  ) {
+    return `${file.name}: usa imagenes JPG, PNG, WebP o GIF.`;
+  }
+
+  if (file.size > ARCHIVE_IMAGE_MAX_SIZE_BYTES) {
+    return `${file.name}: cada imagen debe pesar menos de 5 MB.`;
+  }
+
+  return null;
+}
+
 export default function ArchiveComposer({
   onCreated,
 }: {
@@ -261,13 +282,20 @@ export default function ArchiveComposer({
   async function addFiles(files: File[]) {
     setMessage(initialMessage);
 
-    const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+    const failedFileMessage = files
+      .map(validateSelectedFile)
+      .find((message): message is string => Boolean(message));
 
-    if (imageFiles.length === 0) {
+    if (failedFileMessage) {
+      setMessage({ ok: false, text: failedFileMessage });
       return;
     }
 
-    const nextImages = await Promise.all(imageFiles.map(createSelectedImage));
+    if (files.length === 0) {
+      return;
+    }
+
+    const nextImages = await Promise.all(files.map(createSelectedImage));
 
     setSelectedImages((current) => [...current, ...nextImages]);
   }

@@ -192,6 +192,8 @@ function ArchivePostManager({
 
       if (!result.ok) {
         setError(result.message);
+        addImagesFormRef.current?.reset();
+        setAddImageCount(0);
         return;
       }
 
@@ -205,6 +207,8 @@ function ArchivePostManager({
       router.refresh();
     } catch {
       setError("No se pudieron agregar las imagenes.");
+      addImagesFormRef.current?.reset();
+      setAddImageCount(0);
     } finally {
       setIsAddingImages(false);
     }

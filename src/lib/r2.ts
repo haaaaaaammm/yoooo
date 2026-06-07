@@ -7,15 +7,20 @@ import {
 } from "@aws-sdk/client-s3";
 import { randomUUID } from "crypto";
 
-export const IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
+import {
+  ARCHIVE_ALLOWED_IMAGE_TYPES,
+  ARCHIVE_IMAGE_MAX_SIZE_BYTES,
+} from "@/lib/archive";
+
+export const IMAGE_MAX_SIZE_BYTES = ARCHIVE_IMAGE_MAX_SIZE_BYTES;
 export const PROFILE_IMAGE_MAX_SIZE_BYTES = IMAGE_MAX_SIZE_BYTES;
 
-export const IMAGE_FILE_EXTENSIONS = {
-  "image/gif": "gif",
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-} as const;
+export const IMAGE_FILE_EXTENSIONS = Object.fromEntries(
+  ARCHIVE_ALLOWED_IMAGE_TYPES.map((mimeType) => [
+    mimeType,
+    mimeType === "image/jpeg" ? "jpg" : mimeType.replace("image/", ""),
+  ])
+) as Record<(typeof ARCHIVE_ALLOWED_IMAGE_TYPES)[number], string>;
 export const PROFILE_IMAGE_EXTENSIONS = IMAGE_FILE_EXTENSIONS;
 
 type ImageMimeType = keyof typeof IMAGE_FILE_EXTENSIONS;
@@ -115,7 +120,11 @@ export async function uploadProfileImageToR2(file: File) {
   };
 }
 
-export async function uploadArchiveImageToR2(file: File, postId: string) {
+export async function uploadArchiveImageToR2(
+  file: File,
+  postId: string,
+  order?: number
+) {
   const validation = validateImageFile(file);
 
   if (!validation.ok) {
@@ -123,7 +132,8 @@ export async function uploadArchiveImageToR2(file: File, postId: string) {
   }
 
   const config = getR2Config();
-  const key = `archive/posts/${postId}/${Date.now()}-${randomUUID()}.${validation.extension}`;
+  const orderSegment = typeof order === "number" ? `${order}-` : "";
+  const key = `archive/posts/${postId}/${Date.now()}-${orderSegment}${randomUUID()}.${validation.extension}`;
   const body = Buffer.from(await file.arrayBuffer());
 
   await getS3Client(config).send(

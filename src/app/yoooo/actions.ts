@@ -237,14 +237,19 @@ type ArchiveMutationResult =
     }
   | { ok: false; message: string };
 
-function imageErrorMessage(reason: "missing" | "too_large" | "invalid_type") {
+function imageErrorMessage(
+  reason: "missing" | "too_large" | "invalid_type",
+  fileName?: string
+) {
+  const prefix = fileName ? `${fileName}: ` : "";
+
   switch (reason) {
     case "missing":
       return "Selecciona al menos una imagen.";
     case "too_large":
-      return "Cada imagen debe pesar menos de 5 MB.";
+      return `${prefix}Cada imagen debe pesar menos de 5 MB.`;
     case "invalid_type":
-      return "Usa imagenes JPG, PNG, WebP o GIF.";
+      return `${prefix}Usa imagenes JPG, PNG, WebP o GIF.`;
   }
 }
 
@@ -314,7 +319,10 @@ export async function createArchivePostAction(
     const validation = validateImageFile(image);
 
     if (!validation.ok) {
-      return { ok: false, message: imageErrorMessage(validation.reason) };
+      return {
+        ok: false,
+        message: imageErrorMessage(validation.reason, image.name),
+      };
     }
   }
 
@@ -322,8 +330,8 @@ export async function createArchivePostAction(
   const uploadedImages: { key: string; url: string }[] = [];
 
   try {
-    for (const image of images) {
-      uploadedImages.push(await uploadArchiveImageToR2(image, postId));
+    for (const [index, image] of images.entries()) {
+      uploadedImages.push(await uploadArchiveImageToR2(image, postId, index));
     }
   } catch {
     await cleanupUploadedImages(uploadedImages.map((image) => image.key));
@@ -430,25 +438,29 @@ export async function addArchiveImagesAction(
     const validation = validateImageFile(image);
 
     if (!validation.ok) {
-      return { ok: false, message: imageErrorMessage(validation.reason) };
+      return {
+        ok: false,
+        message: imageErrorMessage(validation.reason, image.name),
+      };
     }
-  }
-
-  const uploadedImages: { key: string; url: string }[] = [];
-
-  try {
-    for (const image of images) {
-      uploadedImages.push(await uploadArchiveImageToR2(image, postId));
-    }
-  } catch {
-    await cleanupUploadedImages(uploadedImages.map((image) => image.key));
-    return { ok: false, message: "No se pudieron subir las imagenes." };
   }
 
   const nextOrder =
     post.images.length > 0
       ? Math.max(...post.images.map((image) => image.order)) + 1
       : 0;
+  const uploadedImages: { key: string; url: string }[] = [];
+
+  try {
+    for (const [index, image] of images.entries()) {
+      uploadedImages.push(
+        await uploadArchiveImageToR2(image, postId, nextOrder + index)
+      );
+    }
+  } catch {
+    await cleanupUploadedImages(uploadedImages.map((image) => image.key));
+    return { ok: false, message: "No se pudieron subir las imagenes." };
+  }
 
   try {
     await prisma.archiveImage.createMany({
