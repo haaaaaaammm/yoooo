@@ -42,7 +42,7 @@ export async function generateMetadata({
 
   const titleExcerpt = getExcerpt(post.content, 80);
   const description = getExcerpt(post.content, 160) || FALLBACK_TITLE;
-  const title = titleExcerpt ? `${titleExcerpt} | poemario` : FALLBACK_TITLE;
+  const title = titleExcerpt ? `:pp` : FALLBACK_TITLE;
   const url = `https://haaaaaaammmm.com${PUBLIC_FEED_PATH}/${post.id}`;
 
   return {
