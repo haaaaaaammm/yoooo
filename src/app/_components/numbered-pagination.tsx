@@ -7,8 +7,15 @@ type NumberedPaginationProps = {
 };
 
 function pageHref(basePath: string, page: number) {
-  return `${basePath}?page=${page}`;
+  const separator = basePath.includes("?") ? "&" : "?";
+
+  return `${basePath}${separator}page=${page}`;
 }
+
+// Shared style for the non-active controls (page numbers and the previous link)
+// so the `<` link visually matches the inactive page-number links.
+const navLinkClassName =
+  "rounded-full px-4 py-2 text-sm text-neutral-500 transition hover:bg-[#ff003c]/10 hover:text-[#ff003c]";
 
 export default function NumberedPagination({
   basePath,
@@ -27,6 +34,15 @@ export default function NumberedPagination({
       aria-label="Pagination"
       className="flex flex-wrap items-center justify-center gap-2 border-b border-neutral-800 px-4 py-4"
     >
+      {currentPage > 1 ? (
+        <Link
+          aria-label="Pagina anterior"
+          className={navLinkClassName}
+          href={pageHref(basePath, currentPage - 1)}
+        >
+          &lt;
+        </Link>
+      ) : null}
       {pages.map((pageNumber) => {
         const isActive = pageNumber === currentPage;
 
@@ -36,7 +52,7 @@ export default function NumberedPagination({
             className={
               isActive
                 ? "rounded-full bg-[#ff003c]/10 px-4 py-2 text-sm text-[#ff003c]"
-                : "rounded-full px-4 py-2 text-sm text-neutral-500 transition hover:bg-[#ff003c]/10 hover:text-[#ff003c]"
+                : navLinkClassName
             }
             href={pageHref(basePath, pageNumber)}
             key={pageNumber}

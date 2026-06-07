@@ -47,6 +47,11 @@ export { Prisma }
  */
 export type Post = Prisma.PostModel
 /**
+ * Model PoemarioComment
+ * 
+ */
+export type PoemarioComment = Prisma.PoemarioCommentModel
+/**
  * Model SiteSettings
  * 
  */

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import AdminPostLink from "@/app/_components/admin-post-link";
 import NumberedPagination from "@/app/_components/numbered-pagination";
 import {
   formatArchiveTimestamp,
@@ -50,9 +51,21 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
     <main className="min-h-screen min-h-dvh overflow-x-hidden bg-black text-white">
       <div className="mx-auto min-h-screen min-h-dvh w-full max-w-2xl border-neutral-800 bg-black sm:border-x">
         <header className="sticky top-0 z-10 border-b border-neutral-800 bg-black/90 px-4 py-4 backdrop-blur">
-          <h1 className="truncate text-xl font-semibold tracking-wide text-white">
-            archive
-          </h1>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <Link
+                aria-label="Inicio"
+                className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-lg text-[#ff003c] transition hover:bg-[#ff003c]/10"
+                href="/"
+              >
+                {"<"}
+              </Link>
+              <h1 className="min-w-0 truncate text-xl font-semibold tracking-wide text-white">
+                archive
+              </h1>
+            </div>
+            <AdminPostLink />
+          </div>
         </header>
 
         <section aria-label="Archive">

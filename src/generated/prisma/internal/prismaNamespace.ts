@@ -385,6 +385,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   Post: 'Post',
+  PoemarioComment: 'PoemarioComment',
   SiteSettings: 'SiteSettings',
   ArchivePost: 'ArchivePost',
   ArchiveImage: 'ArchiveImage'
@@ -403,7 +404,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "post" | "siteSettings" | "archivePost" | "archiveImage"
+    modelProps: "post" | "poemarioComment" | "siteSettings" | "archivePost" | "archiveImage"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -478,6 +479,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.PostCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.PostCountAggregateOutputType> | number
+        }
+      }
+    }
+    PoemarioComment: {
+      payload: Prisma.$PoemarioCommentPayload<ExtArgs>
+      fields: Prisma.PoemarioCommentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PoemarioCommentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PoemarioCommentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PoemarioCommentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PoemarioCommentPayload>
+        }
+        findFirst: {
+          args: Prisma.PoemarioCommentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PoemarioCommentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PoemarioCommentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PoemarioCommentPayload>
+        }
+        findMany: {
+          args: Prisma.PoemarioCommentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PoemarioCommentPayload>[]
+        }
+        create: {
+          args: Prisma.PoemarioCommentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PoemarioCommentPayload>
+        }
+        createMany: {
+          args: Prisma.PoemarioCommentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PoemarioCommentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PoemarioCommentPayload>[]
+        }
+        delete: {
+          args: Prisma.PoemarioCommentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PoemarioCommentPayload>
+        }
+        update: {
+          args: Prisma.PoemarioCommentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PoemarioCommentPayload>
+        }
+        deleteMany: {
+          args: Prisma.PoemarioCommentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PoemarioCommentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PoemarioCommentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PoemarioCommentPayload>[]
+        }
+        upsert: {
+          args: Prisma.PoemarioCommentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PoemarioCommentPayload>
+        }
+        aggregate: {
+          args: Prisma.PoemarioCommentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePoemarioComment>
+        }
+        groupBy: {
+          args: Prisma.PoemarioCommentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PoemarioCommentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PoemarioCommentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PoemarioCommentCountAggregateOutputType> | number
         }
       }
     }
@@ -752,6 +827,18 @@ export const PostScalarFieldEnum = {
 export type PostScalarFieldEnum = (typeof PostScalarFieldEnum)[keyof typeof PostScalarFieldEnum]
 
 
+export const PoemarioCommentScalarFieldEnum = {
+  id: 'id',
+  postId: 'postId',
+  parentId: 'parentId',
+  text: 'text',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PoemarioCommentScalarFieldEnum = (typeof PoemarioCommentScalarFieldEnum)[keyof typeof PoemarioCommentScalarFieldEnum]
+
+
 export const SiteSettingsScalarFieldEnum = {
   id: 'id',
   profileImageUrl: 'profileImageUrl',
@@ -982,6 +1069,7 @@ export type PrismaClientOptions = ({
 }
 export type GlobalOmitConfig = {
   post?: Prisma.PostOmit
+  poemarioComment?: Prisma.PoemarioCommentOmit
   siteSettings?: Prisma.SiteSettingsOmit
   archivePost?: Prisma.ArchivePostOmit
   archiveImage?: Prisma.ArchiveImageOmit

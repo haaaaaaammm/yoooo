@@ -23,6 +23,11 @@ export * from './enums';
  */
 export type Post = Prisma.PostModel
 /**
+ * Model PoemarioComment
+ * 
+ */
+export type PoemarioComment = Prisma.PoemarioCommentModel
+/**
  * Model SiteSettings
  * 
  */

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import AdminPostLink from "@/app/_components/admin-post-link";
 import {
   formatArchiveTimestamp,
   getArchivePostById,
@@ -81,14 +82,26 @@ export default async function ArchivePostPage({
     <main className="min-h-screen min-h-dvh overflow-x-hidden bg-black text-white">
       <div className="mx-auto min-h-screen min-h-dvh w-full max-w-2xl border-neutral-800 bg-black sm:border-x">
         <header className="sticky top-0 z-10 border-b border-neutral-800 bg-black/90 px-4 py-4 backdrop-blur">
-          <div className="flex items-center justify-between gap-4">
-            <Link
-              className="min-w-0 truncate text-xl font-semibold tracking-wide text-white"
-              href={ARCHIVE_PATH}
-            >
-              archive
-            </Link>
-            <CopyLinkButton />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <Link
+                aria-label="Back to archive"
+                className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-lg text-[#ff003c] transition hover:bg-[#ff003c]/10"
+                href={ARCHIVE_PATH}
+              >
+                &lt;
+              </Link>
+              <Link
+                className="min-w-0 truncate text-xl font-semibold tracking-wide text-white"
+                href={ARCHIVE_PATH}
+              >
+                archive
+              </Link>
+            </div>
+            <div className="flex flex-none items-center gap-2">
+              <CopyLinkButton />
+              <AdminPostLink />
+            </div>
           </div>
         </header>
 

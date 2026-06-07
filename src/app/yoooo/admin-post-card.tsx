@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
@@ -9,12 +10,14 @@ import { updatePostAction } from "./actions";
 import DeletePostMenu from "./delete-post-menu";
 
 type AdminPost = {
+  commentCount?: number;
   id: string;
   content: string;
   createdAt: string;
 };
 
 type AdminPostCardProps = {
+  href?: string;
   post: AdminPost;
   profileImageUrl?: string | null;
 };
@@ -44,6 +47,7 @@ function editErrorMessage(reason: "auth" | "empty" | "not_found" | "update") {
 }
 
 export default function AdminPostCard({
+  href,
   post,
   profileImageUrl,
 }: AdminPostCardProps) {
@@ -55,6 +59,20 @@ export default function AdminPostCard({
   const [isSaving, setIsSaving] = useState(false);
   const createdAt = new Date(post.createdAt);
   const canSave = draft.trim().length > 0 && !isSaving;
+  const commentCount =
+    typeof post.commentCount === "number" ? (
+      <span
+        aria-label={`${post.commentCount} comentarios`}
+        className="text-sm leading-5 text-neutral-500"
+      >
+        {post.commentCount}
+      </span>
+    ) : null;
+  const timestamp = (
+    <time className="text-neutral-500" dateTime={post.createdAt}>
+      {formatTimestamp(createdAt)}
+    </time>
+  );
 
   function startEditing() {
     setDraft(content);
@@ -115,12 +133,18 @@ export default function AdminPostCard({
                   <span className="max-w-full truncate font-semibold text-white">
                     humberto
                   </span>
-                  <time
-                    className="text-neutral-500"
-                    dateTime={post.createdAt}
-                  >
-                    {formatTimestamp(createdAt)}
-                  </time>
+                  {href && !isEditing ? (
+                    <Link
+                      aria-label={`Open post from ${formatTimestamp(
+                        createdAt
+                      )}`}
+                      href={href}
+                    >
+                      {timestamp}
+                    </Link>
+                  ) : (
+                    timestamp
+                  )}
                 </div>
               </div>
             </div>
@@ -158,10 +182,33 @@ export default function AdminPostCard({
                 </div>
               </form>
             ) : (
-              <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
-                {content}
-              </p>
+              href ? (
+                <Link className="block" href={href}>
+                  <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+                    {content}
+                  </p>
+                </Link>
+              ) : (
+                <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+                  {content}
+                </p>
+              )
             )}
+            {!isEditing && commentCount ? (
+              <div className="mt-2 flex items-center gap-2">
+                {href ? (
+                  <Link
+                    aria-label={`${post.commentCount} comentarios`}
+                    className="rounded-full text-sm leading-5 text-neutral-500 transition hover:text-[#ff003c]"
+                    href={href}
+                  >
+                    {post.commentCount}
+                  </Link>
+                ) : (
+                  commentCount
+                )}
+              </div>
+            ) : null}
           </div>
 
           <DeletePostMenu onEdit={startEditing} postId={post.id} />

@@ -52,6 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   Post: 'Post',
+  PoemarioComment: 'PoemarioComment',
   SiteSettings: 'SiteSettings',
   ArchivePost: 'ArchivePost',
   ArchiveImage: 'ArchiveImage'
@@ -81,6 +82,18 @@ export const PostScalarFieldEnum = {
 } as const
 
 export type PostScalarFieldEnum = (typeof PostScalarFieldEnum)[keyof typeof PostScalarFieldEnum]
+
+
+export const PoemarioCommentScalarFieldEnum = {
+  id: 'id',
+  postId: 'postId',
+  parentId: 'parentId',
+  text: 'text',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PoemarioCommentScalarFieldEnum = (typeof PoemarioCommentScalarFieldEnum)[keyof typeof PoemarioCommentScalarFieldEnum]
 
 
 export const SiteSettingsScalarFieldEnum = {

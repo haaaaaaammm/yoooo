@@ -2,8 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import AdminPostLink from "@/app/_components/admin-post-link";
 import FeedPostCard from "@/app/_components/feed-post-card";
-import { getPoemarioPostById } from "@/lib/poemario-posts";
+import PoemarioCommentThread from "@/app/_components/poemario-comment-thread";
+import {
+  getPoemarioPostById,
+  getPoemarioPostWithThread,
+} from "@/lib/poemario-posts";
 import { PUBLIC_FEED_PATH } from "@/lib/posts";
 import { getProfileImageSettings } from "@/lib/site-settings";
 
@@ -69,7 +74,7 @@ export default async function PoemarioPostPage({
 }: PoemarioPostPageProps) {
   const { id } = await params;
   const [post, profileImageSettings] = await Promise.all([
-    getPoemarioPostById(id),
+    getPoemarioPostWithThread(id),
     getProfileImageSettings(),
   ]);
 
@@ -81,25 +86,47 @@ export default async function PoemarioPostPage({
     <main className="min-h-screen min-h-dvh overflow-x-hidden bg-black text-white">
       <div className="mx-auto min-h-screen min-h-dvh w-full max-w-2xl border-neutral-800 bg-black sm:border-x">
         <header className="sticky top-0 z-10 border-b border-neutral-800 bg-black/90 px-4 py-4 backdrop-blur">
-          <div className="flex items-center justify-between gap-4">
-            <Link
-              className="min-w-0 truncate text-xl font-semibold tracking-wide text-white"
-              href={PUBLIC_FEED_PATH}
-            >
-              yoooooooooooo
-            </Link>
-            <CopyLinkButton />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <Link
+                aria-label="Back to poemario"
+                className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-lg text-[#ff003c] transition hover:bg-[#ff003c]/10"
+                href={PUBLIC_FEED_PATH}
+              >
+                &lt;
+              </Link>
+              <Link
+                className="min-w-0 truncate text-xl font-semibold tracking-wide text-white"
+                href={PUBLIC_FEED_PATH}
+              >
+                yoooooooooooo
+              </Link>
+            </div>
+            <div className="flex flex-none items-center gap-2">
+              <CopyLinkButton />
+              <AdminPostLink />
+            </div>
           </div>
         </header>
 
         <section aria-label="Post">
           <ol>
             <FeedPostCard
-              post={post}
+              post={{
+                commentCount: post.commentCount,
+                content: post.content,
+                createdAt: post.createdAt,
+                id: post.id,
+              }}
               profileImageUrl={profileImageSettings.profileImageUrl}
             />
           </ol>
         </section>
+
+        <PoemarioCommentThread
+          comments={post.thread}
+          profileImageUrl={profileImageSettings.profileImageUrl}
+        />
       </div>
     </main>
   );

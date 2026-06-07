@@ -2,9 +2,12 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import FeedPagination from "@/app/_components/feed-pagination";
+import { getArchivePostsPage } from "@/lib/archive-posts";
 import { getAdminAuthStatus, isAdminAuthenticated } from "@/lib/auth";
+import { getPoemarioPostsPage } from "@/lib/poemario-posts";
 import {
   ADMIN_PATH,
   ARCHIVE_PATH,
@@ -12,7 +15,6 @@ import {
   PUBLIC_FEED_PATH,
   parsePageParam,
 } from "@/lib/posts";
-import { getPrisma } from "@/lib/prisma";
 import { getProfileImageSettings } from "@/lib/site-settings";
 
 import AdminPostCard from "./admin-post-card";
@@ -111,7 +113,7 @@ export default async function Home({ searchParams }: AdminPageProps) {
                   username
                 </span>
                 <input
-                  className="w-full rounded-2xl border border-neutral-800 bg-black px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-[#ff003c] focus:ring-1 focus:ring-[#ff003c]"
+                  className="w-full rounded-2xl border border-neutral-800 bg-black px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500/40"
                   name="username"
                   autoComplete="username"
                   required
@@ -123,7 +125,7 @@ export default async function Home({ searchParams }: AdminPageProps) {
                   password
                 </span>
                 <input
-                  className="w-full rounded-2xl border border-neutral-800 bg-black px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-[#ff003c] focus:ring-1 focus:ring-[#ff003c]"
+                  className="w-full rounded-2xl border border-neutral-800 bg-black px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500/40"
                   name="password"
                   type="password"
                   autoComplete="current-password"
@@ -162,26 +164,24 @@ export default async function Home({ searchParams }: AdminPageProps) {
     );
   }
 
-  const prisma = getPrisma();
   const profileImageSettings = await getProfileImageSettings();
   const profileImageUrl = profileImageSettings.profileImageUrl;
   const publicTargetPath = mode === "archive" ? ARCHIVE_PATH : PUBLIC_FEED_PATH;
-  const publicTargetLabel = mode === "archive" ? "(archive)" : "(posts)";
+  const publicTargetLabel = mode === "archive" ? "< archive" : "< poemario";
   let pageContent: ReactNode;
 
   if (mode === "archive") {
-    const archivePosts = await prisma.archivePost.findMany({
-      include: {
-        images: {
-          orderBy: { order: "asc" },
-        },
-      },
-      orderBy: { takenAt: "desc" },
-      take: POSTS_PER_PAGE,
-    });
+    const { posts: archivePosts, totalPages } = await getArchivePostsPage(page);
+
+    // Out-of-range page (e.g. posts were deleted): send to the last valid page
+    // so the URL, content, and highlighted page number stay in sync.
+    if (totalPages > 0 && page > totalPages) {
+      redirect(`${ADMIN_PATH}?app=archive&page=${totalPages}`);
+    }
 
     pageContent = (
       <ArchiveManager
+        page={page}
         posts={archivePosts.map((post) => ({
           createdAt: post.createdAt.toISOString(),
           description: post.description,
@@ -194,17 +194,11 @@ export default async function Home({ searchParams }: AdminPageProps) {
           })),
           takenAt: post.takenAt.toISOString(),
         }))}
+        totalPages={totalPages}
       />
     );
   } else {
-    const [totalPosts, posts] = await Promise.all([
-      prisma.post.count(),
-      prisma.post.findMany({
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * POSTS_PER_PAGE,
-        take: POSTS_PER_PAGE,
-      }),
-    ]);
+    const { posts, totalPosts } = await getPoemarioPostsPage(page);
     const hasNextPage = page * POSTS_PER_PAGE < totalPosts;
 
     pageContent = (
@@ -220,8 +214,10 @@ export default async function Home({ searchParams }: AdminPageProps) {
             <ol>
               {posts.map((post) => (
                 <AdminPostCard
+                  href={`${ADMIN_PATH}/poemario/${post.id}`}
                   key={post.id}
                   post={{
+                    commentCount: post.commentCount,
                     id: post.id,
                     content: post.content,
                     createdAt: post.createdAt.toISOString(),

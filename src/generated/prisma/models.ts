@@ -9,6 +9,7 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/Post'
+export type * from './models/PoemarioComment'
 export type * from './models/SiteSettings'
 export type * from './models/ArchivePost'
 export type * from './models/ArchiveImage'

@@ -3,10 +3,13 @@
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import NumberedPagination from "@/app/_components/numbered-pagination";
 import { ARCHIVE_IMAGE_ACCEPT } from "@/lib/archive";
+import { ADMIN_PATH } from "@/lib/posts";
 
 import { prepareArchiveImageFiles } from "./archive-image-processing";
 import ArchiveComposer from "./archive-composer";
+import SortableImageGrid from "./sortable-image-grid";
 import {
   deleteArchivePostAction,
   removeArchiveImageAction,
@@ -31,7 +34,9 @@ export type AdminArchivePost = {
 };
 
 type ArchiveManagerProps = {
+  page: number;
   posts: AdminArchivePost[];
+  totalPages: number;
 };
 
 type UploadStatus = "pending" | "uploading" | "uploaded" | "failed";
@@ -486,7 +491,7 @@ function ArchivePostManager({
                 fecha
               </span>
               <input
-                className="w-full rounded-2xl border border-neutral-800 bg-black px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-[#ff003c] focus:ring-1 focus:ring-[#ff003c]"
+                className="w-full rounded-2xl border border-neutral-800 bg-black px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500/40"
                 onChange={(event) => setDraftTakenAt(event.target.value)}
                 type="datetime-local"
                 value={draftTakenAt}
@@ -523,12 +528,13 @@ function ArchivePostManager({
           </div>
         ) : null}
 
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {images.map((image, index) => (
-            <div
-              className="overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950"
-              key={image.id}
-            >
+        <SortableImageGrid
+          className="mt-4"
+          disabled={pendingImageId !== null}
+          items={images}
+          onReorder={reorderImages}
+          renderItem={(image, index) => (
+            <>
               <div className="aspect-square">
                 <img
                   alt={`archive image ${index + 1}`}
@@ -559,7 +565,7 @@ function ArchivePostManager({
                   </button>
                   <button
                     className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:cursor-not-allowed disabled:text-neutral-500 disabled:hover:bg-transparent"
-                    disabled={pendingImageId === image.id}
+                    disabled={pendingImageId !== null}
                     onClick={() => removeImage(image.id)}
                     type="button"
                   >
@@ -567,9 +573,9 @@ function ArchivePostManager({
                   </button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            </>
+          )}
+        />
 
         <form
           className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-neutral-900 pt-3"
@@ -645,7 +651,11 @@ function ArchivePostManager({
   );
 }
 
-export default function ArchiveManager({ posts: initialPosts }: ArchiveManagerProps) {
+export default function ArchiveManager({
+  page,
+  posts: initialPosts,
+  totalPages,
+}: ArchiveManagerProps) {
   const router = useRouter();
   const { notice, showNotice } = useAutoDismissNotice();
   const [posts, setPosts] = useState(initialPosts);
@@ -684,6 +694,11 @@ export default function ArchiveManager({ posts: initialPosts }: ArchiveManagerPr
             ))}
           </ol>
         )}
+        <NumberedPagination
+          basePath={`${ADMIN_PATH}?app=archive`}
+          page={page}
+          totalPages={totalPages}
+        />
       </section>
     </>
   );

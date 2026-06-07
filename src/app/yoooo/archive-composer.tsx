@@ -16,11 +16,14 @@ import {
 } from "@/lib/archive";
 
 import { prepareArchiveImageFiles } from "./archive-image-processing";
+import SortableImageGrid from "./sortable-image-grid";
 import {
   createArchivePostMetadataAction,
   deleteArchivePostAction,
   uploadSingleArchiveImageAction,
 } from "./actions";
+
+type DateMode = "oldest" | "newest";
 
 type UploadStatus = "pending" | "uploading" | "uploaded" | "failed";
 
@@ -240,29 +243,45 @@ export default function ArchiveComposer({
   const [metadataPostId, setMetadataPostId] = useState<string | null>(null);
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const [takenAt, setTakenAt] = useState(formatDateTimeLocal(new Date()));
+  const [dateMode, setDateMode] = useState<DateMode>("oldest");
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const remainingUploadCount = selectedImages.filter(
     (image) => image.status !== "uploaded"
   ).length;
   const canSubmit =
     remainingUploadCount > 0 && !isProcessingImages && !isSubmitting;
-  const oldestImage = useMemo(
+  // Track the oldest/newest photo timestamps as numbers (not object references)
+  // so the auto-fill effect only reacts to an actual change in the detected
+  // date. Reordering images or rewriting an image's upload status produces a new
+  // array but the same min/max timestamp, so a manual date edit is preserved.
+  const oldestTime = useMemo(
     () =>
-      selectedImages.reduce<SelectedImage | null>((oldest, image) => {
-        if (!oldest || image.date < oldest.date) {
-          return image;
-        }
-
-        return oldest;
-      }, null),
+      selectedImages.reduce(
+        (oldest, image) => Math.min(oldest, image.date.getTime()),
+        Number.POSITIVE_INFINITY
+      ),
+    [selectedImages]
+  );
+  const newestTime = useMemo(
+    () =>
+      selectedImages.reduce(
+        (newest, image) => Math.max(newest, image.date.getTime()),
+        Number.NEGATIVE_INFINITY
+      ),
     [selectedImages]
   );
 
+  // Auto-fill the date from the chosen photo (oldest/newest). This only runs
+  // when the detected date or the date mode change, so a manual edit to the
+  // field survives reorders and upload-status churn until the selected photos or
+  // the mode actually change.
   useEffect(() => {
-    if (oldestImage) {
-      setTakenAt(formatDateTimeLocal(oldestImage.date));
+    const detectedTime = dateMode === "newest" ? newestTime : oldestTime;
+
+    if (Number.isFinite(detectedTime)) {
+      setTakenAt(formatDateTimeLocal(new Date(detectedTime)));
     }
-  }, [oldestImage]);
+  }, [dateMode, newestTime, oldestTime]);
 
   useEffect(() => {
     selectedImagesRef.current = selectedImages;
@@ -541,12 +560,12 @@ export default function ArchiveComposer({
         </div>
 
         {selectedImages.length > 0 ? (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {selectedImages.map((image, index) => (
-              <div
-                className="overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950"
-                key={image.id}
-              >
+          <SortableImageGrid
+            disabled={Boolean(metadataPostId) || isSubmitting}
+            items={selectedImages}
+            onReorder={moveImage}
+            renderItem={(image, index) => (
+              <>
                 <div className="aspect-square">
                   <img
                     alt={image.file.name}
@@ -599,27 +618,55 @@ export default function ArchiveComposer({
                     {image.error ? `: ${image.error}` : ""}
                   </p>
                 </div>
-              </div>
-            ))}
-          </div>
+              </>
+            )}
+          />
         ) : null}
 
-        <label className="block">
-          <span className="mb-2 block text-sm text-neutral-400">
-            fecha del archivo
-          </span>
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-sm text-neutral-400">fecha del archivo</span>
+            <div aria-label="Modo de fecha" className="flex gap-1" role="group">
+              <button
+                aria-pressed={dateMode === "oldest"}
+                className={
+                  dateMode === "oldest"
+                    ? "rounded-full bg-[#ff003c]/10 px-3 py-1.5 text-xs text-[#ff003c]"
+                    : "rounded-full px-3 py-1.5 text-xs text-neutral-500 transition hover:bg-[#ff003c]/10 hover:text-[#ff003c]"
+                }
+                onClick={() => setDateMode("oldest")}
+                type="button"
+              >
+                mas antigua
+              </button>
+              <button
+                aria-pressed={dateMode === "newest"}
+                className={
+                  dateMode === "newest"
+                    ? "rounded-full bg-[#ff003c]/10 px-3 py-1.5 text-xs text-[#ff003c]"
+                    : "rounded-full px-3 py-1.5 text-xs text-neutral-500 transition hover:bg-[#ff003c]/10 hover:text-[#ff003c]"
+                }
+                onClick={() => setDateMode("newest")}
+                type="button"
+              >
+                mas reciente
+              </button>
+            </div>
+          </div>
           <input
-            className="w-full rounded-2xl border border-neutral-800 bg-black px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-[#ff003c] focus:ring-1 focus:ring-[#ff003c]"
+            aria-label="fecha del archivo"
+            className="w-full rounded-2xl border border-neutral-800 bg-black px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500/40"
             name="takenAt"
             onChange={(event) => setTakenAt(event.target.value)}
             required
             type="datetime-local"
             value={takenAt}
           />
-          <span className="mt-2 block text-xs leading-5 text-neutral-500">
-            se usa la fecha mas antigua detectada; puedes cambiarla
+          <span className="block text-xs leading-5 text-neutral-500">
+            se usa la fecha {dateMode === "newest" ? "mas reciente" : "mas antigua"}{" "}
+            detectada; puedes cambiarla
           </span>
-        </label>
+        </div>
 
         <label className="block">
           <span className="mb-2 block text-sm text-neutral-400">

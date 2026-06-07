@@ -8,12 +8,28 @@ datasource db {
 }
 
 model Post {
-  id        String   @id @default(cuid())
+  id        String            @id @default(cuid())
   content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  comments  PoemarioComment[]
 
   @@index([createdAt])
+}
+
+model PoemarioComment {
+  id        String             @id @default(cuid())
+  postId    String
+  parentId  String?
+  text      String
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  post      Post               @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent    PoemarioComment?   @relation("PoemarioCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   PoemarioComment[]  @relation("PoemarioCommentReplies")
+
+  @@index([postId, createdAt])
+  @@index([parentId, createdAt])
 }
 
 model SiteSettings {

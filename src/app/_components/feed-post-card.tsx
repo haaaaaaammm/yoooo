@@ -4,6 +4,7 @@ import Link from "next/link";
 import ProfileImage from "@/app/_components/profile-image";
 
 type FeedPost = {
+  commentCount?: number;
   id: string;
   content: string;
   createdAt: Date;
@@ -43,6 +44,15 @@ export default function FeedPostCard({
       {post.content}
     </p>
   );
+  const commentCount =
+    typeof post.commentCount === "number" ? (
+      <span
+        aria-label={`${post.commentCount} comentarios`}
+        className="text-sm leading-5 text-neutral-500"
+      >
+        {post.commentCount}
+      </span>
+    ) : null;
 
   return (
     <li className="border-b border-neutral-800 transition hover:bg-neutral-950">
@@ -81,6 +91,21 @@ export default function FeedPostCard({
             ) : (
               content
             )}
+            {commentCount ? (
+              <div className="mt-2 flex items-center gap-2">
+                {href ? (
+                  <Link
+                    aria-label={`${post.commentCount} comentarios`}
+                    className="rounded-full text-sm leading-5 text-neutral-500 transition hover:text-[#ff003c]"
+                    href={href}
+                  >
+                    {post.commentCount}
+                  </Link>
+                ) : (
+                  commentCount
+                )}
+              </div>
+            ) : null}
           </div>
           {action}
         </div>

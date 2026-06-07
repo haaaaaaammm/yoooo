@@ -94,6 +94,26 @@ type UpdatePostResult =
   | { ok: true; content: string }
   | { ok: false; reason: "auth" | "empty" | "not_found" | "update" };
 
+type PoemarioCommentMutationResult =
+  | { ok: true; message: string }
+  | { ok: false; message: string };
+
+function revalidatePoemarioCommentPath(postId: string, commentId: string) {
+  revalidatePath(`${ADMIN_PATH}/poemario/${postId}/comment/${commentId}`);
+  revalidatePath(`${PUBLIC_FEED_PATH}/${postId}/comment/${commentId}`);
+}
+
+function revalidatePoemarioThread(postId: string, commentId?: string | null) {
+  revalidatePath(ADMIN_PATH);
+  revalidatePath(PUBLIC_FEED_PATH);
+  revalidatePath(`${ADMIN_PATH}/poemario/${postId}`);
+  revalidatePath(`${PUBLIC_FEED_PATH}/${postId}`);
+
+  if (commentId) {
+    revalidatePoemarioCommentPath(postId, commentId);
+  }
+}
+
 export async function updatePostAction(
   postId: string,
   rawContent: string
@@ -135,6 +155,131 @@ export async function updatePostAction(
   revalidatePath(ADMIN_PATH);
 
   return { ok: true, content };
+}
+
+export async function createPoemarioCommentAction(
+  postId: string,
+  parentId: string | null,
+  rawText: string
+): Promise<PoemarioCommentMutationResult> {
+  if (!(await isAdminAuthenticated())) {
+    return { ok: false, message: "vuelve a iniciar sesion" };
+  }
+
+  const text = rawText.trim();
+
+  if (!text) {
+    return { ok: false, message: "Escribe algo antes de comentar." };
+  }
+
+  const prisma = getPrisma();
+  const post = await prisma.post.findUnique({
+    select: { id: true },
+    where: { id: postId },
+  });
+
+  if (!post) {
+    return { ok: false, message: "Ese post ya no existe." };
+  }
+
+  if (parentId) {
+    const parent = await prisma.poemarioComment.findUnique({
+      select: { postId: true },
+      where: { id: parentId },
+    });
+
+    if (!parent || parent.postId !== postId) {
+      return { ok: false, message: "Ese comentario ya no existe." };
+    }
+  }
+
+  try {
+    await prisma.poemarioComment.create({
+      data: {
+        parentId,
+        postId,
+        text,
+      },
+    });
+  } catch {
+    return { ok: false, message: "No se pudo guardar el comentario." };
+  }
+
+  revalidatePoemarioThread(postId, parentId);
+
+  return { ok: true, message: "comentario guardado" };
+}
+
+export async function updatePoemarioCommentAction(
+  commentId: string,
+  rawText: string
+): Promise<PoemarioCommentMutationResult> {
+  if (!(await isAdminAuthenticated())) {
+    return { ok: false, message: "vuelve a iniciar sesion" };
+  }
+
+  const text = rawText.trim();
+
+  if (!text) {
+    return { ok: false, message: "Escribe algo antes de guardar." };
+  }
+
+  const prisma = getPrisma();
+  const comment = await prisma.poemarioComment.findUnique({
+    select: { postId: true },
+    where: { id: commentId },
+  });
+
+  if (!comment) {
+    return { ok: false, message: "Ese comentario ya no existe." };
+  }
+
+  try {
+    await prisma.poemarioComment.update({
+      data: { text },
+      where: { id: commentId },
+    });
+  } catch {
+    return { ok: false, message: "No se pudo editar el comentario." };
+  }
+
+  revalidatePoemarioThread(comment.postId, commentId);
+
+  return { ok: true, message: "comentario actualizado" };
+}
+
+export async function deletePoemarioCommentAction(
+  commentId: string
+): Promise<PoemarioCommentMutationResult> {
+  if (!(await isAdminAuthenticated())) {
+    return { ok: false, message: "vuelve a iniciar sesion" };
+  }
+
+  const prisma = getPrisma();
+  const comment = await prisma.poemarioComment.findUnique({
+    select: { parentId: true, postId: true },
+    where: { id: commentId },
+  });
+
+  if (!comment) {
+    return { ok: false, message: "Ese comentario ya no existe." };
+  }
+
+  try {
+    await prisma.poemarioComment.delete({
+      where: { id: commentId },
+    });
+  } catch {
+    return { ok: false, message: "No se pudo borrar el comentario." };
+  }
+
+  revalidatePoemarioThread(comment.postId, commentId);
+
+  if (comment.parentId) {
+    revalidatePoemarioCommentPath(comment.postId, comment.parentId);
+  }
+
+  return { ok: true, message: "comentario borrado" };
 }
 
 type UpdateProfileImageState = {
