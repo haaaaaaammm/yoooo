@@ -11,10 +11,11 @@ import {
 } from "react";
 
 import {
-  ARCHIVE_ALLOWED_IMAGE_TYPES,
-  ARCHIVE_IMAGE_MAX_SIZE_BYTES,
+  ARCHIVE_IMAGE_ACCEPT,
+  getArchiveImageUploadType,
 } from "@/lib/archive";
 
+import { prepareArchiveImageFiles } from "./archive-image-processing";
 import { createArchivePostAction } from "./actions";
 
 type SelectedImage = {
@@ -112,7 +113,9 @@ function readIfdEntries(
 }
 
 async function readExifDateTimeOriginal(file: File) {
-  if (file.type !== "image/jpeg") {
+  const uploadType = getArchiveImageUploadType(file);
+
+  if (!uploadType.ok || uploadType.extension !== "jpg") {
     return null;
   }
 
@@ -186,10 +189,15 @@ async function readExifDateTimeOriginal(file: File) {
   return null;
 }
 
-async function createSelectedImage(file: File): Promise<SelectedImage> {
-  const exifDate = await readExifDateTimeOriginal(file);
+async function createSelectedImage(
+  file: File,
+  originalFile = file
+): Promise<SelectedImage> {
+  const exifDate = await readExifDateTimeOriginal(originalFile);
   const fallbackDate =
-    file.lastModified > 0 ? new Date(file.lastModified) : new Date();
+    originalFile.lastModified > 0
+      ? new Date(originalFile.lastModified)
+      : new Date();
 
   return {
     date: exifDate ?? fallbackDate,
@@ -208,22 +216,6 @@ function moveItem(items: SelectedImage[], fromIndex: number, toIndex: number) {
   return nextItems;
 }
 
-function validateSelectedFile(file: File) {
-  if (
-    !ARCHIVE_ALLOWED_IMAGE_TYPES.includes(
-      file.type as (typeof ARCHIVE_ALLOWED_IMAGE_TYPES)[number]
-    )
-  ) {
-    return `${file.name}: usa imagenes JPG, PNG, WebP o GIF.`;
-  }
-
-  if (file.size > ARCHIVE_IMAGE_MAX_SIZE_BYTES) {
-    return `${file.name}: cada imagen debe pesar menos de 5 MB.`;
-  }
-
-  return null;
-}
-
 export default function ArchiveComposer({
   onCreated,
 }: {
@@ -233,11 +225,13 @@ export default function ArchiveComposer({
   const selectedImagesRef = useRef<SelectedImage[]>([]);
   const [description, setDescription] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const [isProcessingImages, setIsProcessingImages] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState(initialMessage);
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const [takenAt, setTakenAt] = useState(formatDateTimeLocal(new Date()));
-  const canSubmit = selectedImages.length > 0 && !isSubmitting;
+  const canSubmit =
+    selectedImages.length > 0 && !isProcessingImages && !isSubmitting;
   const oldestImage = useMemo(
     () =>
       selectedImages.reduce<SelectedImage | null>((oldest, image) => {
@@ -282,22 +276,30 @@ export default function ArchiveComposer({
   async function addFiles(files: File[]) {
     setMessage(initialMessage);
 
-    const failedFileMessage = files
-      .map(validateSelectedFile)
-      .find((message): message is string => Boolean(message));
-
-    if (failedFileMessage) {
-      setMessage({ ok: false, text: failedFileMessage });
-      return;
-    }
-
     if (files.length === 0) {
       return;
     }
 
-    const nextImages = await Promise.all(files.map(createSelectedImage));
+    setIsProcessingImages(true);
 
-    setSelectedImages((current) => [...current, ...nextImages]);
+    try {
+      const result = await prepareArchiveImageFiles(files, "create-select");
+
+      if (result.errors.length > 0) {
+        setMessage({ ok: false, text: result.errors.join("\n") });
+        return;
+      }
+
+      const nextImages = await Promise.all(
+        result.files.map((prepared) =>
+          createSelectedImage(prepared.file, prepared.originalFile)
+        )
+      );
+
+      setSelectedImages((current) => [...current, ...nextImages]);
+    } finally {
+      setIsProcessingImages(false);
+    }
   }
 
   function handleFilesChange(event: ChangeEvent<HTMLInputElement>) {
@@ -332,6 +334,11 @@ export default function ArchiveComposer({
 
     if (selectedImages.length === 0) {
       setMessage({ ok: false, text: "Selecciona al menos una imagen." });
+      return;
+    }
+
+    if (isProcessingImages) {
+      setMessage({ ok: false, text: "Espera a que terminen de procesarse." });
       return;
     }
 
@@ -391,7 +398,7 @@ export default function ArchiveComposer({
               </p>
             </div>
             <input
-              accept="image/jpeg,image/png,image/webp,image/gif"
+              accept={ARCHIVE_IMAGE_ACCEPT}
               className="sr-only"
               multiple
               name="images"
@@ -401,10 +408,11 @@ export default function ArchiveComposer({
             />
             <button
               className="rounded-full px-4 py-2 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10"
+              disabled={isProcessingImages}
               onClick={() => inputRef.current?.click()}
               type="button"
             >
-              elegir
+              {isProcessingImages ? "procesando" : "elegir"}
             </button>
           </div>
         </div>
@@ -492,7 +500,9 @@ export default function ArchiveComposer({
           {message.text ? (
             <p
               className={
-                message.ok ? "text-sm text-green-400" : "text-sm text-red-400"
+                message.ok
+                  ? "text-sm text-green-400"
+                  : "whitespace-pre-wrap text-sm text-red-400"
               }
             >
               {message.text}

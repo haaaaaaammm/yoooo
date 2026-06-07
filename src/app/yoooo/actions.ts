@@ -4,7 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
 
-import { parseArchiveTakenAt } from "@/lib/archive";
+import {
+  ARCHIVE_IMAGE_MAX_SIZE_BYTES,
+  ARCHIVE_UPLOAD_TOTAL_MAX_SIZE_BYTES,
+  formatArchiveFileSize,
+  getArchiveImageFileInfo,
+  parseArchiveTakenAt,
+} from "@/lib/archive";
 import { isAdminAuthenticated, loginAdmin, logoutAdmin } from "@/lib/auth";
 import { ADMIN_PATH, ARCHIVE_PATH, PUBLIC_FEED_PATH } from "@/lib/posts";
 import { getPrisma } from "@/lib/prisma";
@@ -138,13 +144,22 @@ type UpdateProfileImageState = {
 };
 
 function profileImageErrorMessage(
-  reason: "missing" | "too_large" | "invalid_type"
+  reason:
+    | "missing"
+    | "too_large"
+    | "invalid_type"
+    | "unsupported_heic"
+    | "unsupported_video"
 ) {
   switch (reason) {
     case "missing":
       return "Selecciona una imagen.";
     case "too_large":
       return "La imagen debe pesar menos de 5 MB.";
+    case "unsupported_heic":
+      return "HEIC photos from iPhone are not supported yet. Please select Most Compatible/JPEG or convert them first.";
+    case "unsupported_video":
+      return "MOV/Live Photo videos no son compatibles. Selecciona solo fotos.";
     case "invalid_type":
       return "Usa una imagen JPG, PNG, WebP o GIF.";
   }
@@ -238,7 +253,12 @@ type ArchiveMutationResult =
   | { ok: false; message: string };
 
 function imageErrorMessage(
-  reason: "missing" | "too_large" | "invalid_type",
+  reason:
+    | "missing"
+    | "too_large"
+    | "invalid_type"
+    | "unsupported_heic"
+    | "unsupported_video",
   fileName?: string
 ) {
   const prefix = fileName ? `${fileName}: ` : "";
@@ -247,10 +267,64 @@ function imageErrorMessage(
     case "missing":
       return "Selecciona al menos una imagen.";
     case "too_large":
-      return `${prefix}Cada imagen debe pesar menos de 5 MB.`;
+      return `${prefix}La imagen procesada debe pesar menos de ${formatArchiveFileSize(
+        ARCHIVE_IMAGE_MAX_SIZE_BYTES
+      )}.`;
+    case "unsupported_heic":
+      return `${prefix}HEIC photos from iPhone are not supported yet. Please select Most Compatible/JPEG or convert them first.`;
+    case "unsupported_video":
+      return `${prefix}MOV/Live Photo videos no son compatibles. Selecciona solo fotos.`;
     case "invalid_type":
       return `${prefix}Usa imagenes JPG, PNG, WebP o GIF.`;
   }
+}
+
+function getArchiveUploadTotalSize(images: File[]) {
+  return images.reduce((total, image) => total + image.size, 0);
+}
+
+function getArchiveImageValidationMessages(images: File[]) {
+  const messages: string[] = [];
+
+  for (const image of images) {
+    const validation = validateImageFile(image);
+
+    if (!validation.ok) {
+      messages.push(imageErrorMessage(validation.reason, image.name));
+    }
+  }
+
+  const totalSize = getArchiveUploadTotalSize(images);
+
+  if (totalSize > ARCHIVE_UPLOAD_TOTAL_MAX_SIZE_BYTES) {
+    messages.push(
+      `El lote pesa ${formatArchiveFileSize(
+        totalSize
+      )}; debe quedar abajo de ${formatArchiveFileSize(
+        ARCHIVE_UPLOAD_TOTAL_MAX_SIZE_BYTES
+      )}. Sube menos peso en una tanda.`
+    );
+  }
+
+  return messages;
+}
+
+function logArchiveUploadDebug(context: string, images: File[]) {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
+
+  console.info(
+    `[archive-upload:${context}] files=${images.length} total=${formatArchiveFileSize(
+      getArchiveUploadTotalSize(images)
+    )}`,
+    images.map((image) => ({
+      extension: getArchiveImageFileInfo(image).extension,
+      name: image.name,
+      size: image.size,
+      type: image.type,
+    }))
+  );
 }
 
 async function cleanupUploadedImages(keys: string[]) {
@@ -315,15 +389,15 @@ export async function createArchivePostAction(
     return { ok: false, message: "Selecciona al menos una imagen." };
   }
 
-  for (const image of images) {
-    const validation = validateImageFile(image);
+  logArchiveUploadDebug("create-formdata", images);
 
-    if (!validation.ok) {
-      return {
-        ok: false,
-        message: imageErrorMessage(validation.reason, image.name),
-      };
-    }
+  const validationMessages = getArchiveImageValidationMessages(images);
+
+  if (validationMessages.length > 0) {
+    return {
+      ok: false,
+      message: validationMessages.join("\n"),
+    };
   }
 
   const postId = randomUUID();
@@ -331,6 +405,17 @@ export async function createArchivePostAction(
 
   try {
     for (const [index, image] of images.entries()) {
+      if (process.env.NODE_ENV === "development") {
+        console.info(
+          `[archive-upload:create] uploading ${index + 1}/${images.length}`,
+          {
+            name: image.name,
+            size: image.size,
+            type: image.type,
+          }
+        );
+      }
+
       uploadedImages.push(await uploadArchiveImageToR2(image, postId, index));
     }
   } catch {
@@ -434,15 +519,15 @@ export async function addArchiveImagesAction(
     return { ok: false, message: "Selecciona al menos una imagen." };
   }
 
-  for (const image of images) {
-    const validation = validateImageFile(image);
+  logArchiveUploadDebug("add-formdata", images);
 
-    if (!validation.ok) {
-      return {
-        ok: false,
-        message: imageErrorMessage(validation.reason, image.name),
-      };
-    }
+  const validationMessages = getArchiveImageValidationMessages(images);
+
+  if (validationMessages.length > 0) {
+    return {
+      ok: false,
+      message: validationMessages.join("\n"),
+    };
   }
 
   const nextOrder =
@@ -453,6 +538,17 @@ export async function addArchiveImagesAction(
 
   try {
     for (const [index, image] of images.entries()) {
+      if (process.env.NODE_ENV === "development") {
+        console.info(
+          `[archive-upload:add] uploading ${index + 1}/${images.length}`,
+          {
+            name: image.name,
+            size: image.size,
+            type: image.type,
+          }
+        );
+      }
+
       uploadedImages.push(
         await uploadArchiveImageToR2(image, postId, nextOrder + index)
       );

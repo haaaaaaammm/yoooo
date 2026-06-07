@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import NumberedPagination from "@/app/_components/numbered-pagination";
 import {
-  ARCHIVE_PATH,
-  ARCHIVE_POSTS_PER_PAGE,
-  parsePageParam,
-} from "@/lib/posts";
-import { getPrisma } from "@/lib/prisma";
+  formatArchiveTimestamp,
+  getArchivePostsPage,
+} from "@/lib/archive-posts";
+import { ARCHIVE_PATH, parsePageParam } from "@/lib/posts";
 
 import ArchiveCarousel from "./archive-carousel";
 
@@ -35,35 +35,10 @@ type ArchivePageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-function formatTimestamp(date: Date) {
-  return new Intl.DateTimeFormat("es-MX", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "America/Mexico_City",
-  }).format(date);
-}
-
 export default async function ArchivePage({ searchParams }: ArchivePageProps) {
   const params = (await searchParams) ?? {};
   const page = parsePageParam(params.page);
-  const prisma = getPrisma();
-  const [totalPosts, posts] = await Promise.all([
-    prisma.archivePost.count(),
-    prisma.archivePost.findMany({
-      include: {
-        images: {
-          orderBy: { order: "asc" },
-        },
-      },
-      orderBy: { takenAt: "desc" },
-      skip: (page - 1) * ARCHIVE_POSTS_PER_PAGE,
-      take: ARCHIVE_POSTS_PER_PAGE,
-    }),
-  ]);
-  const totalPages = Math.ceil(totalPosts / ARCHIVE_POSTS_PER_PAGE);
+  const { posts, totalPages } = await getArchivePostsPage(page);
 
   // Out-of-range page (e.g. posts were deleted): send to the last valid page so
   // the URL, content, and highlighted page number stay in sync.
@@ -72,8 +47,8 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
   }
 
   return (
-    <main className="min-h-dvh overflow-x-hidden bg-black text-white">
-      <div className="mx-auto min-h-dvh w-full max-w-2xl border-neutral-800 sm:border-x">
+    <main className="min-h-screen min-h-dvh overflow-x-hidden bg-black text-white">
+      <div className="mx-auto min-h-screen min-h-dvh w-full max-w-2xl border-neutral-800 bg-black sm:border-x">
         <header className="sticky top-0 z-10 border-b border-neutral-800 bg-black/90 px-4 py-4 backdrop-blur">
           <h1 className="truncate text-xl font-semibold tracking-wide text-white">
             archive
@@ -93,15 +68,24 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
                   key={post.id}
                 >
                   <article className="px-4 py-4">
-                    <time
-                      className="text-sm leading-5 text-neutral-500"
-                      dateTime={post.takenAt.toISOString()}
+                    <Link
+                      aria-label={`Open archive post from ${formatArchiveTimestamp(
+                        post.takenAt
+                      )}`}
+                      className="block"
+                      href={`${ARCHIVE_PATH}/${post.id}`}
                     >
-                      {formatTimestamp(post.takenAt)}
-                    </time>
+                      <time
+                        className="text-sm leading-5 text-neutral-500"
+                        dateTime={post.takenAt.toISOString()}
+                      >
+                        {formatArchiveTimestamp(post.takenAt)}
+                      </time>
+                    </Link>
 
                     <ArchiveCarousel
                       description={post.description}
+                      href={`${ARCHIVE_PATH}/${post.id}`}
                       images={post.images.map((image) => ({
                         id: image.id,
                         url: image.url,
@@ -109,9 +93,14 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
                     />
 
                     {post.description ? (
-                      <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
-                        {post.description}
-                      </p>
+                      <Link
+                        className="mt-3 block"
+                        href={`${ARCHIVE_PATH}/${post.id}`}
+                      >
+                        <p className="whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+                          {post.description}
+                        </p>
+                      </Link>
                     ) : null}
                   </article>
                 </li>

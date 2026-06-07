@@ -27,3 +27,18 @@
   color: #d01010e3;
 }
 
+html.archive-viewport-black,
+html.archive-viewport-black body,
+body.archive-viewport-black,
+html.poemario-viewport-black,
+html.poemario-viewport-black body,
+body.poemario-viewport-black {
+  background: #000;
+  min-height: 100%;
+}
+
+html.archive-viewport-black,
+html.poemario-viewport-black {
+  color-scheme: dark;
+}
+

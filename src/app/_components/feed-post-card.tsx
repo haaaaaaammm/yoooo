@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 
 import ProfileImage from "@/app/_components/profile-image";
 
@@ -10,6 +11,7 @@ type FeedPost = {
 
 type FeedPostCardProps = {
   action?: ReactNode;
+  href?: string;
   post: FeedPost;
   profileImageUrl?: string | null;
 };
@@ -27,9 +29,21 @@ function formatTimestamp(date: Date) {
 
 export default function FeedPostCard({
   action,
+  href,
   post,
   profileImageUrl,
 }: FeedPostCardProps) {
+  const timestamp = (
+    <time className="text-neutral-500" dateTime={post.createdAt.toISOString()}>
+      {formatTimestamp(post.createdAt)}
+    </time>
+  );
+  const content = (
+    <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+      {post.content}
+    </p>
+  );
+
   return (
     <li className="border-b border-neutral-800 transition hover:bg-neutral-950">
       <article className="px-4 py-4">
@@ -45,21 +59,31 @@ export default function FeedPostCard({
                   <span className="max-w-full truncate font-semibold text-white">
                     humberto
                   </span>
-                  <time
-                    className="text-neutral-500"
-                    dateTime={post.createdAt.toISOString()}
-                  >
-                    {formatTimestamp(post.createdAt)}
-                  </time>
+                  {href ? (
+                    <Link
+                      aria-label={`Open post from ${formatTimestamp(
+                        post.createdAt
+                      )}`}
+                      href={href}
+                    >
+                      {timestamp}
+                    </Link>
+                  ) : (
+                    timestamp
+                  )}
                 </div>
               </div>
             </div>
-            <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">{post.content}</p>
+            {href ? (
+              <Link className="block" href={href}>
+                {content}
+              </Link>
+            ) : (
+              content
+            )}
           </div>
-              {action}
-
+          {action}
         </div>
-
       </article>
     </li>
   );

@@ -8,19 +8,15 @@ import {
 import { randomUUID } from "crypto";
 
 import {
-  ARCHIVE_ALLOWED_IMAGE_TYPES,
   ARCHIVE_IMAGE_MAX_SIZE_BYTES,
+  ARCHIVE_MIME_TYPE_TO_EXTENSION,
+  getArchiveImageUploadType,
 } from "@/lib/archive";
 
 export const IMAGE_MAX_SIZE_BYTES = ARCHIVE_IMAGE_MAX_SIZE_BYTES;
 export const PROFILE_IMAGE_MAX_SIZE_BYTES = IMAGE_MAX_SIZE_BYTES;
 
-export const IMAGE_FILE_EXTENSIONS = Object.fromEntries(
-  ARCHIVE_ALLOWED_IMAGE_TYPES.map((mimeType) => [
-    mimeType,
-    mimeType === "image/jpeg" ? "jpg" : mimeType.replace("image/", ""),
-  ])
-) as Record<(typeof ARCHIVE_ALLOWED_IMAGE_TYPES)[number], string>;
+export const IMAGE_FILE_EXTENSIONS = ARCHIVE_MIME_TYPE_TO_EXTENSION;
 export const PROFILE_IMAGE_EXTENSIONS = IMAGE_FILE_EXTENSIONS;
 
 type ImageMimeType = keyof typeof IMAGE_FILE_EXTENSIONS;
@@ -83,14 +79,16 @@ export function validateImageFile(file: File) {
     return { ok: false as const, reason: "too_large" as const };
   }
 
-  if (!(file.type in IMAGE_FILE_EXTENSIONS)) {
-    return { ok: false as const, reason: "invalid_type" as const };
+  const uploadType = getArchiveImageUploadType(file);
+
+  if (!uploadType.ok) {
+    return uploadType;
   }
 
   return {
     ok: true as const,
-    extension: IMAGE_FILE_EXTENSIONS[file.type as ImageMimeType],
-    mimeType: file.type as ImageMimeType,
+    extension: uploadType.extension,
+    mimeType: uploadType.mimeType as ImageMimeType,
   };
 }
 
@@ -132,8 +130,8 @@ export async function uploadArchiveImageToR2(
   }
 
   const config = getR2Config();
-  const orderSegment = typeof order === "number" ? `${order}-` : "";
-  const key = `archive/posts/${postId}/${Date.now()}-${orderSegment}${randomUUID()}.${validation.extension}`;
+  const orderSegment = typeof order === "number" ? `-${order}` : "";
+  const key = `archive/posts/${postId}/${Date.now()}-${randomUUID()}${orderSegment}.${validation.extension}`;
   const body = Buffer.from(await file.arrayBuffer());
 
   await getS3Client(config).send(

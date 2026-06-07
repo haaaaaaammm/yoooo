@@ -3,6 +3,9 @@
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { ARCHIVE_IMAGE_ACCEPT } from "@/lib/archive";
+
+import { prepareArchiveImageFiles } from "./archive-image-processing";
 import ArchiveComposer from "./archive-composer";
 import {
   addArchiveImagesAction,
@@ -117,6 +120,7 @@ function ArchivePostManager({
   const router = useRouter();
   const { clearNotice, notice, showNotice } = useAutoDismissNotice();
   const [addImageCount, setAddImageCount] = useState(0);
+  const [addImageFiles, setAddImageFiles] = useState<File[]>([]);
   const [description, setDescription] = useState(post.description);
   const [draftDescription, setDraftDescription] = useState(post.description);
   const [draftTakenAt, setDraftTakenAt] = useState(
@@ -125,6 +129,7 @@ function ArchivePostManager({
   const [error, setError] = useState<string | null>(null);
   const [images, setImages] = useState(post.images);
   const [isAddingImages, setIsAddingImages] = useState(false);
+  const [isProcessingAddImages, setIsProcessingAddImages] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -177,7 +182,12 @@ function ArchivePostManager({
   async function addImages(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (addImageCount === 0) {
+    if (isProcessingAddImages) {
+      setError("Espera a que terminen de procesarse.");
+      return;
+    }
+
+    if (addImageFiles.length === 0) {
       setError("Selecciona al menos una imagen.");
       return;
     }
@@ -187,12 +197,16 @@ function ArchivePostManager({
     clearNotice();
 
     try {
-      const formData = new FormData(event.currentTarget);
+      const formData = new FormData();
+
+      addImageFiles.forEach((file) => formData.append("images", file));
+
       const result = await addArchiveImagesAction(post.id, formData);
 
       if (!result.ok) {
         setError(result.message);
         addImagesFormRef.current?.reset();
+        setAddImageFiles([]);
         setAddImageCount(0);
         return;
       }
@@ -202,12 +216,14 @@ function ArchivePostManager({
       }
 
       addImagesFormRef.current?.reset();
+      setAddImageFiles([]);
       setAddImageCount(0);
       showNotice("imagenes agregadas");
       router.refresh();
     } catch {
       setError("No se pudieron agregar las imagenes.");
       addImagesFormRef.current?.reset();
+      setAddImageFiles([]);
       setAddImageCount(0);
     } finally {
       setIsAddingImages(false);
@@ -304,8 +320,38 @@ function ArchivePostManager({
     }
   }
 
-  function handleAddImagesChange(event: ChangeEvent<HTMLInputElement>) {
-    setAddImageCount(event.target.files?.length ?? 0);
+  async function handleAddImagesChange(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const files = Array.from(input.files ?? []);
+
+    setAddImageFiles([]);
+    setAddImageCount(0);
+    setError(null);
+    clearNotice();
+
+    if (files.length === 0) {
+      input.value = "";
+      return;
+    }
+
+    setIsProcessingAddImages(true);
+
+    try {
+      const result = await prepareArchiveImageFiles(files, `add-${post.id}`);
+
+      if (result.errors.length > 0) {
+        setError(result.errors.join("\n"));
+        return;
+      }
+
+      const preparedFiles = result.files.map((prepared) => prepared.file);
+
+      setAddImageFiles(preparedFiles);
+      setAddImageCount(preparedFiles.length);
+    } finally {
+      setIsProcessingAddImages(false);
+      input.value = "";
+    }
   }
 
   return (
@@ -440,22 +486,24 @@ function ArchivePostManager({
         >
           <div className="flex min-w-0 items-center gap-2">
             <input
-              accept="image/jpeg,image/png,image/webp,image/gif"
+              accept={ARCHIVE_IMAGE_ACCEPT}
               className="sr-only"
               multiple
-              name="images"
               onChange={handleAddImagesChange}
               ref={addImagesInputRef}
               type="file"
             />
             <button
               className="rounded-full px-4 py-2 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:cursor-not-allowed disabled:text-neutral-500 disabled:hover:bg-transparent"
+              disabled={isProcessingAddImages}
               onClick={() => addImagesInputRef.current?.click()}
               type="button"
             >
-              agregar imagenes
+              {isProcessingAddImages ? "procesando" : "agregar imagenes"}
             </button>
-            {addImageCount > 0 ? (
+            {isProcessingAddImages ? (
+              <span className="text-sm text-neutral-500">procesando</span>
+            ) : addImageCount > 0 ? (
               <span className="text-sm text-neutral-500">
                 {addImageCount} seleccionada{addImageCount === 1 ? "" : "s"}
               </span>
@@ -463,14 +511,18 @@ function ArchivePostManager({
           </div>
           <button
             className="rounded-full px-5 py-2 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:cursor-not-allowed disabled:text-neutral-500 disabled:hover:bg-transparent"
-            disabled={isAddingImages || addImageCount === 0}
+            disabled={isAddingImages || isProcessingAddImages || addImageCount === 0}
             type="submit"
           >
             {isAddingImages ? "subiendo" : "subir"}
           </button>
         </form>
 
-        {error ? <p className="mt-3 text-sm text-red-400">{error}</p> : null}
+        {error ? (
+          <p className="mt-3 whitespace-pre-wrap text-sm text-red-400">
+            {error}
+          </p>
+        ) : null}
         {notice ? (
           <p className="mt-3 text-sm text-green-400">{notice.text}</p>
         ) : null}
