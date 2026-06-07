@@ -852,8 +852,11 @@ export type SiteSettingsScalarFieldEnum = (typeof SiteSettingsScalarFieldEnum)[k
 
 export const ArchivePostScalarFieldEnum = {
   id: 'id',
+  kind: 'kind',
+  title: 'title',
   description: 'description',
   takenAt: 'takenAt',
+  coverImageId: 'coverImageId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

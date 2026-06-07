@@ -183,16 +183,28 @@ export default async function Home({ searchParams }: AdminPageProps) {
       <ArchiveManager
         page={page}
         posts={archivePosts.map((post) => ({
+          coverImage: post.coverImage
+            ? {
+                id: post.coverImage.id,
+                key: post.coverImage.key,
+                order: post.coverImage.order,
+                url: post.coverImage.url,
+              }
+            : null,
+          coverImageId: post.coverImageId,
           createdAt: post.createdAt.toISOString(),
           description: post.description,
           id: post.id,
+          imageCount: post.imageCount,
           images: post.images.map((image) => ({
             id: image.id,
             key: image.key,
             order: image.order,
             url: image.url,
           })),
+          kind: post.kind,
           takenAt: post.takenAt.toISOString(),
+          title: post.title,
         }))}
         totalPages={totalPages}
       />

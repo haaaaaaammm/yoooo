@@ -22,6 +22,9 @@ export const ARCHIVE_IMAGE_MAX_DIMENSION = 2560;
 export const ARCHIVE_IMAGE_JPEG_QUALITY = 0.86;
 export const ARCHIVE_IMAGE_ACCEPT =
   "image/*,.jpg,.jpeg,.png,.webp,.gif,.heic,.heif";
+export const ARCHIVE_ALBUM_THRESHOLD = 20;
+export const ARCHIVE_POST_KIND = "post";
+export const ARCHIVE_ALBUM_KIND = "album";
 
 export const ARCHIVE_EXTENSION_TO_MIME_TYPE = {
   gif: "image/gif",

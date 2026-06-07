@@ -4,7 +4,10 @@ import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import NumberedPagination from "@/app/_components/numbered-pagination";
-import { ARCHIVE_IMAGE_ACCEPT } from "@/lib/archive";
+import {
+  ARCHIVE_ALBUM_KIND,
+  ARCHIVE_IMAGE_ACCEPT,
+} from "@/lib/archive";
 import { ADMIN_PATH } from "@/lib/posts";
 
 import { prepareArchiveImageFiles } from "./archive-image-processing";
@@ -12,8 +15,10 @@ import ArchiveComposer from "./archive-composer";
 import SortableImageGrid from "./sortable-image-grid";
 import {
   deleteArchivePostAction,
+  getArchiveImagesAction,
   removeArchiveImageAction,
   reorderArchiveImagesAction,
+  updateArchiveCoverImageAction,
   updateArchivePostAction,
   uploadSingleArchiveImageAction,
 } from "./actions";
@@ -26,11 +31,16 @@ type AdminArchiveImage = {
 };
 
 export type AdminArchivePost = {
+  coverImage: AdminArchiveImage | null;
+  coverImageId: string | null;
   createdAt: string;
   description: string;
   id: string;
+  imageCount: number;
   images: AdminArchiveImage[];
+  kind: string;
   takenAt: string;
+  title: string | null;
 };
 
 type ArchiveManagerProps = {
@@ -92,6 +102,18 @@ function moveItem<T>(items: T[], fromIndex: number, toIndex: number) {
   return nextItems;
 }
 
+function formatFailureSummary(messages: string[], limit = 8) {
+  const visibleMessages = messages.slice(0, limit);
+  const hiddenCount = messages.length - visibleMessages.length;
+
+  return [
+    ...visibleMessages,
+    hiddenCount > 0 ? `...y ${hiddenCount} mas.` : null,
+  ]
+    .filter((message): message is string => Boolean(message))
+    .join("\n");
+}
+
 // Success notices show briefly then clear themselves after 5s. The id makes
 // repeated identical messages restart the timer, and the cleanup clears any
 // pending timeout so unmounting or a new notice never leaks one.
@@ -134,29 +156,48 @@ function ArchivePostManager({
   const addImagesInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { clearNotice, notice, showNotice } = useAutoDismissNotice();
+  const isAlbum = post.kind === ARCHIVE_ALBUM_KIND;
   const [addImageQueue, setAddImageQueue] = useState<AddImageQueueItem[]>([]);
   const [addUploadProgress, setAddUploadProgress] = useState<string | null>(
     null
   );
+  const [coverImageId, setCoverImageId] = useState(post.coverImageId);
   const [description, setDescription] = useState(post.description);
   const [draftDescription, setDraftDescription] = useState(post.description);
   const [draftTakenAt, setDraftTakenAt] = useState(
     formatDateTimeLocal(post.takenAt)
   );
+  const [draftTitle, setDraftTitle] = useState(post.title ?? "");
   const [error, setError] = useState<string | null>(null);
   const [images, setImages] = useState(post.images);
+  const [imageCount, setImageCount] = useState(post.imageCount);
   const [isAddingImages, setIsAddingImages] = useState(false);
+  const [isLoadingAllImages, setIsLoadingAllImages] = useState(false);
   const [isProcessingAddImages, setIsProcessingAddImages] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [pendingImageId, setPendingImageId] = useState<string | null>(null);
   const [takenAt, setTakenAt] = useState(post.takenAt);
+  const [title, setTitle] = useState(post.title ?? "");
   const addImageCount = addImageQueue.length;
+  const coverImage =
+    images.find((image) => image.id === coverImageId) ??
+    post.coverImage ??
+    images[0] ??
+    null;
+  const visibleImages = isAlbum ? images.slice(0, 24) : images;
+  const hasHiddenAlbumImages = isAlbum && imageCount > images.length;
+  const visibleAddImageQueue = isAlbum
+    ? addImageQueue.slice(0, 12)
+    : addImageQueue;
+  const hiddenAddImageQueueCount =
+    addImageQueue.length - visibleAddImageQueue.length;
 
   function startEditing() {
     setDraftDescription(description);
     setDraftTakenAt(formatDateTimeLocal(takenAt));
+    setDraftTitle(title);
     setError(null);
     setIsEditing(true);
   }
@@ -164,6 +205,7 @@ function ArchivePostManager({
   function cancelEditing() {
     setDraftDescription(description);
     setDraftTakenAt(formatDateTimeLocal(takenAt));
+    setDraftTitle(title);
     setError(null);
     setIsEditing(false);
   }
@@ -177,7 +219,9 @@ function ArchivePostManager({
       const result = await updateArchivePostAction(
         post.id,
         draftDescription,
-        draftTakenAt
+        draftTakenAt,
+        isAlbum ? draftTitle : undefined,
+        isAlbum ? coverImageId : undefined
       );
 
       if (!result.ok) {
@@ -187,6 +231,8 @@ function ArchivePostManager({
 
       setDescription(result.description ?? draftDescription.trim());
       setTakenAt(result.takenAt ?? new Date(draftTakenAt).toISOString());
+      setTitle(result.title ?? draftTitle.trim());
+      setCoverImageId(result.coverImageId ?? coverImageId);
       setIsEditing(false);
       showNotice("archivo actualizado");
       router.refresh();
@@ -229,11 +275,12 @@ function ArchivePostManager({
     try {
       let uploadedCount = 0;
       let latestImages: AdminArchiveImage[] | null = null;
+      const uploadedImages: AdminArchiveImage[] = [];
       const failedItems: AddImageQueueItem[] = [];
 
       for (const [index, image] of uploadCandidates.entries()) {
         setAddUploadProgress(
-          `Uploading ${index + 1} of ${uploadCandidates.length}...`
+          `subiendo ${index + 1} de ${uploadCandidates.length}`
         );
         setAddImageQueue((current) =>
           current.map((item) =>
@@ -244,6 +291,7 @@ function ArchivePostManager({
         const formData = new FormData();
         formData.set("image", image.file);
         formData.set("order", String(image.order));
+        formData.set("returnImages", isAlbum ? "false" : "true");
 
         try {
           const result = await uploadSingleArchiveImageAction(post.id, formData);
@@ -265,7 +313,8 @@ function ArchivePostManager({
           }
 
           uploadedCount += 1;
-          latestImages = result.images;
+          uploadedImages.push(result.image);
+          latestImages = result.images ?? null;
           setAddImageQueue((current) =>
             current.map((item) =>
               item.id === image.id ? { ...item, status: "uploaded" } : item
@@ -291,6 +340,18 @@ function ArchivePostManager({
 
       if (latestImages) {
         setImages(latestImages);
+        setImageCount(latestImages.length);
+      } else if (uploadedImages.length > 0) {
+        setImages((current) => {
+          const currentIds = new Set(current.map((image) => image.id));
+          const nextImages = [
+            ...current,
+            ...uploadedImages.filter((image) => !currentIds.has(image.id)),
+          ].sort((left, right) => left.order - right.order);
+
+          return isAlbum ? nextImages.slice(0, 24) : nextImages;
+        });
+        setImageCount((current) => current + uploadedImages.length);
       }
 
       setAddUploadProgress(null);
@@ -307,9 +368,9 @@ function ArchivePostManager({
       setError(
         `${uploadedCount} imagen${uploadedCount === 1 ? "" : "es"} subid${
           uploadedCount === 1 ? "a" : "as"
-        }, ${failedItems.length} fallaron.\n${failedItems
-          .map((image) => image.error ?? image.file.name)
-          .join("\n")}\nPuedes reintentar sin duplicar las que ya subieron.`
+        }, ${failedItems.length} fallaron.\n${formatFailureSummary(
+          failedItems.map((image) => image.error ?? image.file.name)
+        )}\nPuedes reintentar sin duplicar las que ya subieron.`
       );
 
       if (uploadedCount > 0) {
@@ -343,6 +404,11 @@ function ArchivePostManager({
 
       if (result.images) {
         setImages(result.images);
+        setImageCount(result.images.length);
+      }
+
+      if (result.coverImageId !== undefined) {
+        setCoverImageId(result.coverImageId);
       }
 
       showNotice("imagen quitada");
@@ -414,6 +480,53 @@ function ArchivePostManager({
     }
   }
 
+  async function loadAllImages() {
+    setIsLoadingAllImages(true);
+    setError(null);
+    clearNotice();
+
+    try {
+      const result = await getArchiveImagesAction(post.id);
+
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+
+      setCoverImageId(result.coverImageId);
+      setImageCount(result.images.length);
+      setImages(result.images);
+      showNotice("imagenes cargadas");
+    } catch {
+      setError("No se pudieron cargar las imagenes.");
+    } finally {
+      setIsLoadingAllImages(false);
+    }
+  }
+
+  async function changeCover(imageId: string) {
+    setPendingImageId(imageId);
+    setError(null);
+    clearNotice();
+
+    try {
+      const result = await updateArchiveCoverImageAction(post.id, imageId);
+
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+
+      setCoverImageId(result.coverImageId ?? imageId);
+      showNotice("portada actualizada");
+      router.refresh();
+    } catch {
+      setError("No se pudo cambiar la portada.");
+    } finally {
+      setPendingImageId(null);
+    }
+  }
+
   async function handleAddImagesChange(event: ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget;
     const files = Array.from(input.files ?? []);
@@ -441,7 +554,7 @@ function ArchivePostManager({
         result.files.map((prepared, index) => ({
           file: prepared.file,
           id: crypto.randomUUID(),
-          order: images.length + index,
+          order: imageCount + index,
           status: "pending",
         }))
       );
@@ -455,10 +568,33 @@ function ArchivePostManager({
     <li className="border-b border-neutral-800 transition hover:bg-neutral-950">
       <article className="px-4 py-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <time className="text-sm text-neutral-500" dateTime={takenAt}>
               {formatArchiveDate(takenAt)}
             </time>
+            {isAlbum ? (
+              <div className="mt-2 flex min-w-0 gap-3">
+                {coverImage ? (
+                  <img
+                    alt={title || "album cover"}
+                    className="h-20 w-20 flex-none rounded-2xl border border-neutral-800 object-cover"
+                    loading="lazy"
+                    src={coverImage.url}
+                  />
+                ) : null}
+                <div className="min-w-0">
+                  <p className="text-xs uppercase tracking-[0.2em] text-neutral-600">
+                    album
+                  </p>
+                  <h2 className="mt-1 truncate text-lg font-semibold leading-6 text-white">
+                    {title || "album"}
+                  </h2>
+                  <p className="mt-1 text-sm text-neutral-500">
+                    {imageCount} foto{imageCount === 1 ? "" : "s"}
+                  </p>
+                </div>
+              </div>
+            ) : null}
             {description ? (
               <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
                 {description}
@@ -486,6 +622,57 @@ function ArchivePostManager({
 
         {isEditing ? (
           <div className="mt-4 space-y-3 rounded-2xl border border-neutral-800 bg-black p-3">
+            {isAlbum ? (
+              <>
+                <label className="block">
+                  <span className="mb-2 block text-sm text-neutral-400">
+                    titulo
+                  </span>
+                  <input
+                    className="w-full rounded-2xl border border-neutral-800 bg-black px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500/40"
+                    onChange={(event) => setDraftTitle(event.target.value)}
+                    value={draftTitle}
+                  />
+                </label>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-sm text-neutral-400">portada</span>
+                    {hasHiddenAlbumImages ? (
+                      <button
+                        className="rounded-full px-3 py-1.5 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-500 disabled:hover:bg-transparent"
+                        disabled={isLoadingAllImages}
+                        onClick={loadAllImages}
+                        type="button"
+                      >
+                        {isLoadingAllImages ? "cargando" : "cargar todas"}
+                      </button>
+                    ) : null}
+                  </div>
+                  <div className="grid max-h-48 grid-cols-5 gap-2 overflow-y-auto pr-1 sm:grid-cols-8">
+                    {images.map((image, index) => (
+                      <button
+                        className={
+                          image.id === coverImageId
+                            ? "overflow-hidden rounded-xl border border-[#ff003c] bg-neutral-950"
+                            : "overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950"
+                        }
+                        disabled={pendingImageId !== null}
+                        key={image.id}
+                        onClick={() => void changeCover(image.id)}
+                        type="button"
+                      >
+                        <img
+                          alt={`cover option ${index + 1}`}
+                          className="aspect-square h-full w-full object-cover"
+                          loading="lazy"
+                          src={image.url}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : null}
             <label className="block">
               <span className="mb-2 block text-sm text-neutral-400">
                 fecha
@@ -530,8 +717,8 @@ function ArchivePostManager({
 
         <SortableImageGrid
           className="mt-4"
-          disabled={pendingImageId !== null}
-          items={images}
+          disabled={pendingImageId !== null || isAlbum}
+          items={visibleImages}
           onReorder={reorderImages}
           renderItem={(image, index) => (
             <>
@@ -543,26 +730,46 @@ function ArchivePostManager({
                 />
               </div>
               <div className="space-y-2 p-2">
-                <p className="text-xs text-neutral-500">imagen {index + 1}</p>
-                <div className="grid grid-cols-3 gap-1">
-                  <button
-                    className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
-                    disabled={index === 0 || pendingImageId !== null}
-                    onClick={() => reorderImages(index, index - 1)}
-                    type="button"
-                  >
-                    &lt;
-                  </button>
-                  <button
-                    className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
-                    disabled={
-                      index === images.length - 1 || pendingImageId !== null
-                    }
-                    onClick={() => reorderImages(index, index + 1)}
-                    type="button"
-                  >
-                    &gt;
-                  </button>
+                <p className="text-xs text-neutral-500">
+                  imagen {image.order + 1}
+                  {image.id === coverImageId ? " / portada" : ""}
+                </p>
+                <div
+                  className={
+                    isAlbum ? "grid grid-cols-2 gap-1" : "grid grid-cols-3 gap-1"
+                  }
+                >
+                  {isAlbum ? (
+                    <button
+                      className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
+                      disabled={pendingImageId !== null}
+                      onClick={() => void changeCover(image.id)}
+                      type="button"
+                    >
+                      portada
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
+                        disabled={index === 0 || pendingImageId !== null}
+                        onClick={() => reorderImages(index, index - 1)}
+                        type="button"
+                      >
+                        &lt;
+                      </button>
+                      <button
+                        className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
+                        disabled={
+                          index === images.length - 1 || pendingImageId !== null
+                        }
+                        onClick={() => reorderImages(index, index + 1)}
+                        type="button"
+                      >
+                        &gt;
+                      </button>
+                    </>
+                  )}
                   <button
                     className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:cursor-not-allowed disabled:text-neutral-500 disabled:hover:bg-transparent"
                     disabled={pendingImageId !== null}
@@ -576,6 +783,21 @@ function ArchivePostManager({
             </>
           )}
         />
+
+        {hasHiddenAlbumImages ? (
+          <div className="mt-3 flex justify-center">
+            <button
+              className="rounded-full px-4 py-2 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-500 disabled:hover:bg-transparent"
+              disabled={isLoadingAllImages}
+              onClick={loadAllImages}
+              type="button"
+            >
+              {isLoadingAllImages
+                ? "cargando"
+                : `cargar ${imageCount - images.length} mas`}
+            </button>
+          </div>
+        ) : null}
 
         <form
           className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-neutral-900 pt-3"
@@ -622,7 +844,7 @@ function ArchivePostManager({
 
         {addImageQueue.length > 0 ? (
           <div className="mt-3 space-y-1 text-xs text-neutral-500">
-            {addImageQueue.map((image, index) => (
+            {visibleAddImageQueue.map((image, index) => (
               <p
                 className={
                   image.status === "failed"
@@ -635,6 +857,9 @@ function ArchivePostManager({
                 {image.error ? `: ${image.error}` : ""}
               </p>
             ))}
+            {hiddenAddImageQueueCount > 0 ? (
+              <p>...y {hiddenAddImageQueueCount} mas en la cola</p>
+            ) : null}
           </div>
         ) : null}
 

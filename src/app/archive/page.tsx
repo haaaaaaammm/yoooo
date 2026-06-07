@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import AdminPostLink from "@/app/_components/admin-post-link";
 import NumberedPagination from "@/app/_components/numbered-pagination";
+import { ARCHIVE_ALBUM_KIND } from "@/lib/archive";
 import {
   formatArchiveTimestamp,
   getArchivePostsPage,
@@ -35,6 +35,97 @@ export const metadata: Metadata = {
 type ArchivePageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
+type ArchiveListPost = Awaited<
+  ReturnType<typeof getArchivePostsPage>
+>["posts"][number];
+
+function getExcerpt(value: string, maxLength = 140) {
+  const excerpt = value.replace(/\s+/g, " ").trim();
+
+  if (excerpt.length <= maxLength) {
+    return excerpt;
+  }
+
+  return `${excerpt.slice(0, maxLength - 1).trim()}...`;
+}
+
+function ArchiveAlbumCard({ post }: { post: ArchiveListPost }) {
+  const coverImage = post.coverImage ?? post.images[0] ?? null;
+  const previewImages = post.images
+    .filter((image) => image.id !== coverImage?.id)
+    .slice(0, 3);
+
+  return (
+    <Link className="group block" href={`${ARCHIVE_PATH}/album/${post.id}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <time
+          className="text-sm leading-5 text-neutral-500"
+          dateTime={post.takenAt.toISOString()}
+        >
+          {formatArchiveTimestamp(post.takenAt)}
+        </time>
+        <span className="text-xs uppercase tracking-[0.2em] text-neutral-600">
+          album
+        </span>
+      </div>
+
+      <div className="mt-3 grid grid-cols-[1fr_5.5rem] gap-2 sm:grid-cols-[1fr_7rem]">
+        <div className="relative overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950">
+          {coverImage ? (
+            <img
+              alt={post.title ?? "album cover"}
+              className="aspect-[4/5] w-full object-cover transition duration-300 group-hover:scale-[1.01]"
+              loading="lazy"
+              src={coverImage.url}
+            />
+          ) : (
+            <div className="aspect-[4/5]" />
+          )}
+          <span className="absolute bottom-2 right-2 rounded-full bg-black/75 px-2 py-1 text-xs text-neutral-200">
+            {post.imageCount} foto{post.imageCount === 1 ? "" : "s"}
+          </span>
+        </div>
+
+        <div className="grid grid-rows-3 gap-2">
+          {previewImages.length > 0
+            ? previewImages.map((image, index) => (
+                <div
+                  className="overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950"
+                  key={image.id}
+                >
+                  <img
+                    alt={`${post.title ?? "album"} preview ${index + 1}`}
+                    className="aspect-square h-full w-full object-cover"
+                    loading="lazy"
+                    src={image.url}
+                  />
+                </div>
+              ))
+            : [0, 1, 2].map((index) => (
+                <div
+                  className="rounded-xl border border-neutral-900 bg-neutral-950"
+                  key={index}
+                />
+              ))}
+        </div>
+      </div>
+
+      <div className="mt-3 space-y-1">
+        <h2 className="text-lg font-semibold leading-6 text-white">
+          {post.title ?? "album"}
+        </h2>
+        {post.description ? (
+          <p className="whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+            {getExcerpt(post.description)}
+          </p>
+        ) : null}
+        <span className="inline-flex rounded-full px-0 py-1 text-sm text-[#ff003c] transition group-hover:text-[#ff4d75]">
+          ver album
+        </span>
+      </div>
+    </Link>
+  );
+}
 
 export default async function ArchivePage({ searchParams }: ArchivePageProps) {
   const params = (await searchParams) ?? {};
@@ -51,7 +142,7 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
     <main className="min-h-screen min-h-dvh overflow-x-hidden bg-black text-white">
       <div className="mx-auto min-h-screen min-h-dvh w-full max-w-2xl border-neutral-800 bg-black sm:border-x">
         <header className="sticky top-0 z-10 border-b border-neutral-800 bg-black/90 px-4 py-4 backdrop-blur">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             <div className="flex min-w-0 items-center gap-3">
               <Link
                 aria-label="Inicio"
@@ -64,7 +155,6 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
                 archive
               </h1>
             </div>
-            <AdminPostLink />
           </div>
         </header>
 
@@ -81,40 +171,46 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
                   key={post.id}
                 >
                   <article className="px-4 py-4">
-                    <Link
-                      aria-label={`Open archive post from ${formatArchiveTimestamp(
-                        post.takenAt
-                      )}`}
-                      className="block"
-                      href={`${ARCHIVE_PATH}/${post.id}`}
-                    >
-                      <time
-                        className="text-sm leading-5 text-neutral-500"
-                        dateTime={post.takenAt.toISOString()}
-                      >
-                        {formatArchiveTimestamp(post.takenAt)}
-                      </time>
-                    </Link>
+                    {post.kind === ARCHIVE_ALBUM_KIND ? (
+                      <ArchiveAlbumCard post={post} />
+                    ) : (
+                      <>
+                        <Link
+                          aria-label={`Open archive post from ${formatArchiveTimestamp(
+                            post.takenAt
+                          )}`}
+                          className="block"
+                          href={`${ARCHIVE_PATH}/${post.id}`}
+                        >
+                          <time
+                            className="text-sm leading-5 text-neutral-500"
+                            dateTime={post.takenAt.toISOString()}
+                          >
+                            {formatArchiveTimestamp(post.takenAt)}
+                          </time>
+                        </Link>
 
-                    <ArchiveCarousel
-                      description={post.description}
-                      href={`${ARCHIVE_PATH}/${post.id}`}
-                      images={post.images.map((image) => ({
-                        id: image.id,
-                        url: image.url,
-                      }))}
-                    />
+                        <ArchiveCarousel
+                          description={post.description}
+                          href={`${ARCHIVE_PATH}/${post.id}`}
+                          images={post.images.map((image) => ({
+                            id: image.id,
+                            url: image.url,
+                          }))}
+                        />
 
-                    {post.description ? (
-                      <Link
-                        className="mt-3 block"
-                        href={`${ARCHIVE_PATH}/${post.id}`}
-                      >
-                        <p className="whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
-                          {post.description}
-                        </p>
-                      </Link>
-                    ) : null}
+                        {post.description ? (
+                          <Link
+                            className="mt-3 block"
+                            href={`${ARCHIVE_PATH}/${post.id}`}
+                          >
+                            <p className="whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+                              {post.description}
+                            </p>
+                          </Link>
+                        ) : null}
+                      </>
+                    )}
                   </article>
                 </li>
               ))}

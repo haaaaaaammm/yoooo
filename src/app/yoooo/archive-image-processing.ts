@@ -268,7 +268,13 @@ export async function prepareArchiveImageFiles(
 ) {
   logArchiveFiles(context, "selected", files);
 
-  const results = await Promise.all(files.map(prepareArchiveImageFile));
+  const results: Awaited<ReturnType<typeof prepareArchiveImageFile>>[] = [];
+
+  for (const file of files) {
+    results.push(await prepareArchiveImageFile(file));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
   const errors = results
     .map((result) => result.error)
     .filter((message): message is string => Boolean(message));

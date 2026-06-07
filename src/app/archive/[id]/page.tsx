@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
-import AdminPostLink from "@/app/_components/admin-post-link";
+import { ARCHIVE_ALBUM_KIND } from "@/lib/archive";
 import {
   formatArchiveTimestamp,
   getArchivePostById,
@@ -78,6 +78,10 @@ export default async function ArchivePostPage({
     notFound();
   }
 
+  if (post.kind === ARCHIVE_ALBUM_KIND) {
+    redirect(`${ARCHIVE_PATH}/album/${post.id}`);
+  }
+
   return (
     <main className="min-h-screen min-h-dvh overflow-x-hidden bg-black text-white">
       <div className="mx-auto min-h-screen min-h-dvh w-full max-w-2xl border-neutral-800 bg-black sm:border-x">
@@ -98,10 +102,7 @@ export default async function ArchivePostPage({
                 archive
               </Link>
             </div>
-            <div className="flex flex-none items-center gap-2">
-              <CopyLinkButton />
-              <AdminPostLink />
-            </div>
+            <CopyLinkButton />
           </div>
         </header>
 

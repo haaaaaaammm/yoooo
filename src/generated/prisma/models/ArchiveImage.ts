@@ -224,6 +224,7 @@ export type ArchiveImageWhereInput = {
   url?: Prisma.StringFilter<"ArchiveImage"> | string
   order?: Prisma.IntFilter<"ArchiveImage"> | number
   createdAt?: Prisma.DateTimeFilter<"ArchiveImage"> | Date | string
+  coverFor?: Prisma.XOR<Prisma.ArchivePostNullableScalarRelationFilter, Prisma.ArchivePostWhereInput> | null
   post?: Prisma.XOR<Prisma.ArchivePostScalarRelationFilter, Prisma.ArchivePostWhereInput>
 }
 
@@ -234,6 +235,7 @@ export type ArchiveImageOrderByWithRelationInput = {
   url?: Prisma.SortOrder
   order?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  coverFor?: Prisma.ArchivePostOrderByWithRelationInput
   post?: Prisma.ArchivePostOrderByWithRelationInput
 }
 
@@ -247,6 +249,7 @@ export type ArchiveImageWhereUniqueInput = Prisma.AtLeast<{
   url?: Prisma.StringFilter<"ArchiveImage"> | string
   order?: Prisma.IntFilter<"ArchiveImage"> | number
   createdAt?: Prisma.DateTimeFilter<"ArchiveImage"> | Date | string
+  coverFor?: Prisma.XOR<Prisma.ArchivePostNullableScalarRelationFilter, Prisma.ArchivePostWhereInput> | null
   post?: Prisma.XOR<Prisma.ArchivePostScalarRelationFilter, Prisma.ArchivePostWhereInput>
 }, "id">
 
@@ -282,6 +285,7 @@ export type ArchiveImageCreateInput = {
   url: string
   order: number
   createdAt?: Date | string
+  coverFor?: Prisma.ArchivePostCreateNestedOneWithoutCoverImageInput
   post: Prisma.ArchivePostCreateNestedOneWithoutImagesInput
 }
 
@@ -292,6 +296,7 @@ export type ArchiveImageUncheckedCreateInput = {
   url: string
   order: number
   createdAt?: Date | string
+  coverFor?: Prisma.ArchivePostUncheckedCreateNestedOneWithoutCoverImageInput
 }
 
 export type ArchiveImageUpdateInput = {
@@ -300,6 +305,7 @@ export type ArchiveImageUpdateInput = {
   url?: Prisma.StringFieldUpdateOperationsInput | string
   order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverFor?: Prisma.ArchivePostUpdateOneWithoutCoverImageNestedInput
   post?: Prisma.ArchivePostUpdateOneRequiredWithoutImagesNestedInput
 }
 
@@ -310,6 +316,7 @@ export type ArchiveImageUncheckedUpdateInput = {
   url?: Prisma.StringFieldUpdateOperationsInput | string
   order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverFor?: Prisma.ArchivePostUncheckedUpdateOneWithoutCoverImageNestedInput
 }
 
 export type ArchiveImageCreateManyInput = {
@@ -336,6 +343,11 @@ export type ArchiveImageUncheckedUpdateManyInput = {
   url?: Prisma.StringFieldUpdateOperationsInput | string
   order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type ArchiveImageNullableScalarRelationFilter = {
+  is?: Prisma.ArchiveImageWhereInput | null
+  isNot?: Prisma.ArchiveImageWhereInput | null
 }
 
 export type ArchiveImageListRelationFilter = {
@@ -383,6 +395,12 @@ export type ArchiveImageSumOrderByAggregateInput = {
   order?: Prisma.SortOrder
 }
 
+export type ArchiveImageCreateNestedOneWithoutCoverForInput = {
+  create?: Prisma.XOR<Prisma.ArchiveImageCreateWithoutCoverForInput, Prisma.ArchiveImageUncheckedCreateWithoutCoverForInput>
+  connectOrCreate?: Prisma.ArchiveImageCreateOrConnectWithoutCoverForInput
+  connect?: Prisma.ArchiveImageWhereUniqueInput
+}
+
 export type ArchiveImageCreateNestedManyWithoutPostInput = {
   create?: Prisma.XOR<Prisma.ArchiveImageCreateWithoutPostInput, Prisma.ArchiveImageUncheckedCreateWithoutPostInput> | Prisma.ArchiveImageCreateWithoutPostInput[] | Prisma.ArchiveImageUncheckedCreateWithoutPostInput[]
   connectOrCreate?: Prisma.ArchiveImageCreateOrConnectWithoutPostInput | Prisma.ArchiveImageCreateOrConnectWithoutPostInput[]
@@ -395,6 +413,16 @@ export type ArchiveImageUncheckedCreateNestedManyWithoutPostInput = {
   connectOrCreate?: Prisma.ArchiveImageCreateOrConnectWithoutPostInput | Prisma.ArchiveImageCreateOrConnectWithoutPostInput[]
   createMany?: Prisma.ArchiveImageCreateManyPostInputEnvelope
   connect?: Prisma.ArchiveImageWhereUniqueInput | Prisma.ArchiveImageWhereUniqueInput[]
+}
+
+export type ArchiveImageUpdateOneWithoutCoverForNestedInput = {
+  create?: Prisma.XOR<Prisma.ArchiveImageCreateWithoutCoverForInput, Prisma.ArchiveImageUncheckedCreateWithoutCoverForInput>
+  connectOrCreate?: Prisma.ArchiveImageCreateOrConnectWithoutCoverForInput
+  upsert?: Prisma.ArchiveImageUpsertWithoutCoverForInput
+  disconnect?: Prisma.ArchiveImageWhereInput | boolean
+  delete?: Prisma.ArchiveImageWhereInput | boolean
+  connect?: Prisma.ArchiveImageWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ArchiveImageUpdateToOneWithWhereWithoutCoverForInput, Prisma.ArchiveImageUpdateWithoutCoverForInput>, Prisma.ArchiveImageUncheckedUpdateWithoutCoverForInput>
 }
 
 export type ArchiveImageUpdateManyWithoutPostNestedInput = {
@@ -433,12 +461,36 @@ export type IntFieldUpdateOperationsInput = {
   divide?: number
 }
 
+export type ArchiveImageCreateWithoutCoverForInput = {
+  id?: string
+  key: string
+  url: string
+  order: number
+  createdAt?: Date | string
+  post: Prisma.ArchivePostCreateNestedOneWithoutImagesInput
+}
+
+export type ArchiveImageUncheckedCreateWithoutCoverForInput = {
+  id?: string
+  postId: string
+  key: string
+  url: string
+  order: number
+  createdAt?: Date | string
+}
+
+export type ArchiveImageCreateOrConnectWithoutCoverForInput = {
+  where: Prisma.ArchiveImageWhereUniqueInput
+  create: Prisma.XOR<Prisma.ArchiveImageCreateWithoutCoverForInput, Prisma.ArchiveImageUncheckedCreateWithoutCoverForInput>
+}
+
 export type ArchiveImageCreateWithoutPostInput = {
   id?: string
   key: string
   url: string
   order: number
   createdAt?: Date | string
+  coverFor?: Prisma.ArchivePostCreateNestedOneWithoutCoverImageInput
 }
 
 export type ArchiveImageUncheckedCreateWithoutPostInput = {
@@ -447,6 +499,7 @@ export type ArchiveImageUncheckedCreateWithoutPostInput = {
   url: string
   order: number
   createdAt?: Date | string
+  coverFor?: Prisma.ArchivePostUncheckedCreateNestedOneWithoutCoverImageInput
 }
 
 export type ArchiveImageCreateOrConnectWithoutPostInput = {
@@ -457,6 +510,35 @@ export type ArchiveImageCreateOrConnectWithoutPostInput = {
 export type ArchiveImageCreateManyPostInputEnvelope = {
   data: Prisma.ArchiveImageCreateManyPostInput | Prisma.ArchiveImageCreateManyPostInput[]
   skipDuplicates?: boolean
+}
+
+export type ArchiveImageUpsertWithoutCoverForInput = {
+  update: Prisma.XOR<Prisma.ArchiveImageUpdateWithoutCoverForInput, Prisma.ArchiveImageUncheckedUpdateWithoutCoverForInput>
+  create: Prisma.XOR<Prisma.ArchiveImageCreateWithoutCoverForInput, Prisma.ArchiveImageUncheckedCreateWithoutCoverForInput>
+  where?: Prisma.ArchiveImageWhereInput
+}
+
+export type ArchiveImageUpdateToOneWithWhereWithoutCoverForInput = {
+  where?: Prisma.ArchiveImageWhereInput
+  data: Prisma.XOR<Prisma.ArchiveImageUpdateWithoutCoverForInput, Prisma.ArchiveImageUncheckedUpdateWithoutCoverForInput>
+}
+
+export type ArchiveImageUpdateWithoutCoverForInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  key?: Prisma.StringFieldUpdateOperationsInput | string
+  url?: Prisma.StringFieldUpdateOperationsInput | string
+  order?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  post?: Prisma.ArchivePostUpdateOneRequiredWithoutImagesNestedInput
+}
+
+export type ArchiveImageUncheckedUpdateWithoutCoverForInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  postId?: Prisma.StringFieldUpdateOperationsInput | string
+  key?: Prisma.StringFieldUpdateOperationsInput | string
+  url?: Prisma.StringFieldUpdateOperationsInput | string
+  order?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type ArchiveImageUpsertWithWhereUniqueWithoutPostInput = {
@@ -501,6 +583,7 @@ export type ArchiveImageUpdateWithoutPostInput = {
   url?: Prisma.StringFieldUpdateOperationsInput | string
   order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverFor?: Prisma.ArchivePostUpdateOneWithoutCoverImageNestedInput
 }
 
 export type ArchiveImageUncheckedUpdateWithoutPostInput = {
@@ -509,6 +592,7 @@ export type ArchiveImageUncheckedUpdateWithoutPostInput = {
   url?: Prisma.StringFieldUpdateOperationsInput | string
   order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverFor?: Prisma.ArchivePostUncheckedUpdateOneWithoutCoverImageNestedInput
 }
 
 export type ArchiveImageUncheckedUpdateManyWithoutPostInput = {
@@ -528,6 +612,7 @@ export type ArchiveImageSelect<ExtArgs extends runtime.Types.Extensions.Internal
   url?: boolean
   order?: boolean
   createdAt?: boolean
+  coverFor?: boolean | Prisma.ArchiveImage$coverForArgs<ExtArgs>
   post?: boolean | Prisma.ArchivePostDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["archiveImage"]>
 
@@ -562,6 +647,7 @@ export type ArchiveImageSelectScalar = {
 
 export type ArchiveImageOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "postId" | "key" | "url" | "order" | "createdAt", ExtArgs["result"]["archiveImage"]>
 export type ArchiveImageInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  coverFor?: boolean | Prisma.ArchiveImage$coverForArgs<ExtArgs>
   post?: boolean | Prisma.ArchivePostDefaultArgs<ExtArgs>
 }
 export type ArchiveImageIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -574,6 +660,7 @@ export type ArchiveImageIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types
 export type $ArchiveImagePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "ArchiveImage"
   objects: {
+    coverFor: Prisma.$ArchivePostPayload<ExtArgs> | null
     post: Prisma.$ArchivePostPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -977,6 +1064,7 @@ readonly fields: ArchiveImageFieldRefs;
  */
 export interface Prisma__ArchiveImageClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  coverFor<T extends Prisma.ArchiveImage$coverForArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ArchiveImage$coverForArgs<ExtArgs>>): Prisma.Prisma__ArchivePostClient<runtime.Types.Result.GetResult<Prisma.$ArchivePostPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   post<T extends Prisma.ArchivePostDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ArchivePostDefaultArgs<ExtArgs>>): Prisma.Prisma__ArchivePostClient<runtime.Types.Result.GetResult<Prisma.$ArchivePostPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1411,6 +1499,25 @@ export type ArchiveImageDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.
    * Limit how many ArchiveImages to delete.
    */
   limit?: number
+}
+
+/**
+ * ArchiveImage.coverFor
+ */
+export type ArchiveImage$coverForArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ArchivePost
+   */
+  select?: Prisma.ArchivePostSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ArchivePost
+   */
+  omit?: Prisma.ArchivePostOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ArchivePostInclude<ExtArgs> | null
+  where?: Prisma.ArchivePostWhereInput
 }
 
 /**

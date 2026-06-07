@@ -8,8 +8,10 @@ import {
 import { randomUUID } from "crypto";
 
 import {
+  ARCHIVE_ALBUM_KIND,
   ARCHIVE_IMAGE_MAX_SIZE_BYTES,
   ARCHIVE_MIME_TYPE_TO_EXTENSION,
+  ARCHIVE_POST_KIND,
   getArchiveImageUploadType,
 } from "@/lib/archive";
 
@@ -121,7 +123,8 @@ export async function uploadProfileImageToR2(file: File) {
 export async function uploadArchiveImageToR2(
   file: File,
   postId: string,
-  order?: number
+  order?: number,
+  kind: string = ARCHIVE_POST_KIND
 ) {
   const validation = validateImageFile(file);
 
@@ -130,8 +133,10 @@ export async function uploadArchiveImageToR2(
   }
 
   const config = getR2Config();
-  const orderSegment = typeof order === "number" ? `-${order}` : "";
-  const key = `archive/posts/${postId}/${Date.now()}-${randomUUID()}${orderSegment}.${validation.extension}`;
+  const normalizedOrder = typeof order === "number" ? Math.max(0, order) : 0;
+  const keyPrefix =
+    kind === ARCHIVE_ALBUM_KIND ? "archive/albums" : "archive/posts";
+  const key = `${keyPrefix}/${postId}/${Date.now()}-${randomUUID()}-${normalizedOrder}.${validation.extension}`;
   const body = Buffer.from(await file.arrayBuffer());
 
   await getS3Client(config).send(

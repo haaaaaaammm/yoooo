@@ -1,9 +1,25 @@
 import "server-only";
 
+import { ARCHIVE_ALBUM_THRESHOLD } from "@/lib/archive";
 import { ARCHIVE_POSTS_PER_PAGE } from "@/lib/posts";
 import { getPrisma } from "@/lib/prisma";
 
-const archivePostInclude = {
+const archiveCompactPostInclude = {
+  _count: {
+    select: { images: true },
+  },
+  coverImage: true,
+  images: {
+    orderBy: { order: "asc" as const },
+    take: ARCHIVE_ALBUM_THRESHOLD + 1,
+  },
+};
+
+const archiveFullPostInclude = {
+  _count: {
+    select: { images: true },
+  },
+  coverImage: true,
   images: {
     orderBy: { order: "asc" as const },
   },
@@ -25,7 +41,7 @@ export async function getArchivePostsPage(page: number) {
   const [totalPosts, posts] = await Promise.all([
     prisma.archivePost.count(),
     prisma.archivePost.findMany({
-      include: archivePostInclude,
+      include: archiveCompactPostInclude,
       orderBy: { takenAt: "desc" },
       skip: (page - 1) * ARCHIVE_POSTS_PER_PAGE,
       take: ARCHIVE_POSTS_PER_PAGE,
@@ -33,7 +49,11 @@ export async function getArchivePostsPage(page: number) {
   ]);
 
   return {
-    posts,
+    posts: posts.map((post) => ({
+      ...post,
+      coverImage: post.coverImage ?? post.images[0] ?? null,
+      imageCount: post._count.images,
+    })),
     totalPages: Math.ceil(totalPosts / ARCHIVE_POSTS_PER_PAGE),
     totalPosts,
   };
@@ -47,7 +67,7 @@ export async function getArchivePostById(id: string) {
   }
 
   return getPrisma().archivePost.findUnique({
-    include: archivePostInclude,
+    include: archiveFullPostInclude,
     where: { id: postId },
   });
 }

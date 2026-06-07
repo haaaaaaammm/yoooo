@@ -41,14 +41,19 @@ model SiteSettings {
 }
 
 model ArchivePost {
-  id          String         @id @default(cuid())
-  description String
-  takenAt     DateTime       @default(now())
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  images      ArchiveImage[]
+  id           String         @id @default(cuid())
+  kind         String         @default("post")
+  title        String?
+  description  String
+  takenAt      DateTime       @default(now())
+  coverImageId String?        @unique
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  coverImage   ArchiveImage?  @relation("ArchivePostCoverImage", fields: [coverImageId], references: [id], onDelete: SetNull)
+  images       ArchiveImage[] @relation("ArchivePostImages")
 
   @@index([createdAt])
+  @@index([kind, takenAt])
   @@index([takenAt])
 }
 
@@ -59,7 +64,8 @@ model ArchiveImage {
   url       String
   order     Int
   createdAt DateTime    @default(now())
-  post      ArchivePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  coverFor  ArchivePost? @relation("ArchivePostCoverImage")
+  post      ArchivePost @relation("ArchivePostImages", fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([postId, order])
 }

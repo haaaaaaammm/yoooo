@@ -11,7 +11,10 @@ import {
 } from "react";
 
 import {
+  ARCHIVE_ALBUM_KIND,
+  ARCHIVE_ALBUM_THRESHOLD,
   ARCHIVE_IMAGE_ACCEPT,
+  ARCHIVE_POST_KIND,
   getArchiveImageUploadType,
 } from "@/lib/archive";
 
@@ -20,6 +23,7 @@ import SortableImageGrid from "./sortable-image-grid";
 import {
   createArchivePostMetadataAction,
   deleteArchivePostAction,
+  updateArchiveCoverImageAction,
   uploadSingleArchiveImageAction,
 } from "./actions";
 
@@ -28,6 +32,7 @@ type DateMode = "oldest" | "newest";
 type UploadStatus = "pending" | "uploading" | "uploaded" | "failed";
 
 type SelectedImage = {
+  archiveImageId?: string;
   date: Date;
   error?: string;
   file: File;
@@ -41,6 +46,7 @@ const initialMessage = {
   ok: false,
   text: null as string | null,
 };
+const ALBUM_PREVIEW_LIMIT = 72;
 
 function pad(value: number) {
   return String(value).padStart(2, "0");
@@ -228,6 +234,18 @@ function moveItem(items: SelectedImage[], fromIndex: number, toIndex: number) {
   return nextItems;
 }
 
+function formatFailureSummary(messages: string[], limit = 8) {
+  const visibleMessages = messages.slice(0, limit);
+  const hiddenCount = messages.length - visibleMessages.length;
+
+  return [
+    ...visibleMessages,
+    hiddenCount > 0 ? `...y ${hiddenCount} mas.` : null,
+  ]
+    .filter((message): message is string => Boolean(message))
+    .join("\n");
+}
+
 export default function ArchiveComposer({
   onCreated,
 }: {
@@ -235,7 +253,10 @@ export default function ArchiveComposer({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const selectedImagesRef = useRef<SelectedImage[]>([]);
+  const [albumTitle, setAlbumTitle] = useState("");
+  const [coverImageId, setCoverImageId] = useState<string | null>(null);
   const [description, setDescription] = useState("");
+  const [showAllAlbumPreviews, setShowAllAlbumPreviews] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessingImages, setIsProcessingImages] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -245,11 +266,54 @@ export default function ArchiveComposer({
   const [takenAt, setTakenAt] = useState(formatDateTimeLocal(new Date()));
   const [dateMode, setDateMode] = useState<DateMode>("oldest");
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+  const isAlbumMode = selectedImages.length > ARCHIVE_ALBUM_THRESHOLD;
   const remainingUploadCount = selectedImages.filter(
     (image) => image.status !== "uploaded"
   ).length;
+  const uploadStatusCounts = useMemo(
+    () =>
+      selectedImages.reduce(
+        (counts, image) => ({
+          ...counts,
+          [image.status]: counts[image.status] + 1,
+        }),
+        { failed: 0, pending: 0, uploaded: 0, uploading: 0 } as Record<
+          UploadStatus,
+          number
+        >
+      ),
+    [selectedImages]
+  );
+  const albumPreviewImages = useMemo(() => {
+    if (
+      !isAlbumMode ||
+      showAllAlbumPreviews ||
+      selectedImages.length <= ALBUM_PREVIEW_LIMIT
+    ) {
+      return selectedImages;
+    }
+
+    const previewImages = selectedImages.slice(0, ALBUM_PREVIEW_LIMIT);
+    const coverImage = selectedImages.find((image) => image.id === coverImageId);
+
+    if (
+      coverImage &&
+      !previewImages.some((image) => image.id === coverImage.id)
+    ) {
+      return [...previewImages.slice(0, ALBUM_PREVIEW_LIMIT - 1), coverImage];
+    }
+
+    return previewImages;
+  }, [coverImageId, isAlbumMode, selectedImages, showAllAlbumPreviews]);
+  const hiddenAlbumPreviewCount =
+    isAlbumMode && !showAllAlbumPreviews
+      ? Math.max(0, selectedImages.length - albumPreviewImages.length)
+      : 0;
   const canSubmit =
-    remainingUploadCount > 0 && !isProcessingImages && !isSubmitting;
+    remainingUploadCount > 0 &&
+    !isProcessingImages &&
+    !isSubmitting &&
+    (!isAlbumMode || albumTitle.trim().length > 0);
   // Track the oldest/newest photo timestamps as numbers (not object references)
   // so the auto-fill effect only reacts to an actual change in the detected
   // date. Reordering images or rewriting an image's upload status produces a new
@@ -288,6 +352,21 @@ export default function ArchiveComposer({
   }, [selectedImages]);
 
   useEffect(() => {
+    if (!isAlbumMode) {
+      setCoverImageId(null);
+      setShowAllAlbumPreviews(false);
+      return;
+    }
+
+    if (
+      selectedImages.length > 0 &&
+      (!coverImageId || !selectedImages.some((image) => image.id === coverImageId))
+    ) {
+      setCoverImageId(selectedImages[0].id);
+    }
+  }, [coverImageId, isAlbumMode, selectedImages]);
+
+  useEffect(() => {
     return () => {
       selectedImagesRef.current.forEach((image) =>
         URL.revokeObjectURL(image.previewUrl)
@@ -322,11 +401,14 @@ export default function ArchiveComposer({
         setMessage({ ok: false, text: result.errors.join("\n") });
       }
 
-      const nextImages = await Promise.all(
-        result.files.map((prepared) =>
-          createSelectedImage(prepared.file, prepared.originalFile)
-        )
-      );
+      const nextImages: SelectedImage[] = [];
+
+      for (const prepared of result.files) {
+        nextImages.push(
+          await createSelectedImage(prepared.file, prepared.originalFile)
+        );
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
 
       if (nextImages.length > 0) {
         setSelectedImages((current) => [...current, ...nextImages]);
@@ -374,11 +456,19 @@ export default function ArchiveComposer({
   function updateImageStatus(
     imageId: string,
     status: UploadStatus,
-    error?: string
+    error?: string,
+    archiveImageId?: string
   ) {
     setSelectedImages((current) =>
       current.map((image) =>
-        image.id === imageId ? { ...image, error, status } : image
+        image.id === imageId
+          ? {
+              ...image,
+              archiveImageId: archiveImageId ?? image.archiveImageId,
+              error,
+              status,
+            }
+          : image
       )
     );
   }
@@ -400,6 +490,11 @@ export default function ArchiveComposer({
       return;
     }
 
+    if (isAlbumMode && !albumTitle.trim()) {
+      setMessage({ ok: false, text: "Ponle titulo al album." });
+      return;
+    }
+
     setIsSubmitting(true);
     setMessage(initialMessage);
     setUploadProgress(null);
@@ -418,7 +513,11 @@ export default function ArchiveComposer({
       if (!postId) {
         const metadataResult = await createArchivePostMetadataAction(
           description,
-          takenAt
+          takenAt,
+          {
+            kind: isAlbumMode ? ARCHIVE_ALBUM_KIND : ARCHIVE_POST_KIND,
+            title: isAlbumMode ? albumTitle : undefined,
+          }
         );
 
         if (!metadataResult.ok) {
@@ -431,10 +530,11 @@ export default function ArchiveComposer({
       }
 
       let uploadedCount = 0;
+      const uploadedImageIdsByLocalId = new Map<string, string>();
       const failedImages: { fileName: string; message: string }[] = [];
 
       for (const [index, image] of uploadCandidates.entries()) {
-        setUploadProgress(`Uploading ${index + 1} of ${uploadCandidates.length}...`);
+        setUploadProgress(`subiendo ${index + 1} de ${uploadCandidates.length}`);
         updateImageStatus(image.id, "uploading");
 
         const imageFormData = new FormData();
@@ -443,6 +543,7 @@ export default function ArchiveComposer({
           "order",
           String(selectedImages.findIndex((item) => item.id === image.id))
         );
+        imageFormData.set("returnImages", "false");
 
         try {
           const result = await uploadSingleArchiveImageAction(
@@ -460,7 +561,8 @@ export default function ArchiveComposer({
           }
 
           uploadedCount += 1;
-          updateImageStatus(image.id, "uploaded");
+          uploadedImageIdsByLocalId.set(image.id, result.image.id);
+          updateImageStatus(image.id, "uploaded", undefined, result.image.id);
         } catch {
           const failedMessage = `${image.file.name}: No se pudo subir la imagen.`;
 
@@ -473,12 +575,33 @@ export default function ArchiveComposer({
       }
 
       if (failedImages.length === 0) {
+        if (isAlbumMode && postId) {
+          const latestImages = selectedImagesRef.current;
+          const requestedCover = latestImages.find(
+            (image) => image.id === coverImageId
+          );
+          const coverArchiveImageId =
+            requestedCover?.archiveImageId ??
+            (requestedCover
+              ? uploadedImageIdsByLocalId.get(requestedCover.id)
+              : undefined) ??
+            latestImages.find((image) => image.archiveImageId)?.archiveImageId ??
+            uploadedImageIdsByLocalId.values().next().value;
+
+          if (coverArchiveImageId) {
+            await updateArchiveCoverImageAction(postId, coverArchiveImageId);
+          }
+        }
+
         selectedImages.forEach((image) =>
           URL.revokeObjectURL(image.previewUrl)
         );
+        setAlbumTitle("");
+        setCoverImageId(null);
         setDescription("");
         setMetadataPostId(null);
         setSelectedImages([]);
+        setShowAllAlbumPreviews(false);
         setTakenAt(formatDateTimeLocal(new Date()));
         setUploadProgress(null);
         setMessage({ ok: true, text: "guardado en archive" });
@@ -486,9 +609,9 @@ export default function ArchiveComposer({
         return;
       }
 
-      const failedSummary = failedImages
-        .map((image) => image.message)
-        .join("\n");
+      const failedSummary = formatFailureSummary(
+        failedImages.map((image) => image.message)
+      );
 
       if (uploadedCount === 0 && postId) {
         await deleteArchivePostAction(postId);
@@ -499,6 +622,24 @@ export default function ArchiveComposer({
           text: `No se subio ninguna imagen. El archivo vacio fue eliminado.\n${failedSummary}`,
         });
         return;
+      }
+
+      if (isAlbumMode && postId) {
+        const latestImages = selectedImagesRef.current;
+        const requestedCover = latestImages.find(
+          (image) => image.id === coverImageId
+        );
+        const coverArchiveImageId =
+          requestedCover?.archiveImageId ??
+          (requestedCover
+            ? uploadedImageIdsByLocalId.get(requestedCover.id)
+            : undefined) ??
+          latestImages.find((image) => image.archiveImageId)?.archiveImageId ??
+          uploadedImageIdsByLocalId.values().next().value;
+
+        if (coverArchiveImageId) {
+          await updateArchiveCoverImageAction(postId, coverArchiveImageId);
+        }
       }
 
       setUploadProgress(null);
@@ -560,67 +701,202 @@ export default function ArchiveComposer({
         </div>
 
         {selectedImages.length > 0 ? (
-          <SortableImageGrid
-            disabled={Boolean(metadataPostId) || isSubmitting}
-            items={selectedImages}
-            onReorder={moveImage}
-            renderItem={(image, index) => (
-              <>
-                <div className="aspect-square">
-                  <img
-                    alt={image.file.name}
-                    className="h-full w-full object-cover"
-                    src={image.previewUrl}
-                  />
-                </div>
-                <div className="space-y-2 p-2">
-                  <p className="truncate text-xs text-neutral-500">
-                    {index + 1}. {image.file.name}
-                  </p>
-                  <div className="grid grid-cols-3 gap-1">
-                    <button
-                      className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
-                      disabled={index === 0 || Boolean(metadataPostId) || isSubmitting}
-                      onClick={() => moveImage(index, index - 1)}
-                      type="button"
-                    >
-                      &lt;
-                    </button>
-                    <button
-                      className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
-                      disabled={
-                        index === selectedImages.length - 1 ||
-                        Boolean(metadataPostId) ||
-                        isSubmitting
+          isAlbumMode ? (
+            <div className="space-y-4 rounded-2xl border border-neutral-800 bg-black p-4">
+              <div className="space-y-1">
+                <p className="text-sm text-neutral-300">album</p>
+                <p className="text-xs leading-5 text-neutral-500">
+                  seleccionaste mas de {ARCHIVE_ALBUM_THRESHOLD} imagenes, asi
+                  que se publicara como album. el titulo es obligatorio.
+                </p>
+              </div>
+
+              <label className="block">
+                <span className="mb-2 block text-sm text-neutral-400">
+                  titulo del album
+                </span>
+                <input
+                  className="w-full rounded-2xl border border-neutral-800 bg-black px-4 py-3 text-base text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500/40"
+                  onChange={(event) => setAlbumTitle(event.target.value)}
+                  placeholder="titulo"
+                  required={isAlbumMode}
+                  value={albumTitle}
+                />
+              </label>
+
+              {selectedImages[0] ? (
+                <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
+                  <div className="overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950">
+                    <img
+                      alt="cover preview"
+                      className="aspect-square h-full w-full object-cover"
+                      loading="lazy"
+                      src={
+                        selectedImages.find((image) => image.id === coverImageId)
+                          ?.previewUrl ?? selectedImages[0].previewUrl
                       }
-                      onClick={() => moveImage(index, index + 1)}
-                      type="button"
-                    >
-                      &gt;
-                    </button>
-                    <button
-                      className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10"
-                      disabled={image.status === "uploaded" || isSubmitting}
-                      onClick={() => removeImage(image.id)}
-                      type="button"
-                    >
-                      quitar
-                    </button>
+                    />
                   </div>
-                  <p
-                    className={
-                      image.status === "failed"
-                        ? "whitespace-pre-wrap text-xs text-red-400"
-                        : "text-xs text-neutral-500"
-                    }
-                  >
-                    {image.status}
-                    {image.error ? `: ${image.error}` : ""}
-                  </p>
+                  <div className="min-w-0 space-y-2">
+                    <p className="text-sm text-neutral-300">
+                      {selectedImages.length} fotos seleccionadas
+                    </p>
+                    <p className="break-words text-xs leading-5 text-neutral-500">
+                      portada:{" "}
+                      {selectedImages.find((image) => image.id === coverImageId)
+                        ?.file.name ?? selectedImages[0].file.name}
+                    </p>
+                    <p className="text-xs leading-5 text-neutral-500">
+                      pendientes {uploadStatusCounts.pending} / subiendo{" "}
+                      {uploadStatusCounts.uploading} / subidas{" "}
+                      {uploadStatusCounts.uploaded} / fallidas{" "}
+                      {uploadStatusCounts.failed}
+                    </p>
+                  </div>
                 </div>
-              </>
-            )}
-          />
+              ) : null}
+
+              <div className="grid max-h-80 grid-cols-4 gap-2 overflow-y-auto pr-1 sm:grid-cols-6">
+                {albumPreviewImages.map((image) => {
+                  const index = selectedImages.findIndex(
+                    (item) => item.id === image.id
+                  );
+
+                  return (
+                  <div
+                    className={
+                      image.id === coverImageId
+                        ? "overflow-hidden rounded-xl border border-[#ff003c] bg-neutral-950"
+                        : "overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950"
+                    }
+                    key={image.id}
+                  >
+                    <button
+                      className="block aspect-square w-full"
+                      disabled={isSubmitting}
+                      onClick={() => setCoverImageId(image.id)}
+                      type="button"
+                    >
+                      <img
+                        alt={image.file.name}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                        src={image.previewUrl}
+                      />
+                    </button>
+                    <div className="space-y-1 p-1.5">
+                      <p className="truncate text-[11px] text-neutral-500">
+                        {index + 1}
+                      </p>
+                      <button
+                        className="w-full rounded-full px-2 py-1 text-[11px] text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
+                        disabled={image.status === "uploaded" || isSubmitting}
+                        onClick={() => removeImage(image.id)}
+                        type="button"
+                      >
+                        quitar
+                      </button>
+                      <p
+                        className={
+                          image.status === "failed"
+                            ? "truncate text-[11px] text-red-400"
+                            : "truncate text-[11px] text-neutral-500"
+                        }
+                      >
+                        {image.status}
+                      </p>
+                    </div>
+                  </div>
+                  );
+                })}
+              </div>
+
+              {hiddenAlbumPreviewCount > 0 ? (
+                <button
+                  className="w-full rounded-full px-4 py-2 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-500 disabled:hover:bg-transparent"
+                  disabled={isSubmitting}
+                  onClick={() => setShowAllAlbumPreviews(true)}
+                  type="button"
+                >
+                  mostrar {hiddenAlbumPreviewCount} mas
+                </button>
+              ) : showAllAlbumPreviews &&
+                selectedImages.length > ALBUM_PREVIEW_LIMIT ? (
+                <button
+                  className="w-full rounded-full px-4 py-2 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-500 disabled:hover:bg-transparent"
+                  disabled={isSubmitting}
+                  onClick={() => setShowAllAlbumPreviews(false)}
+                  type="button"
+                >
+                  ver menos
+                </button>
+              ) : null}
+            </div>
+          ) : (
+            <SortableImageGrid
+              disabled={Boolean(metadataPostId) || isSubmitting}
+              items={selectedImages}
+              onReorder={moveImage}
+              renderItem={(image, index) => (
+                <>
+                  <div className="aspect-square">
+                    <img
+                      alt={image.file.name}
+                      className="h-full w-full object-cover"
+                      src={image.previewUrl}
+                    />
+                  </div>
+                  <div className="space-y-2 p-2">
+                    <p className="truncate text-xs text-neutral-500">
+                      {index + 1}. {image.file.name}
+                    </p>
+                    <div className="grid grid-cols-3 gap-1">
+                      <button
+                        className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
+                        disabled={
+                          index === 0 || Boolean(metadataPostId) || isSubmitting
+                        }
+                        onClick={() => moveImage(index, index - 1)}
+                        type="button"
+                      >
+                        &lt;
+                      </button>
+                      <button
+                        className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
+                        disabled={
+                          index === selectedImages.length - 1 ||
+                          Boolean(metadataPostId) ||
+                          isSubmitting
+                        }
+                        onClick={() => moveImage(index, index + 1)}
+                        type="button"
+                      >
+                        &gt;
+                      </button>
+                      <button
+                        className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10"
+                        disabled={image.status === "uploaded" || isSubmitting}
+                        onClick={() => removeImage(image.id)}
+                        type="button"
+                      >
+                        quitar
+                      </button>
+                    </div>
+                    <p
+                      className={
+                        image.status === "failed"
+                          ? "whitespace-pre-wrap text-xs text-red-400"
+                          : "text-xs text-neutral-500"
+                      }
+                    >
+                      {image.status}
+                      {image.error ? `: ${image.error}` : ""}
+                    </p>
+                  </div>
+                </>
+              )}
+            />
+          )
         ) : null}
 
         <div className="space-y-2">

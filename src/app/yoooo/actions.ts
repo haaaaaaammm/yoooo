@@ -5,7 +5,9 @@ import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
 
 import {
+  ARCHIVE_ALBUM_KIND,
   ARCHIVE_IMAGE_MAX_SIZE_BYTES,
+  ARCHIVE_POST_KIND,
   formatArchiveFileSize,
   getArchiveImageFileInfo,
   parseArchiveTakenAt,
@@ -384,11 +386,13 @@ type ArchiveImageResult = {
 type ArchiveMutationResult =
   | {
       ok: true;
+      coverImageId?: string | null;
       description?: string;
       image?: ArchiveImageResult;
       images?: ArchiveImageResult[];
       postId?: string;
       takenAt?: string;
+      title?: string | null;
     }
   | { ok: false; message: string };
 
@@ -397,8 +401,21 @@ type CreateArchivePostMetadataResult =
   | { ok: false; message: string };
 
 type UploadSingleArchiveImageResult =
-  | { ok: true; image: ArchiveImageResult; images: ArchiveImageResult[] }
+  | { ok: true; image: ArchiveImageResult; images?: ArchiveImageResult[] }
   | { ok: false; message: string };
+
+type GetArchiveImagesResult =
+  | {
+      ok: true;
+      coverImageId: string | null;
+      images: ArchiveImageResult[];
+    }
+  | { ok: false; message: string };
+
+type CreateArchivePostOptions = {
+  kind?: string;
+  title?: string;
+};
 
 function imageErrorMessage(
   reason:
@@ -453,6 +470,10 @@ function serializeArchiveImage(image: {
   };
 }
 
+function normalizeArchiveKind(kind?: string) {
+  return kind === ARCHIVE_ALBUM_KIND ? ARCHIVE_ALBUM_KIND : ARCHIVE_POST_KIND;
+}
+
 async function getOrderedArchiveImages(postId: string) {
   const images = await getPrisma().archiveImage.findMany({
     orderBy: { order: "asc" },
@@ -462,21 +483,33 @@ async function getOrderedArchiveImages(postId: string) {
   return images.map(serializeArchiveImage);
 }
 
-function revalidateArchiveAdmin() {
+function revalidateArchiveAdmin(postId?: string) {
   revalidatePath(ARCHIVE_PATH);
   revalidatePath(ADMIN_PATH);
+
+  if (postId) {
+    revalidatePath(`${ARCHIVE_PATH}/${postId}`);
+    revalidatePath(`${ARCHIVE_PATH}/album/${postId}`);
+  }
 }
 
 export async function createArchivePostMetadataAction(
   rawDescription: string,
-  rawTakenAt: string
+  rawTakenAt: string,
+  options: CreateArchivePostOptions = {}
 ): Promise<CreateArchivePostMetadataResult> {
   if (!(await isAdminAuthenticated())) {
     return { ok: false, message: "vuelve a iniciar sesion" };
   }
 
+  const kind = normalizeArchiveKind(options.kind);
+  const title = options.title?.trim() ?? "";
   const description = rawDescription.trim();
   const takenAt = parseArchiveTakenAt(rawTakenAt);
+
+  if (kind === ARCHIVE_ALBUM_KIND && !title) {
+    return { ok: false, message: "Ponle titulo al album." };
+  }
 
   if (!takenAt) {
     return { ok: false, message: "Elige una fecha valida." };
@@ -486,13 +519,15 @@ export async function createArchivePostMetadataAction(
     const post = await getPrisma().archivePost.create({
       data: {
         id: randomUUID(),
+        kind,
+        title: kind === ARCHIVE_ALBUM_KIND ? title : null,
         description,
         takenAt,
       },
       select: { id: true },
     });
 
-    revalidateArchiveAdmin();
+    revalidateArchiveAdmin(post.id);
 
     return { ok: true, message: "archivo creado", postId: post.id };
   } catch {
@@ -509,6 +544,7 @@ export async function uploadSingleArchiveImageAction(
   }
 
   const file = formData.get("image");
+  const shouldReturnImages = formData.get("returnImages") !== "false";
 
   if (!(file instanceof File) || file.size === 0) {
     return { ok: false, message: "Selecciona una imagen valida." };
@@ -562,7 +598,12 @@ export async function uploadSingleArchiveImageAction(
   let uploadedImage: Awaited<ReturnType<typeof uploadArchiveImageToR2>>;
 
   try {
-    uploadedImage = await uploadArchiveImageToR2(file, postId, imageOrder);
+    uploadedImage = await uploadArchiveImageToR2(
+      file,
+      postId,
+      imageOrder,
+      post.kind
+    );
   } catch {
     return {
       ok: false,
@@ -580,12 +621,21 @@ export async function uploadSingleArchiveImageAction(
       },
     });
 
-    revalidateArchiveAdmin();
+    if (post.kind === ARCHIVE_ALBUM_KIND && !post.coverImageId) {
+      await prisma.archivePost.update({
+        data: { coverImageId: image.id },
+        where: { id: postId },
+      });
+    }
+
+    revalidateArchiveAdmin(postId);
 
     return {
       ok: true,
       image: serializeArchiveImage(image),
-      images: await getOrderedArchiveImages(postId),
+      images: shouldReturnImages
+        ? await getOrderedArchiveImages(postId)
+        : undefined,
     };
   } catch {
     await cleanupUploadedImages([uploadedImage.key]);
@@ -597,16 +647,75 @@ export async function uploadSingleArchiveImageAction(
   }
 }
 
+export async function getArchiveImagesAction(
+  postId: string
+): Promise<GetArchiveImagesResult> {
+  if (!(await isAdminAuthenticated())) {
+    return { ok: false, message: "vuelve a iniciar sesion" };
+  }
+
+  const post = await getPrisma().archivePost.findUnique({
+    include: {
+      images: { orderBy: { order: "asc" } },
+    },
+    where: { id: postId },
+  });
+
+  if (!post) {
+    return { ok: false, message: "Ese archivo ya no existe." };
+  }
+
+  return {
+    ok: true,
+    coverImageId: post.coverImageId,
+    images: post.images.map(serializeArchiveImage),
+  };
+}
+
+export async function updateArchiveCoverImageAction(
+  postId: string,
+  imageId: string
+): Promise<ArchiveMutationResult> {
+  if (!(await isAdminAuthenticated())) {
+    return { ok: false, message: "vuelve a iniciar sesion" };
+  }
+
+  const image = await getPrisma().archiveImage.findUnique({
+    select: { id: true, postId: true },
+    where: { id: imageId },
+  });
+
+  if (!image || image.postId !== postId) {
+    return { ok: false, message: "Esa imagen ya no existe." };
+  }
+
+  try {
+    await getPrisma().archivePost.update({
+      data: { coverImageId: imageId },
+      where: { id: postId },
+    });
+  } catch {
+    return { ok: false, message: "No se pudo cambiar la portada." };
+  }
+
+  revalidateArchiveAdmin(postId);
+
+  return { ok: true, coverImageId: imageId };
+}
+
 export async function updateArchivePostAction(
   postId: string,
   rawDescription: string,
-  rawTakenAt: string
+  rawTakenAt: string,
+  rawTitle?: string,
+  coverImageId?: string | null
 ): Promise<ArchiveMutationResult> {
   if (!(await isAdminAuthenticated())) {
     return { ok: false, message: "vuelve a iniciar sesion" };
   }
 
   const description = rawDescription.trim();
+  const title = rawTitle?.trim() ?? "";
   const takenAt = parseArchiveTakenAt(rawTakenAt);
 
   if (!takenAt) {
@@ -615,7 +724,7 @@ export async function updateArchivePostAction(
 
   const prisma = getPrisma();
   const post = await prisma.archivePost.findUnique({
-    select: { id: true },
+    select: { id: true, kind: true },
     where: { id: postId },
   });
 
@@ -623,19 +732,46 @@ export async function updateArchivePostAction(
     return { ok: false, message: "Ese archivo ya no existe." };
   }
 
+  if (post.kind === ARCHIVE_ALBUM_KIND && !title) {
+    return { ok: false, message: "Ponle titulo al album." };
+  }
+
+  if (coverImageId) {
+    const coverImage = await prisma.archiveImage.findUnique({
+      select: { postId: true },
+      where: { id: coverImageId },
+    });
+
+    if (!coverImage || coverImage.postId !== postId) {
+      return { ok: false, message: "Esa portada ya no existe." };
+    }
+  }
+
   try {
     const updatedPost = await prisma.archivePost.update({
-      data: { description, takenAt },
-      select: { description: true, takenAt: true },
+      data: {
+        coverImageId: coverImageId === undefined ? undefined : coverImageId,
+        description,
+        takenAt,
+        title: post.kind === ARCHIVE_ALBUM_KIND ? title : null,
+      },
+      select: {
+        coverImageId: true,
+        description: true,
+        takenAt: true,
+        title: true,
+      },
       where: { id: postId },
     });
 
-    revalidateArchiveAdmin();
+    revalidateArchiveAdmin(postId);
 
     return {
       ok: true,
+      coverImageId: updatedPost.coverImageId,
       description: updatedPost.description,
       takenAt: updatedPost.takenAt.toISOString(),
+      title: updatedPost.title,
     };
   } catch {
     return { ok: false, message: "No se pudo guardar el archivo." };
@@ -674,20 +810,29 @@ export async function removeArchiveImageAction(
 
   try {
     await prisma.$transaction(async (transaction) => {
-      await transaction.archiveImage.delete({ where: { id: imageId } });
-
       const remainingImages = image.post.images.filter(
         (postImage) => postImage.id !== imageId
       );
+      const nextCoverImageId =
+        image.post.coverImageId === imageId
+          ? remainingImages[0]?.id ?? null
+          : image.post.coverImageId;
 
-      await Promise.all(
-        remainingImages.map((remainingImage, index) =>
-          transaction.archiveImage.update({
-            data: { order: index },
-            where: { id: remainingImage.id },
-          })
-        )
-      );
+      await transaction.archiveImage.delete({ where: { id: imageId } });
+      await transaction.archiveImage.updateMany({
+        data: { order: { decrement: 1 } },
+        where: {
+          order: { gt: image.order },
+          postId: image.postId,
+        },
+      });
+
+      if (image.post.coverImageId !== nextCoverImageId) {
+        await transaction.archivePost.update({
+          data: { coverImageId: nextCoverImageId },
+          where: { id: image.postId },
+        });
+      }
     });
   } catch {
     return { ok: false, message: "No se pudo quitar la imagen." };
@@ -699,10 +844,15 @@ export async function removeArchiveImageAction(
     // The database already reflects the removal; R2 cleanup can be retried later.
   }
 
-  revalidateArchiveAdmin();
+  revalidateArchiveAdmin(image.postId);
 
   return {
     ok: true,
+    coverImageId:
+      image.post.coverImageId === imageId
+        ? image.post.images.find((postImage) => postImage.id !== imageId)?.id ??
+          null
+        : image.post.coverImageId,
     images: await getOrderedArchiveImages(image.postId),
   };
 }
@@ -747,7 +897,7 @@ export async function reorderArchiveImagesAction(
     return { ok: false, message: "No se pudo reordenar." };
   }
 
-  revalidateArchiveAdmin();
+  revalidateArchiveAdmin(postId);
 
   return {
     ok: true,
@@ -773,13 +923,17 @@ export async function deleteArchivePostAction(
   }
 
   try {
+    await prisma.archivePost.update({
+      data: { coverImageId: null },
+      where: { id: postId },
+    });
     await prisma.archivePost.delete({ where: { id: postId } });
   } catch {
     return { ok: false, message: "No se pudo borrar el archivo." };
   }
 
   await cleanupUploadedImages(post.images.map((image) => image.key));
-  revalidateArchiveAdmin();
+  revalidateArchiveAdmin(postId);
 
   return { ok: true };
 }
