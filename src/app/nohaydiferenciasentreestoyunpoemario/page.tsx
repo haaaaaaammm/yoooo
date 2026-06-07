@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import FeedPagination from "@/app/_components/feed-pagination";
+import NumberedPagination from "@/app/_components/numbered-pagination";
 import FeedPostCard from "@/app/_components/feed-post-card";
 import {
   POSTS_PER_PAGE,
@@ -47,8 +48,14 @@ export default async function Page({ searchParams }: PublicFeedPageProps) {
     }),
     getProfileImageSettings(),
   ]);
-  const hasNextPage = page * POSTS_PER_PAGE < totalPosts;
+  const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
   const profileImageUrl = profileImageSettings.profileImageUrl;
+
+  // Out-of-range page (e.g. posts were deleted): send to the last valid page so
+  // the URL, content, and highlighted page number stay in sync.
+  if (totalPages > 0 && page > totalPages) {
+    redirect(`${PUBLIC_FEED_PATH}?page=${totalPages}`);
+  }
 
   return (
     <main className="min-h-dvh overflow-x-hidden bg-black text-white">
@@ -75,10 +82,10 @@ export default async function Page({ searchParams }: PublicFeedPageProps) {
               ))}
             </ol>
           )}
-          <FeedPagination
+          <NumberedPagination
             basePath={PUBLIC_FEED_PATH}
-            hasNextPage={hasNextPage}
             page={page}
+            totalPages={totalPages}
           />
         </section>
       </div>

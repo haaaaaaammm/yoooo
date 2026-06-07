@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import FeedPagination from "@/app/_components/feed-pagination";
+import NumberedPagination from "@/app/_components/numbered-pagination";
 import {
   ARCHIVE_PATH,
-  POSTS_PER_PAGE,
+  ARCHIVE_POSTS_PER_PAGE,
   parsePageParam,
 } from "@/lib/posts";
 import { getPrisma } from "@/lib/prisma";
@@ -58,11 +59,17 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
         },
       },
       orderBy: { takenAt: "desc" },
-      skip: (page - 1) * POSTS_PER_PAGE,
-      take: POSTS_PER_PAGE,
+      skip: (page - 1) * ARCHIVE_POSTS_PER_PAGE,
+      take: ARCHIVE_POSTS_PER_PAGE,
     }),
   ]);
-  const hasNextPage = page * POSTS_PER_PAGE < totalPosts;
+  const totalPages = Math.ceil(totalPosts / ARCHIVE_POSTS_PER_PAGE);
+
+  // Out-of-range page (e.g. posts were deleted): send to the last valid page so
+  // the URL, content, and highlighted page number stay in sync.
+  if (totalPages > 0 && page > totalPages) {
+    redirect(`${ARCHIVE_PATH}?page=${totalPages}`);
+  }
 
   return (
     <main className="min-h-dvh overflow-x-hidden bg-black text-white">
@@ -111,10 +118,10 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
               ))}
             </ol>
           )}
-          <FeedPagination
+          <NumberedPagination
             basePath={ARCHIVE_PATH}
-            hasNextPage={hasNextPage}
             page={page}
+            totalPages={totalPages}
           />
         </section>
       </div>

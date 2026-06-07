@@ -7,6 +7,7 @@ export default function Home() {
     <a href="https://www.instagram.com/haaaaaaaaaammmm" className=" hover:underline text-blue-500 hover:text-blue-700 block">instagram</a>
     <a href="https://x.com/haaaaaaaammmmm" className=" hover:underline text-blue-500 hover:text-blue-700 block">twitter</a>
     <Link href="/nohaydiferenciasentreestoyunpoemario" className=" hover:underline text-blue-500 hover:text-blue-700 block">no hay diferencias entre esto y un poemario</Link>
+    <Link href="/archive" className=" hover:underline text-blue-500 hover:text-blue-700 block">archive</Link>
     <Image src="/images/VISANAME.png" alt="name" width={300} height={300}/>
   </div>
   );
