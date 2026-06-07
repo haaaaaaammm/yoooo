@@ -6,7 +6,6 @@ import { randomUUID } from "crypto";
 
 import {
   ARCHIVE_IMAGE_MAX_SIZE_BYTES,
-  ARCHIVE_UPLOAD_TOTAL_MAX_SIZE_BYTES,
   formatArchiveFileSize,
   getArchiveImageFileInfo,
   parseArchiveTakenAt,
@@ -230,12 +229,6 @@ export async function updateProfileImageAction(
   return { ok: true, message: "foto actualizada" };
 }
 
-type CreateArchivePostState = {
-  ok: boolean;
-  message: string | null;
-  postId?: string;
-};
-
 type ArchiveImageResult = {
   id: string;
   key: string;
@@ -247,9 +240,19 @@ type ArchiveMutationResult =
   | {
       ok: true;
       description?: string;
+      image?: ArchiveImageResult;
       images?: ArchiveImageResult[];
+      postId?: string;
       takenAt?: string;
     }
+  | { ok: false; message: string };
+
+type CreateArchivePostMetadataResult =
+  | { ok: true; message: string; postId: string }
+  | { ok: false; message: string };
+
+type UploadSingleArchiveImageResult =
+  | { ok: true; image: ArchiveImageResult; images: ArchiveImageResult[] }
   | { ok: false; message: string };
 
 function imageErrorMessage(
@@ -277,54 +280,6 @@ function imageErrorMessage(
     case "invalid_type":
       return `${prefix}Usa imagenes JPG, PNG, WebP o GIF.`;
   }
-}
-
-function getArchiveUploadTotalSize(images: File[]) {
-  return images.reduce((total, image) => total + image.size, 0);
-}
-
-function getArchiveImageValidationMessages(images: File[]) {
-  const messages: string[] = [];
-
-  for (const image of images) {
-    const validation = validateImageFile(image);
-
-    if (!validation.ok) {
-      messages.push(imageErrorMessage(validation.reason, image.name));
-    }
-  }
-
-  const totalSize = getArchiveUploadTotalSize(images);
-
-  if (totalSize > ARCHIVE_UPLOAD_TOTAL_MAX_SIZE_BYTES) {
-    messages.push(
-      `El lote pesa ${formatArchiveFileSize(
-        totalSize
-      )}; debe quedar abajo de ${formatArchiveFileSize(
-        ARCHIVE_UPLOAD_TOTAL_MAX_SIZE_BYTES
-      )}. Sube menos peso en una tanda.`
-    );
-  }
-
-  return messages;
-}
-
-function logArchiveUploadDebug(context: string, images: File[]) {
-  if (process.env.NODE_ENV !== "development") {
-    return;
-  }
-
-  console.info(
-    `[archive-upload:${context}] files=${images.length} total=${formatArchiveFileSize(
-      getArchiveUploadTotalSize(images)
-    )}`,
-    images.map((image) => ({
-      extension: getArchiveImageFileInfo(image).extension,
-      name: image.name,
-      size: image.size,
-      type: image.type,
-    }))
-  );
 }
 
 async function cleanupUploadedImages(keys: string[]) {
@@ -367,85 +322,134 @@ function revalidateArchiveAdmin() {
   revalidatePath(ADMIN_PATH);
 }
 
-export async function createArchivePostAction(
-  _state: CreateArchivePostState,
-  formData: FormData
-): Promise<CreateArchivePostState> {
+export async function createArchivePostMetadataAction(
+  rawDescription: string,
+  rawTakenAt: string
+): Promise<CreateArchivePostMetadataResult> {
   if (!(await isAdminAuthenticated())) {
     return { ok: false, message: "vuelve a iniciar sesion" };
   }
 
-  const description = String(formData.get("description") ?? "").trim();
-  const takenAt = parseArchiveTakenAt(String(formData.get("takenAt") ?? ""));
-  const images = formData
-    .getAll("images")
-    .filter((image): image is File => image instanceof File && image.size > 0);
+  const description = rawDescription.trim();
+  const takenAt = parseArchiveTakenAt(rawTakenAt);
 
   if (!takenAt) {
     return { ok: false, message: "Elige una fecha valida." };
   }
 
-  if (images.length === 0) {
-    return { ok: false, message: "Selecciona al menos una imagen." };
+  try {
+    const post = await getPrisma().archivePost.create({
+      data: {
+        id: randomUUID(),
+        description,
+        takenAt,
+      },
+      select: { id: true },
+    });
+
+    revalidateArchiveAdmin();
+
+    return { ok: true, message: "archivo creado", postId: post.id };
+  } catch {
+    return { ok: false, message: "No se pudo crear el archivo." };
+  }
+}
+
+export async function uploadSingleArchiveImageAction(
+  postId: string,
+  formData: FormData
+): Promise<UploadSingleArchiveImageResult> {
+  if (!(await isAdminAuthenticated())) {
+    return { ok: false, message: "vuelve a iniciar sesion" };
   }
 
-  logArchiveUploadDebug("create-formdata", images);
+  const file = formData.get("image");
 
-  const validationMessages = getArchiveImageValidationMessages(images);
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, message: "Selecciona una imagen valida." };
+  }
 
-  if (validationMessages.length > 0) {
+  const validation = validateImageFile(file);
+
+  if (!validation.ok) {
     return {
       ok: false,
-      message: validationMessages.join("\n"),
+      message: imageErrorMessage(validation.reason, file.name),
     };
   }
 
-  const postId = randomUUID();
-  const uploadedImages: { key: string; url: string }[] = [];
+  const prisma = getPrisma();
+  const post = await prisma.archivePost.findUnique({
+    include: { images: { select: { order: true } } },
+    where: { id: postId },
+  });
+
+  if (!post) {
+    return { ok: false, message: "Ese archivo ya no existe." };
+  }
+
+  const nextOrder =
+    post.images.length > 0
+      ? Math.max(...post.images.map((image) => image.order)) + 1
+      : 0;
+  const requestedOrderValue = Number(formData.get("order"));
+  const requestedOrder =
+    Number.isSafeInteger(requestedOrderValue) && requestedOrderValue >= 0
+      ? requestedOrderValue
+      : null;
+  const usedOrders = new Set(post.images.map((image) => image.order));
+  const imageOrder =
+    requestedOrder !== null && !usedOrders.has(requestedOrder)
+      ? requestedOrder
+      : nextOrder;
+
+  if (process.env.NODE_ENV === "development") {
+    console.info("[archive-upload:single] uploading", {
+      extension: getArchiveImageFileInfo(file).extension,
+      name: file.name,
+      order: imageOrder,
+      postId,
+      size: file.size,
+      type: file.type,
+    });
+  }
+
+  let uploadedImage: Awaited<ReturnType<typeof uploadArchiveImageToR2>>;
 
   try {
-    for (const [index, image] of images.entries()) {
-      if (process.env.NODE_ENV === "development") {
-        console.info(
-          `[archive-upload:create] uploading ${index + 1}/${images.length}`,
-          {
-            name: image.name,
-            size: image.size,
-            type: image.type,
-          }
-        );
-      }
-
-      uploadedImages.push(await uploadArchiveImageToR2(image, postId, index));
-    }
+    uploadedImage = await uploadArchiveImageToR2(file, postId, imageOrder);
   } catch {
-    await cleanupUploadedImages(uploadedImages.map((image) => image.key));
-    return { ok: false, message: "No se pudieron subir las imagenes." };
+    return {
+      ok: false,
+      message: `${file.name}: No se pudo subir la imagen.`,
+    };
   }
 
   try {
-    await getPrisma().archivePost.create({
+    const image = await prisma.archiveImage.create({
       data: {
-        id: postId,
-        description,
-        takenAt,
-        images: {
-          create: uploadedImages.map((image, index) => ({
-            key: image.key,
-            order: index,
-            url: image.url,
-          })),
-        },
+        key: uploadedImage.key,
+        order: imageOrder,
+        postId,
+        url: uploadedImage.url,
       },
     });
+
+    revalidateArchiveAdmin();
+
+    return {
+      ok: true,
+      image: serializeArchiveImage(image),
+      images: await getOrderedArchiveImages(postId),
+    };
   } catch {
-    await cleanupUploadedImages(uploadedImages.map((image) => image.key));
-    return { ok: false, message: "No se pudo guardar el archivo." };
+    await cleanupUploadedImages([uploadedImage.key]);
+
+    return {
+      ok: false,
+      message: `${file.name}: No se pudo guardar la imagen.`,
+    };
   }
-
-  revalidateArchiveAdmin();
-
-  return { ok: true, message: "guardado en archive", postId };
 }
 
 export async function updateArchivePostAction(
@@ -491,93 +495,6 @@ export async function updateArchivePostAction(
   } catch {
     return { ok: false, message: "No se pudo guardar el archivo." };
   }
-}
-
-export async function addArchiveImagesAction(
-  postId: string,
-  formData: FormData
-): Promise<ArchiveMutationResult> {
-  if (!(await isAdminAuthenticated())) {
-    return { ok: false, message: "vuelve a iniciar sesion" };
-  }
-
-  const prisma = getPrisma();
-  const post = await prisma.archivePost.findUnique({
-    include: { images: { orderBy: { order: "asc" } } },
-    where: { id: postId },
-  });
-
-  if (!post) {
-    return { ok: false, message: "Ese archivo ya no existe." };
-  }
-
-  const images = formData
-    .getAll("images")
-    .filter((image): image is File => image instanceof File && image.size > 0);
-
-  if (images.length === 0) {
-    return { ok: false, message: "Selecciona al menos una imagen." };
-  }
-
-  logArchiveUploadDebug("add-formdata", images);
-
-  const validationMessages = getArchiveImageValidationMessages(images);
-
-  if (validationMessages.length > 0) {
-    return {
-      ok: false,
-      message: validationMessages.join("\n"),
-    };
-  }
-
-  const nextOrder =
-    post.images.length > 0
-      ? Math.max(...post.images.map((image) => image.order)) + 1
-      : 0;
-  const uploadedImages: { key: string; url: string }[] = [];
-
-  try {
-    for (const [index, image] of images.entries()) {
-      if (process.env.NODE_ENV === "development") {
-        console.info(
-          `[archive-upload:add] uploading ${index + 1}/${images.length}`,
-          {
-            name: image.name,
-            size: image.size,
-            type: image.type,
-          }
-        );
-      }
-
-      uploadedImages.push(
-        await uploadArchiveImageToR2(image, postId, nextOrder + index)
-      );
-    }
-  } catch {
-    await cleanupUploadedImages(uploadedImages.map((image) => image.key));
-    return { ok: false, message: "No se pudieron subir las imagenes." };
-  }
-
-  try {
-    await prisma.archiveImage.createMany({
-      data: uploadedImages.map((image, index) => ({
-        key: image.key,
-        order: nextOrder + index,
-        postId,
-        url: image.url,
-      })),
-    });
-  } catch {
-    await cleanupUploadedImages(uploadedImages.map((image) => image.key));
-    return { ok: false, message: "No se pudieron guardar las imagenes." };
-  }
-
-  revalidateArchiveAdmin();
-
-  return {
-    ok: true,
-    images: await getOrderedArchiveImages(postId),
-  };
 }
 
 export async function removeArchiveImageAction(

@@ -8,11 +8,11 @@ import { ARCHIVE_IMAGE_ACCEPT } from "@/lib/archive";
 import { prepareArchiveImageFiles } from "./archive-image-processing";
 import ArchiveComposer from "./archive-composer";
 import {
-  addArchiveImagesAction,
   deleteArchivePostAction,
   removeArchiveImageAction,
   reorderArchiveImagesAction,
   updateArchivePostAction,
+  uploadSingleArchiveImageAction,
 } from "./actions";
 
 type AdminArchiveImage = {
@@ -32,6 +32,16 @@ export type AdminArchivePost = {
 
 type ArchiveManagerProps = {
   posts: AdminArchivePost[];
+};
+
+type UploadStatus = "pending" | "uploading" | "uploaded" | "failed";
+
+type AddImageQueueItem = {
+  error?: string;
+  file: File;
+  id: string;
+  order: number;
+  status: UploadStatus;
 };
 
 function pad(value: number) {
@@ -119,8 +129,10 @@ function ArchivePostManager({
   const addImagesInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { clearNotice, notice, showNotice } = useAutoDismissNotice();
-  const [addImageCount, setAddImageCount] = useState(0);
-  const [addImageFiles, setAddImageFiles] = useState<File[]>([]);
+  const [addImageQueue, setAddImageQueue] = useState<AddImageQueueItem[]>([]);
+  const [addUploadProgress, setAddUploadProgress] = useState<string | null>(
+    null
+  );
   const [description, setDescription] = useState(post.description);
   const [draftDescription, setDraftDescription] = useState(post.description);
   const [draftTakenAt, setDraftTakenAt] = useState(
@@ -135,6 +147,7 @@ function ArchivePostManager({
   const [isSaving, setIsSaving] = useState(false);
   const [pendingImageId, setPendingImageId] = useState<string | null>(null);
   const [takenAt, setTakenAt] = useState(post.takenAt);
+  const addImageCount = addImageQueue.length;
 
   function startEditing() {
     setDraftDescription(description);
@@ -187,45 +200,121 @@ function ArchivePostManager({
       return;
     }
 
-    if (addImageFiles.length === 0) {
+    const uploadCandidates = addImageQueue.filter(
+      (image) => image.status !== "uploaded"
+    );
+
+    if (uploadCandidates.length === 0) {
       setError("Selecciona al menos una imagen.");
       return;
     }
 
     setIsAddingImages(true);
     setError(null);
+    setAddUploadProgress(null);
     clearNotice();
+    setAddImageQueue((current) =>
+      current.map((image) =>
+        image.status === "uploaded"
+          ? image
+          : { ...image, error: undefined, status: "pending" }
+      )
+    );
 
     try {
-      const formData = new FormData();
+      let uploadedCount = 0;
+      let latestImages: AdminArchiveImage[] | null = null;
+      const failedItems: AddImageQueueItem[] = [];
 
-      addImageFiles.forEach((file) => formData.append("images", file));
+      for (const [index, image] of uploadCandidates.entries()) {
+        setAddUploadProgress(
+          `Uploading ${index + 1} of ${uploadCandidates.length}...`
+        );
+        setAddImageQueue((current) =>
+          current.map((item) =>
+            item.id === image.id ? { ...item, status: "uploading" } : item
+          )
+        );
 
-      const result = await addArchiveImagesAction(post.id, formData);
+        const formData = new FormData();
+        formData.set("image", image.file);
+        formData.set("order", String(image.order));
 
-      if (!result.ok) {
-        setError(result.message);
+        try {
+          const result = await uploadSingleArchiveImageAction(post.id, formData);
+
+          if (!result.ok) {
+            failedItems.push({
+              ...image,
+              error: result.message,
+              status: "failed",
+            });
+            setAddImageQueue((current) =>
+              current.map((item) =>
+                item.id === image.id
+                  ? { ...item, error: result.message, status: "failed" }
+                  : item
+              )
+            );
+            continue;
+          }
+
+          uploadedCount += 1;
+          latestImages = result.images;
+          setAddImageQueue((current) =>
+            current.map((item) =>
+              item.id === image.id ? { ...item, status: "uploaded" } : item
+            )
+          );
+        } catch {
+          const failedMessage = `${image.file.name}: No se pudo subir la imagen.`;
+
+          failedItems.push({
+            ...image,
+            error: failedMessage,
+            status: "failed",
+          });
+          setAddImageQueue((current) =>
+            current.map((item) =>
+              item.id === image.id
+                ? { ...item, error: failedMessage, status: "failed" }
+                : item
+            )
+          );
+        }
+      }
+
+      if (latestImages) {
+        setImages(latestImages);
+      }
+
+      setAddUploadProgress(null);
+
+      if (failedItems.length === 0) {
         addImagesFormRef.current?.reset();
-        setAddImageFiles([]);
-        setAddImageCount(0);
+        setAddImageQueue([]);
+        showNotice("imagenes agregadas");
+        router.refresh();
         return;
       }
 
-      if (result.images) {
-        setImages(result.images);
-      }
+      setAddImageQueue(failedItems);
+      setError(
+        `${uploadedCount} imagen${uploadedCount === 1 ? "" : "es"} subid${
+          uploadedCount === 1 ? "a" : "as"
+        }, ${failedItems.length} fallaron.\n${failedItems
+          .map((image) => image.error ?? image.file.name)
+          .join("\n")}\nPuedes reintentar sin duplicar las que ya subieron.`
+      );
 
-      addImagesFormRef.current?.reset();
-      setAddImageFiles([]);
-      setAddImageCount(0);
-      showNotice("imagenes agregadas");
-      router.refresh();
+      if (uploadedCount > 0) {
+        router.refresh();
+      }
     } catch {
       setError("No se pudieron agregar las imagenes.");
       addImagesFormRef.current?.reset();
-      setAddImageFiles([]);
-      setAddImageCount(0);
     } finally {
+      setAddUploadProgress(null);
       setIsAddingImages(false);
     }
   }
@@ -324,8 +413,8 @@ function ArchivePostManager({
     const input = event.currentTarget;
     const files = Array.from(input.files ?? []);
 
-    setAddImageFiles([]);
-    setAddImageCount(0);
+    setAddImageQueue([]);
+    setAddUploadProgress(null);
     setError(null);
     clearNotice();
 
@@ -341,13 +430,16 @@ function ArchivePostManager({
 
       if (result.errors.length > 0) {
         setError(result.errors.join("\n"));
-        return;
       }
 
-      const preparedFiles = result.files.map((prepared) => prepared.file);
-
-      setAddImageFiles(preparedFiles);
-      setAddImageCount(preparedFiles.length);
+      setAddImageQueue(
+        result.files.map((prepared, index) => ({
+          file: prepared.file,
+          id: crypto.randomUUID(),
+          order: images.length + index,
+          status: "pending",
+        }))
+      );
     } finally {
       setIsProcessingAddImages(false);
       input.value = "";
@@ -517,6 +609,28 @@ function ArchivePostManager({
             {isAddingImages ? "subiendo" : "subir"}
           </button>
         </form>
+
+        {addUploadProgress ? (
+          <p className="mt-3 text-sm text-neutral-500">{addUploadProgress}</p>
+        ) : null}
+
+        {addImageQueue.length > 0 ? (
+          <div className="mt-3 space-y-1 text-xs text-neutral-500">
+            {addImageQueue.map((image, index) => (
+              <p
+                className={
+                  image.status === "failed"
+                    ? "whitespace-pre-wrap text-red-400"
+                    : undefined
+                }
+                key={image.id}
+              >
+                {index + 1}. {image.file.name} - {image.status}
+                {image.error ? `: ${image.error}` : ""}
+              </p>
+            ))}
+          </div>
+        ) : null}
 
         {error ? (
           <p className="mt-3 whitespace-pre-wrap text-sm text-red-400">

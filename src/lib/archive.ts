@@ -18,7 +18,6 @@ export const ARCHIVE_HEIC_IMAGE_TYPES = ["image/heic", "image/heif"] as const;
 
 export const ARCHIVE_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 export const ARCHIVE_ORIGINAL_IMAGE_MAX_SIZE_BYTES = 30 * 1024 * 1024;
-export const ARCHIVE_UPLOAD_TOTAL_MAX_SIZE_BYTES = 45 * 1024 * 1024;
 export const ARCHIVE_IMAGE_MAX_DIMENSION = 2560;
 export const ARCHIVE_IMAGE_JPEG_QUALITY = 0.86;
 export const ARCHIVE_IMAGE_ACCEPT =

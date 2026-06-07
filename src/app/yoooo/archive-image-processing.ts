@@ -5,7 +5,6 @@ import {
   ARCHIVE_IMAGE_MAX_DIMENSION,
   ARCHIVE_IMAGE_MAX_SIZE_BYTES,
   ARCHIVE_ORIGINAL_IMAGE_MAX_SIZE_BYTES,
-  ARCHIVE_UPLOAD_TOTAL_MAX_SIZE_BYTES,
   formatArchiveFileSize,
   getArchiveImageFileInfo,
   getArchiveImageUploadType,
@@ -263,55 +262,6 @@ async function prepareArchiveImageFile(file: File) {
   }
 }
 
-async function compressPreparedBatchIfNeeded(
-  files: PreparedArchiveImageFile[],
-  context: string
-) {
-  const totalSize = files.reduce((total, prepared) => total + prepared.file.size, 0);
-
-  if (totalSize <= ARCHIVE_UPLOAD_TOTAL_MAX_SIZE_BYTES) {
-    return files;
-  }
-
-  const compressedFiles: PreparedArchiveImageFile[] = [];
-
-  for (const prepared of files) {
-    const uploadType = getArchiveImageUploadType(prepared.file);
-
-    if (
-      prepared.wasCompressed ||
-      !uploadType.ok ||
-      uploadType.extension === "gif"
-    ) {
-      compressedFiles.push(prepared);
-      continue;
-    }
-
-    try {
-      const compressed = await compressImage(prepared.file);
-
-      compressedFiles.push({
-        file: compressed,
-        originalFile: prepared.originalFile,
-        wasCompressed: true,
-      });
-    } catch {
-      compressedFiles.push(prepared);
-    }
-  }
-
-  if (isDevelopment()) {
-    console.info(`[archive-upload:${context}] batch recompressed`, {
-      from: formatArchiveFileSize(totalSize),
-      to: formatArchiveFileSize(
-        compressedFiles.reduce((total, prepared) => total + prepared.file.size, 0)
-      ),
-    });
-  }
-
-  return compressedFiles;
-}
-
 export async function prepareArchiveImageFiles(
   files: File[],
   context: string
@@ -328,34 +278,11 @@ export async function prepareArchiveImageFiles(
       (prepared): prepared is PreparedArchiveImageFile => prepared !== null
     );
 
-  if (errors.length > 0) {
-    return { errors, files: [] };
-  }
-
-  const uploadFiles = await compressPreparedBatchIfNeeded(preparedFiles, context);
-  const totalSize = uploadFiles.reduce(
-    (total, prepared) => total + prepared.file.size,
-    0
-  );
-
-  if (totalSize > ARCHIVE_UPLOAD_TOTAL_MAX_SIZE_BYTES) {
-    return {
-      errors: [
-        `El lote pesa ${formatArchiveFileSize(
-          totalSize
-        )}; debe quedar abajo de ${formatArchiveFileSize(
-          ARCHIVE_UPLOAD_TOTAL_MAX_SIZE_BYTES
-        )}. Sube menos peso en una tanda.`,
-      ],
-    files: [],
-  };
-}
-
   logArchiveFiles(
     context,
     "prepared",
-    uploadFiles.map((prepared) => prepared.file)
+    preparedFiles.map((prepared) => prepared.file)
   );
 
-  return { errors: [], files: uploadFiles };
+  return { errors, files: preparedFiles };
 }

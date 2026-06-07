@@ -16,14 +16,22 @@ import {
 } from "@/lib/archive";
 
 import { prepareArchiveImageFiles } from "./archive-image-processing";
-import { createArchivePostAction } from "./actions";
+import {
+  createArchivePostMetadataAction,
+  deleteArchivePostAction,
+  uploadSingleArchiveImageAction,
+} from "./actions";
+
+type UploadStatus = "pending" | "uploading" | "uploaded" | "failed";
 
 type SelectedImage = {
   date: Date;
+  error?: string;
   file: File;
   id: string;
   previewUrl: string;
   source: "exif" | "file" | "today";
+  status: UploadStatus;
 };
 
 const initialMessage = {
@@ -204,7 +212,8 @@ async function createSelectedImage(
     file,
     id: crypto.randomUUID(),
     previewUrl: URL.createObjectURL(file),
-    source: exifDate ? "exif" : file.lastModified > 0 ? "file" : "today",
+    source: exifDate ? "exif" : originalFile.lastModified > 0 ? "file" : "today",
+    status: "pending",
   };
 }
 
@@ -228,10 +237,15 @@ export default function ArchiveComposer({
   const [isProcessingImages, setIsProcessingImages] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState(initialMessage);
+  const [metadataPostId, setMetadataPostId] = useState<string | null>(null);
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const [takenAt, setTakenAt] = useState(formatDateTimeLocal(new Date()));
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+  const remainingUploadCount = selectedImages.filter(
+    (image) => image.status !== "uploaded"
+  ).length;
   const canSubmit =
-    selectedImages.length > 0 && !isProcessingImages && !isSubmitting;
+    remainingUploadCount > 0 && !isProcessingImages && !isSubmitting;
   const oldestImage = useMemo(
     () =>
       selectedImages.reduce<SelectedImage | null>((oldest, image) => {
@@ -287,7 +301,6 @@ export default function ArchiveComposer({
 
       if (result.errors.length > 0) {
         setMessage({ ok: false, text: result.errors.join("\n") });
-        return;
       }
 
       const nextImages = await Promise.all(
@@ -296,7 +309,9 @@ export default function ArchiveComposer({
         )
       );
 
-      setSelectedImages((current) => [...current, ...nextImages]);
+      if (nextImages.length > 0) {
+        setSelectedImages((current) => [...current, ...nextImages]);
+      }
     } finally {
       setIsProcessingImages(false);
     }
@@ -318,6 +333,10 @@ export default function ArchiveComposer({
       const image = current.find((item) => item.id === imageId);
 
       if (image) {
+        if (image.status === "uploaded") {
+          return current;
+        }
+
         URL.revokeObjectURL(image.previewUrl);
       }
 
@@ -326,13 +345,33 @@ export default function ArchiveComposer({
   }
 
   function moveImage(fromIndex: number, toIndex: number) {
+    if (metadataPostId || isSubmitting) {
+      return;
+    }
+
     setSelectedImages((current) => moveItem(current, fromIndex, toIndex));
+  }
+
+  function updateImageStatus(
+    imageId: string,
+    status: UploadStatus,
+    error?: string
+  ) {
+    setSelectedImages((current) =>
+      current.map((image) =>
+        image.id === imageId ? { ...image, error, status } : image
+      )
+    );
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (selectedImages.length === 0) {
+    const uploadCandidates = selectedImages.filter(
+      (image) => image.status !== "uploaded"
+    );
+
+    if (selectedImages.length === 0 || uploadCandidates.length === 0) {
       setMessage({ ok: false, text: "Selecciona al menos una imagen." });
       return;
     }
@@ -344,28 +383,112 @@ export default function ArchiveComposer({
 
     setIsSubmitting(true);
     setMessage(initialMessage);
+    setUploadProgress(null);
 
-    const formData = new FormData();
-    formData.set("description", description);
-    formData.set("takenAt", takenAt);
-    selectedImages.forEach((image) => formData.append("images", image.file));
+    setSelectedImages((current) =>
+      current.map((image) =>
+        image.status === "uploaded"
+          ? image
+          : { ...image, error: undefined, status: "pending" }
+      )
+    );
 
     try {
-      const result = await createArchivePostAction(
-        { ok: false, message: null },
-        formData
-      );
+      let postId = metadataPostId;
 
-      if (!result.ok) {
-        setMessage({ ok: false, text: result.message });
+      if (!postId) {
+        const metadataResult = await createArchivePostMetadataAction(
+          description,
+          takenAt
+        );
+
+        if (!metadataResult.ok) {
+          setMessage({ ok: false, text: metadataResult.message });
+          return;
+        }
+
+        postId = metadataResult.postId;
+        setMetadataPostId(postId);
+      }
+
+      let uploadedCount = 0;
+      const failedImages: { fileName: string; message: string }[] = [];
+
+      for (const [index, image] of uploadCandidates.entries()) {
+        setUploadProgress(`Uploading ${index + 1} of ${uploadCandidates.length}...`);
+        updateImageStatus(image.id, "uploading");
+
+        const imageFormData = new FormData();
+        imageFormData.set("image", image.file);
+        imageFormData.set(
+          "order",
+          String(selectedImages.findIndex((item) => item.id === image.id))
+        );
+
+        try {
+          const result = await uploadSingleArchiveImageAction(
+            postId,
+            imageFormData
+          );
+
+          if (!result.ok) {
+            failedImages.push({
+              fileName: image.file.name,
+              message: result.message,
+            });
+            updateImageStatus(image.id, "failed", result.message);
+            continue;
+          }
+
+          uploadedCount += 1;
+          updateImageStatus(image.id, "uploaded");
+        } catch {
+          const failedMessage = `${image.file.name}: No se pudo subir la imagen.`;
+
+          failedImages.push({
+            fileName: image.file.name,
+            message: failedMessage,
+          });
+          updateImageStatus(image.id, "failed", failedMessage);
+        }
+      }
+
+      if (failedImages.length === 0) {
+        selectedImages.forEach((image) =>
+          URL.revokeObjectURL(image.previewUrl)
+        );
+        setDescription("");
+        setMetadataPostId(null);
+        setSelectedImages([]);
+        setTakenAt(formatDateTimeLocal(new Date()));
+        setUploadProgress(null);
+        setMessage({ ok: true, text: "guardado en archive" });
+        onCreated?.();
         return;
       }
 
-      selectedImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
-      setDescription("");
-      setSelectedImages([]);
-      setTakenAt(formatDateTimeLocal(new Date()));
-      setMessage({ ok: true, text: result.message });
+      const failedSummary = failedImages
+        .map((image) => image.message)
+        .join("\n");
+
+      if (uploadedCount === 0 && postId) {
+        await deleteArchivePostAction(postId);
+        setMetadataPostId(null);
+        setUploadProgress(null);
+        setMessage({
+          ok: false,
+          text: `No se subio ninguna imagen. El archivo vacio fue eliminado.\n${failedSummary}`,
+        });
+        return;
+      }
+
+      setUploadProgress(null);
+      setMessage({
+        ok: false,
+        text: `${uploadedCount} imagen${uploadedCount === 1 ? "" : "es"} subid${
+          uploadedCount === 1 ? "a" : "as"
+        }, ${failedImages.length} fallaron.\n${failedSummary}\nPuedes reintentar sin duplicar las que ya subieron.`,
+      });
       onCreated?.();
     } catch {
       setMessage({ ok: false, text: "No se pudo guardar el archivo." });
@@ -438,7 +561,7 @@ export default function ArchiveComposer({
                   <div className="grid grid-cols-3 gap-1">
                     <button
                       className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
-                      disabled={index === 0}
+                      disabled={index === 0 || Boolean(metadataPostId) || isSubmitting}
                       onClick={() => moveImage(index, index - 1)}
                       type="button"
                     >
@@ -446,7 +569,11 @@ export default function ArchiveComposer({
                     </button>
                     <button
                       className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
-                      disabled={index === selectedImages.length - 1}
+                      disabled={
+                        index === selectedImages.length - 1 ||
+                        Boolean(metadataPostId) ||
+                        isSubmitting
+                      }
                       onClick={() => moveImage(index, index + 1)}
                       type="button"
                     >
@@ -454,12 +581,23 @@ export default function ArchiveComposer({
                     </button>
                     <button
                       className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10"
+                      disabled={image.status === "uploaded" || isSubmitting}
                       onClick={() => removeImage(image.id)}
                       type="button"
                     >
                       quitar
                     </button>
                   </div>
+                  <p
+                    className={
+                      image.status === "failed"
+                        ? "whitespace-pre-wrap text-xs text-red-400"
+                        : "text-xs text-neutral-500"
+                    }
+                  >
+                    {image.status}
+                    {image.error ? `: ${image.error}` : ""}
+                  </p>
                 </div>
               </div>
             ))}
@@ -497,6 +635,9 @@ export default function ArchiveComposer({
         </label>
 
         <div className="flex flex-wrap items-center justify-end gap-3 border-t border-neutral-900 pt-3">
+          {uploadProgress ? (
+            <p className="text-sm text-neutral-500">{uploadProgress}</p>
+          ) : null}
           {message.text ? (
             <p
               className={
@@ -513,7 +654,11 @@ export default function ArchiveComposer({
             disabled={!canSubmit}
             type="submit"
           >
-            {isSubmitting ? "guardando" : "guardar"}
+            {isSubmitting
+              ? "subiendo"
+              : metadataPostId
+                ? "reintentar"
+                : "guardar"}
           </button>
         </div>
       </div>
