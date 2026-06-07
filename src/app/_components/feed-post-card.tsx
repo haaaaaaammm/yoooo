@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 
+import LinkifiedText, {
+  hasLinkifiedText,
+} from "@/app/_components/linkified-text";
 import ProfileImage from "@/app/_components/profile-image";
 
 type FeedPost = {
@@ -34,6 +37,7 @@ export default function FeedPostCard({
   post,
   profileImageUrl,
 }: FeedPostCardProps) {
+  const hasContentLinks = hasLinkifiedText(post.content);
   const timestamp = (
     <time className="text-neutral-500" dateTime={post.createdAt.toISOString()}>
       {formatTimestamp(post.createdAt)}
@@ -41,7 +45,7 @@ export default function FeedPostCard({
   );
   const content = (
     <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
-      {post.content}
+      <LinkifiedText text={post.content} />
     </p>
   );
   const commentCount =
@@ -84,7 +88,7 @@ export default function FeedPostCard({
                 </div>
               </div>
             </div>
-            {href ? (
+            {href && !hasContentLinks ? (
               <Link className="block" href={href}>
                 {content}
               </Link>

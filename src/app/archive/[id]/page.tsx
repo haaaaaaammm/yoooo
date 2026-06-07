@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import LinkifiedText from "@/app/_components/linkified-text";
 import { ARCHIVE_ALBUM_KIND } from "@/lib/archive";
 import {
   formatArchiveTimestamp,
@@ -116,6 +117,7 @@ export default async function ArchivePostPage({
 
           <ArchiveCarousel
             description={post.description}
+            enableLightbox
             images={post.images.map((image) => ({
               id: image.id,
               url: image.url,
@@ -124,7 +126,7 @@ export default async function ArchivePostPage({
 
           {post.description ? (
             <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
-              {post.description}
+              <LinkifiedText text={post.description} />
             </p>
           ) : null}
         </article>

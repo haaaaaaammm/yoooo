@@ -1,7 +1,10 @@
 import "server-only";
 
 import { ARCHIVE_ALBUM_THRESHOLD } from "@/lib/archive";
-import { ARCHIVE_POSTS_PER_PAGE } from "@/lib/posts";
+import {
+  ARCHIVE_ALBUM_PHOTOS_PER_PAGE,
+  ARCHIVE_POSTS_PER_PAGE,
+} from "@/lib/posts";
 import { getPrisma } from "@/lib/prisma";
 
 const archiveCompactPostInclude = {
@@ -70,4 +73,67 @@ export async function getArchivePostById(id: string) {
     include: archiveFullPostInclude,
     where: { id: postId },
   });
+}
+
+// Lightweight album fetch for generateMetadata: post fields + cover + the first
+// image as a cover fallback, without loading every album photo.
+export async function getArchiveAlbumMeta(id: string) {
+  const postId = id.trim();
+
+  if (!postId) {
+    return null;
+  }
+
+  return getPrisma().archivePost.findUnique({
+    include: {
+      coverImage: true,
+      images: { orderBy: { order: "asc" }, take: 1 },
+    },
+    where: { id: postId },
+  });
+}
+
+// One page of an album's photos. Fetches post metadata + total image count + the
+// current page slice only (never all photos), ordered consistently by `order`.
+// `page` is clamped to [1, totalPages]; the returned `page` is the clamped value
+// so callers can redirect an out-of-range URL to a valid one.
+export async function getArchiveAlbumPage(id: string, page: number) {
+  const postId = id.trim();
+
+  if (!postId) {
+    return null;
+  }
+
+  const prisma = getPrisma();
+  const post = await prisma.archivePost.findUnique({
+    include: {
+      _count: { select: { images: true } },
+      coverImage: true,
+      images: { orderBy: { order: "asc" }, take: 1 },
+    },
+    where: { id: postId },
+  });
+
+  if (!post) {
+    return null;
+  }
+
+  const totalImages = post._count.images;
+  const totalPages = Math.max(1, Math.ceil(totalImages / ARCHIVE_ALBUM_PHOTOS_PER_PAGE));
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const images = await prisma.archiveImage.findMany({
+    orderBy: { order: "asc" },
+    skip: (safePage - 1) * ARCHIVE_ALBUM_PHOTOS_PER_PAGE,
+    take: ARCHIVE_ALBUM_PHOTOS_PER_PAGE,
+    where: { postId },
+  });
+
+  return {
+    coverImage: post.coverImage ?? post.images[0] ?? null,
+    images,
+    page: safePage,
+    post,
+    totalImages,
+    totalPages,
+  };
 }

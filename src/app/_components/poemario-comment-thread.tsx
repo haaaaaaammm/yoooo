@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+import LinkifiedText, {
+  hasLinkifiedText,
+} from "@/app/_components/linkified-text";
 import ProfileImage from "@/app/_components/profile-image";
 import type { PoemarioCommentTree } from "@/lib/poemario-posts";
 import { PUBLIC_FEED_PATH } from "@/lib/posts";
@@ -41,6 +44,23 @@ export function PoemarioCommentBody({
   profileImageUrl,
 }: PoemarioCommentBodyProps) {
   const directReplyCount = comment.replies.length;
+  const hasCommentLinks = hasLinkifiedText(comment.text);
+  const heading = (
+    <div className="text-sm leading-5">
+      <span className="font-semibold text-white">humberto</span>{" "}
+      <time
+        className="text-neutral-500"
+        dateTime={comment.createdAt.toISOString()}
+      >
+        {formatTimestamp(comment.createdAt)}
+      </time>
+    </div>
+  );
+  const body = (
+    <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+      <LinkifiedText text={comment.text} />
+    </p>
+  );
 
   return (
     <article
@@ -56,20 +76,19 @@ export function PoemarioCommentBody({
           profileImageUrl={profileImageUrl}
         />
         <div className="min-w-0 flex-1">
-          <Link className="block min-w-0" href={href}>
-            <div className="text-sm leading-5">
-              <span className="font-semibold text-white">humberto</span>{" "}
-              <time
-                className="text-neutral-500"
-                dateTime={comment.createdAt.toISOString()}
-              >
-                {formatTimestamp(comment.createdAt)}
-              </time>
-            </div>
-            <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
-              {comment.text}
-            </p>
-          </Link>
+          {hasCommentLinks ? (
+            <>
+              <Link className="block min-w-0" href={href}>
+                {heading}
+              </Link>
+              {body}
+            </>
+          ) : (
+            <Link className="block min-w-0" href={href}>
+              {heading}
+              {body}
+            </Link>
+          )}
 
           <div className="mt-2 flex items-center gap-2">
             <Link

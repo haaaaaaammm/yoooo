@@ -2,19 +2,23 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import LinkifiedText from "@/app/_components/linkified-text";
 import { ARCHIVE_ALBUM_KIND } from "@/lib/archive";
 import {
   formatArchiveTimestamp,
-  getArchivePostById,
+  getArchiveAlbumMeta,
+  getArchiveAlbumPage,
 } from "@/lib/archive-posts";
-import { ARCHIVE_PATH } from "@/lib/posts";
+import { ARCHIVE_PATH, parsePageParam } from "@/lib/posts";
 
 import CopyLinkButton from "../../[id]/copy-link-button";
+import AlbumPhotoGrid from "./album-photo-grid";
 
 export const dynamic = "force-dynamic";
 
 type ArchiveAlbumPageProps = {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 function getExcerpt(value: string, maxLength = 160) {
@@ -27,11 +31,61 @@ function getExcerpt(value: string, maxLength = 160) {
   return `${excerpt.slice(0, maxLength - 1).trim()}...`;
 }
 
+function albumPageHref(postId: string, page: number) {
+  return `${ARCHIVE_PATH}/album/${postId}?page=${page}`;
+}
+
+function AlbumPagination({
+  page,
+  postId,
+  totalPages,
+}: {
+  page: number;
+  postId: string;
+  totalPages: number;
+}) {
+  if (totalPages <= 1) {
+    return null;
+  }
+
+  const navLinkClassName =
+    "rounded-full px-4 py-2 text-sm text-neutral-500 transition hover:bg-[#ff003c]/10 hover:text-[#ff003c]";
+
+  return (
+    <nav
+      aria-label="Paginacion del album"
+      className="mt-6 flex flex-wrap items-center justify-center gap-3 border-t border-neutral-900 pt-4"
+    >
+      {page > 1 ? (
+        <Link
+          aria-label="Pagina anterior"
+          className={navLinkClassName}
+          href={albumPageHref(postId, page - 1)}
+        >
+          {"<"}
+        </Link>
+      ) : null}
+      <span className="text-sm tabular-nums text-neutral-500">
+        {page} / {totalPages}
+      </span>
+      {page < totalPages ? (
+        <Link
+          aria-label="Pagina siguiente"
+          className={navLinkClassName}
+          href={albumPageHref(postId, page + 1)}
+        >
+          {">"}
+        </Link>
+      ) : null}
+    </nav>
+  );
+}
+
 export async function generateMetadata({
   params,
 }: ArchiveAlbumPageProps): Promise<Metadata> {
   const { id } = await params;
-  const post = await getArchivePostById(id);
+  const post = await getArchiveAlbumMeta(id);
 
   if (!post || post.kind !== ARCHIVE_ALBUM_KIND) {
     return {
@@ -68,19 +122,28 @@ export async function generateMetadata({
 
 export default async function ArchiveAlbumPage({
   params,
+  searchParams,
 }: ArchiveAlbumPageProps) {
   const { id } = await params;
-  const post = await getArchivePostById(id);
+  const requestedParams = (await searchParams) ?? {};
+  const requestedPage = parsePageParam(requestedParams.page);
+  const album = await getArchiveAlbumPage(id, requestedPage);
 
-  if (!post) {
+  if (!album) {
     notFound();
   }
 
-  if (post.kind !== ARCHIVE_ALBUM_KIND) {
-    redirect(`${ARCHIVE_PATH}/${post.id}`);
+  if (album.post.kind !== ARCHIVE_ALBUM_KIND) {
+    redirect(`${ARCHIVE_PATH}/${album.post.id}`);
   }
 
-  const coverImage = post.coverImage ?? post.images[0];
+  // Out-of-range page (e.g. photos were removed): send to the last valid page so
+  // the URL and rendered photos stay in sync.
+  if (requestedPage > album.totalPages) {
+    redirect(albumPageHref(album.post.id, album.totalPages));
+  }
+
+  const { coverImage, images, page, post, totalImages, totalPages } = album;
 
   return (
     <main className="min-h-screen min-h-dvh overflow-x-hidden bg-black text-white">
@@ -116,7 +179,7 @@ export default async function ArchiveAlbumPage({
             >
               {formatArchiveTimestamp(post.takenAt)}
             </time>
-            <span className="text-xs uppercase tracking-[0.2em] text-neutral-600">
+            <span className="text-xs tracking-[0.2em] text-neutral-600">
               album
             </span>
           </div>
@@ -127,12 +190,12 @@ export default async function ArchiveAlbumPage({
 
           {post.description ? (
             <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
-              {post.description}
+              <LinkifiedText text={post.description} />
             </p>
           ) : null}
 
           <p className="mt-3 text-sm text-neutral-500">
-            {post.images.length} foto{post.images.length === 1 ? "" : "s"}
+            {totalImages} foto{totalImages === 1 ? "" : "s"}
           </p>
 
           {coverImage ? (
@@ -146,21 +209,16 @@ export default async function ArchiveAlbumPage({
             </div>
           ) : null}
 
-          <div className="mt-5 grid grid-cols-3 gap-1.5 sm:grid-cols-4 sm:gap-2">
-            {post.images.map((image, index) => (
-              <div
-                className="overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950"
-                key={image.id}
-              >
-                <img
-                  alt={`${post.title ?? "album"} ${index + 1}`}
-                  className="aspect-square h-full w-full object-cover"
-                  loading={index < 12 ? "eager" : "lazy"}
-                  src={image.url}
-                />
-              </div>
-            ))}
-          </div>
+          <AlbumPhotoGrid
+            images={images.map((image) => ({ id: image.id, url: image.url }))}
+            title={post.title ?? "album"}
+          />
+
+          <AlbumPagination
+            page={page}
+            postId={post.id}
+            totalPages={totalPages}
+          />
         </article>
       </div>
     </main>

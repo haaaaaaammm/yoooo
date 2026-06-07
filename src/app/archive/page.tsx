@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import LinkifiedText, {
+  hasLinkifiedText,
+} from "@/app/_components/linkified-text";
 import NumberedPagination from "@/app/_components/numbered-pagination";
 import { ARCHIVE_ALBUM_KIND } from "@/lib/archive";
 import {
@@ -54,75 +57,112 @@ function ArchiveAlbumCard({ post }: { post: ArchiveListPost }) {
   const previewImages = post.images
     .filter((image) => image.id !== coverImage?.id)
     .slice(0, 3);
+  const href = `${ARCHIVE_PATH}/album/${post.id}`;
+  const excerpt = post.description ? getExcerpt(post.description) : "";
+  const hasDescriptionLinks = hasLinkifiedText(excerpt);
+  const meta = (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <time
+        className="text-sm leading-5 text-neutral-500"
+        dateTime={post.takenAt.toISOString()}
+      >
+        {formatArchiveTimestamp(post.takenAt)}
+      </time>
+      <span className="text-xs tracking-[0.2em] text-neutral-600">album</span>
+    </div>
+  );
+  const media = (
+    <div className="mt-3 grid grid-cols-[1fr_5.5rem] gap-2 sm:grid-cols-[1fr_7rem]">
+      <div className="relative overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950">
+        {coverImage ? (
+          <img
+            alt={post.title ?? "album cover"}
+            className="aspect-[4/5] w-full object-cover transition duration-300 group-hover:scale-[1.01]"
+            loading="lazy"
+            src={coverImage.url}
+          />
+        ) : (
+          <div className="aspect-[4/5]" />
+        )}
+        <span className="absolute bottom-2 right-2 rounded-full bg-black/75 px-2 py-1 text-xs text-neutral-200">
+          {post.imageCount} foto{post.imageCount === 1 ? "" : "s"}
+        </span>
+      </div>
+
+      <div className="grid grid-rows-3 gap-2">
+        {previewImages.length > 0
+          ? previewImages.map((image, index) => (
+              <div
+                className="overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950"
+                key={image.id}
+              >
+                <img
+                  alt={`${post.title ?? "album"} preview ${index + 1}`}
+                  className="aspect-square h-full w-full object-cover"
+                  loading="lazy"
+                  src={image.url}
+                />
+              </div>
+            ))
+          : [0, 1, 2].map((index) => (
+              <div
+                className="rounded-xl border border-neutral-900 bg-neutral-950"
+                key={index}
+              />
+            ))}
+      </div>
+    </div>
+  );
+  const details = (
+    <div className="mt-3 space-y-1">
+      <h2 className="text-lg font-semibold leading-6 text-white">
+        {post.title ?? "album"}
+      </h2>
+      {excerpt ? (
+        <p className="whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+          <LinkifiedText text={excerpt} />
+        </p>
+      ) : null}
+      <span className="inline-flex rounded-full px-0 py-1 text-sm text-[#ff003c] transition group-hover:text-[#ff4d75]">
+        ver album
+      </span>
+    </div>
+  );
+
+  if (hasDescriptionLinks) {
+    return (
+      <div className="group">
+        <Link className="block" href={href}>
+          {meta}
+          {media}
+        </Link>
+        <div className="mt-3 space-y-1">
+          <Link className="block" href={href}>
+            <h2 className="text-lg font-semibold leading-6 text-white">
+              {post.title ?? "album"}
+            </h2>
+          </Link>
+          {excerpt ? (
+            <p className="whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+              <LinkifiedText text={excerpt} />
+            </p>
+          ) : null}
+          <Link
+            className="inline-flex rounded-full px-0 py-1 text-sm text-[#ff003c] transition hover:text-[#ff4d75]"
+            href={href}
+          >
+            ver album
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <Link className="group block" href={`${ARCHIVE_PATH}/album/${post.id}`}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <time
-          className="text-sm leading-5 text-neutral-500"
-          dateTime={post.takenAt.toISOString()}
-        >
-          {formatArchiveTimestamp(post.takenAt)}
-        </time>
-        <span className="text-xs uppercase tracking-[0.2em] text-neutral-600">
-          album
-        </span>
-      </div>
-
-      <div className="mt-3 grid grid-cols-[1fr_5.5rem] gap-2 sm:grid-cols-[1fr_7rem]">
-        <div className="relative overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950">
-          {coverImage ? (
-            <img
-              alt={post.title ?? "album cover"}
-              className="aspect-[4/5] w-full object-cover transition duration-300 group-hover:scale-[1.01]"
-              loading="lazy"
-              src={coverImage.url}
-            />
-          ) : (
-            <div className="aspect-[4/5]" />
-          )}
-          <span className="absolute bottom-2 right-2 rounded-full bg-black/75 px-2 py-1 text-xs text-neutral-200">
-            {post.imageCount} foto{post.imageCount === 1 ? "" : "s"}
-          </span>
-        </div>
-
-        <div className="grid grid-rows-3 gap-2">
-          {previewImages.length > 0
-            ? previewImages.map((image, index) => (
-                <div
-                  className="overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950"
-                  key={image.id}
-                >
-                  <img
-                    alt={`${post.title ?? "album"} preview ${index + 1}`}
-                    className="aspect-square h-full w-full object-cover"
-                    loading="lazy"
-                    src={image.url}
-                  />
-                </div>
-              ))
-            : [0, 1, 2].map((index) => (
-                <div
-                  className="rounded-xl border border-neutral-900 bg-neutral-950"
-                  key={index}
-                />
-              ))}
-        </div>
-      </div>
-
-      <div className="mt-3 space-y-1">
-        <h2 className="text-lg font-semibold leading-6 text-white">
-          {post.title ?? "album"}
-        </h2>
-        {post.description ? (
-          <p className="whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
-            {getExcerpt(post.description)}
-          </p>
-        ) : null}
-        <span className="inline-flex rounded-full px-0 py-1 text-sm text-[#ff003c] transition group-hover:text-[#ff4d75]">
-          ver album
-        </span>
-      </div>
+    <Link className="group block" href={href}>
+      {meta}
+      {media}
+      {details}
     </Link>
   );
 }
@@ -199,13 +239,17 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
                           }))}
                         />
 
-                        {post.description ? (
+                        {post.description && hasLinkifiedText(post.description) ? (
+                          <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+                            <LinkifiedText text={post.description} />
+                          </p>
+                        ) : post.description ? (
                           <Link
                             className="mt-3 block"
                             href={`${ARCHIVE_PATH}/${post.id}`}
                           >
                             <p className="whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
-                              {post.description}
+                              <LinkifiedText text={post.description} />
                             </p>
                           </Link>
                         ) : null}

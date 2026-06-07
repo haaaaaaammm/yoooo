@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRef, useState, type MouseEvent, type TouchEvent } from "react";
 
+import PhotoLightbox from "./photo-lightbox";
+
 type ArchiveCarouselImage = {
   id: string;
   url: string;
@@ -10,16 +12,19 @@ type ArchiveCarouselImage = {
 
 type ArchiveCarouselProps = {
   description: string;
+  enableLightbox?: boolean;
   href?: string;
   images: ArchiveCarouselImage[];
 };
 
 export default function ArchiveCarousel({
   description,
+  enableLightbox = false,
   href,
   images,
 }: ArchiveCarouselProps) {
   const [index, setIndex] = useState(0);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const swipeLastRef = useRef<{ x: number; y: number } | null>(null);
   const suppressClickRef = useRef(false);
@@ -117,6 +122,15 @@ export default function ArchiveCarousel({
     event.stopPropagation();
   }
 
+  function openLightbox() {
+    // A swipe just changed the image; don't also open the viewer on that tap.
+    if (suppressClickRef.current) {
+      return;
+    }
+
+    setLightboxIndex(index);
+  }
+
   return (
     <div className="mt-3">
       <div className="relative overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950">
@@ -140,6 +154,20 @@ export default function ArchiveCarousel({
                 src={currentImage.url}
               />
             </Link>
+          ) : enableLightbox ? (
+            <button
+              aria-label="Ver foto en grande"
+              className="block h-full w-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/40"
+              onClick={openLightbox}
+              type="button"
+            >
+              <img
+                alt={description || `archive image ${index + 1}`}
+                className="h-full w-full object-contain"
+                draggable={false}
+                src={currentImage.url}
+              />
+            </button>
           ) : (
             <img
               alt={description || `archive image ${index + 1}`}
@@ -197,6 +225,21 @@ export default function ArchiveCarousel({
             />
           ))}
         </div>
+      ) : null}
+
+      {enableLightbox ? (
+        <PhotoLightbox
+          alt={(currentIndex) =>
+            description || `archive image ${currentIndex + 1}`
+          }
+          images={images}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={(nextIndex) => {
+            setLightboxIndex(nextIndex);
+            setIndex(nextIndex);
+          }}
+        />
       ) : null}
     </div>
   );
