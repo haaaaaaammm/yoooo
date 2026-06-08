@@ -359,6 +359,13 @@ export async function updateProfileImageAction(
       },
     });
   } catch {
+    // The settings row was not updated, so the just-uploaded object is orphaned.
+    try {
+      await deleteR2Object(uploadedImage.key);
+    } catch {
+      // Best-effort cleanup; never mask the original save error.
+    }
+
     return { ok: false, message: "No se pudo guardar la foto." };
   }
 
@@ -611,8 +618,10 @@ export async function uploadSingleArchiveImageAction(
     };
   }
 
+  let image: Awaited<ReturnType<typeof prisma.archiveImage.create>>;
+
   try {
-    const image = await prisma.archiveImage.create({
+    image = await prisma.archiveImage.create({
       data: {
         key: uploadedImage.key,
         order: imageOrder,
@@ -620,24 +629,9 @@ export async function uploadSingleArchiveImageAction(
         url: uploadedImage.url,
       },
     });
-
-    if (post.kind === ARCHIVE_ALBUM_KIND && !post.coverImageId) {
-      await prisma.archivePost.update({
-        data: { coverImageId: image.id },
-        where: { id: postId },
-      });
-    }
-
-    revalidateArchiveAdmin(postId);
-
-    return {
-      ok: true,
-      image: serializeArchiveImage(image),
-      images: shouldReturnImages
-        ? await getOrderedArchiveImages(postId)
-        : undefined,
-    };
   } catch {
+    // The DB row was not created, so the just-uploaded R2 object is orphaned
+    // and safe to remove.
     await cleanupUploadedImages([uploadedImage.key]);
 
     return {
@@ -645,6 +639,30 @@ export async function uploadSingleArchiveImageAction(
       message: `${file.name}: No se pudo guardar la imagen.`,
     };
   }
+
+  // Setting the album cover is best-effort: if it fails the image row is still
+  // valid and cover resolution falls back to the first image everywhere, so we
+  // must NOT delete the just-saved R2 object here.
+  if (post.kind === ARCHIVE_ALBUM_KIND && !post.coverImageId) {
+    try {
+      await prisma.archivePost.update({
+        data: { coverImageId: image.id },
+        where: { id: postId },
+      });
+    } catch {
+      // Leave the image intact; the first image will be used as the cover.
+    }
+  }
+
+  revalidateArchiveAdmin(postId);
+
+  return {
+    ok: true,
+    image: serializeArchiveImage(image),
+    images: shouldReturnImages
+      ? await getOrderedArchiveImages(postId)
+      : undefined,
+  };
 }
 
 export async function getArchiveImagesAction(
