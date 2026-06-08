@@ -5,7 +5,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import NumberedPagination from "@/app/_components/numbered-pagination";
-import { getArchivePostsPage } from "@/lib/archive-posts";
+import { getAdminArchivePostsPage } from "@/lib/archive-posts";
 import { getAdminAuthStatus, isAdminAuthenticated } from "@/lib/auth";
 import { getPoemarioPostsPage } from "@/lib/poemario-posts";
 import {
@@ -171,7 +171,7 @@ export default async function Home({ searchParams }: AdminPageProps) {
   let pageContent: ReactNode;
 
   if (mode === "archive") {
-    const { posts: archivePosts, totalPages } = await getArchivePostsPage(page);
+    const { posts: archivePosts, totalPages } = await getAdminArchivePostsPage(page);
 
     // Out-of-range page (e.g. posts were deleted): send to the last valid page
     // so the URL, content, and highlighted page number stay in sync.

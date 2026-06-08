@@ -154,6 +154,7 @@ function ArchivePostManager({
 }) {
   const addImagesFormRef = useRef<HTMLFormElement>(null);
   const addImagesInputRef = useRef<HTMLInputElement>(null);
+  const jumpToImageInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { clearNotice, notice, showNotice } = useAutoDismissNotice();
   const isAlbum = post.kind === ARCHIVE_ALBUM_KIND;
@@ -177,17 +178,24 @@ function ArchivePostManager({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [jumpToImageNumber, setJumpToImageNumber] = useState("");
   const [pendingImageId, setPendingImageId] = useState<string | null>(null);
   const [takenAt, setTakenAt] = useState(post.takenAt);
   const [title, setTitle] = useState(post.title ?? "");
+  const imageItemRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const addImageCount = addImageQueue.length;
   const coverImage =
     images.find((image) => image.id === coverImageId) ??
     post.coverImage ??
     images[0] ??
     null;
-  const visibleImages = isAlbum ? images.slice(0, 24) : images;
+  const visibleImages = images;
   const hasHiddenAlbumImages = isAlbum && imageCount > images.length;
+  const coverImageIndex = images.findIndex((image) => image.id === coverImageId);
+  const coverLabel =
+    coverImageIndex >= 0
+      ? `portada #${images[coverImageIndex].order + 1}`
+      : null;
   const visibleAddImageQueue = isAlbum
     ? addImageQueue.slice(0, 12)
     : addImageQueue;
@@ -349,7 +357,7 @@ function ArchivePostManager({
             ...uploadedImages.filter((image) => !currentIds.has(image.id)),
           ].sort((left, right) => left.order - right.order);
 
-          return isAlbum ? nextImages.slice(0, 24) : nextImages;
+          return nextImages;
         });
         setImageCount((current) => current + uploadedImages.length);
       }
@@ -412,7 +420,6 @@ function ArchivePostManager({
       }
 
       showNotice("imagen quitada");
-      router.refresh();
     } catch {
       setError("No se pudo quitar la imagen.");
     } finally {
@@ -504,6 +511,33 @@ function ArchivePostManager({
     }
   }
 
+  function jumpToImage() {
+    const imageNumber = Number(
+      jumpToImageInputRef.current?.value ?? jumpToImageNumber
+    );
+
+    if (
+      !Number.isSafeInteger(imageNumber) ||
+      imageNumber < 1 ||
+      imageNumber > images.length
+    ) {
+      setError(`Elige un numero entre 1 y ${images.length}.`);
+      return;
+    }
+
+    const targetImage = images[imageNumber - 1];
+
+    if (!targetImage) {
+      return;
+    }
+
+    setError(null);
+    imageItemRefs.current[targetImage.id]?.scrollIntoView({
+      behavior: "auto",
+      block: "center",
+    });
+  }
+
   async function changeCover(imageId: string) {
     setPendingImageId(imageId);
     setError(null);
@@ -519,7 +553,6 @@ function ArchivePostManager({
 
       setCoverImageId(result.coverImageId ?? imageId);
       showNotice("portada actualizada");
-      router.refresh();
     } catch {
       setError("No se pudo cambiar la portada.");
     } finally {
@@ -715,89 +748,190 @@ function ArchivePostManager({
           </div>
         ) : null}
 
-        <SortableImageGrid
-          className="mt-4"
-          disabled={pendingImageId !== null || isAlbum}
-          items={visibleImages}
-          onReorder={reorderImages}
-          renderItem={(image, index) => (
-            <>
-              <div className="aspect-square">
-                <img
-                  alt={`archive image ${index + 1}`}
-                  className="h-full w-full object-cover"
-                  src={image.url}
-                />
-              </div>
-              <div className="space-y-2 p-2">
-                <p className="text-xs text-neutral-500">
-                  imagen {image.order + 1}
-                  {image.id === coverImageId ? " / portada" : ""}
-                </p>
-                <div
-                  className={
-                    isAlbum ? "grid grid-cols-2 gap-1" : "grid grid-cols-3 gap-1"
-                  }
-                >
-                  {isAlbum ? (
+        {isAlbum ? (
+          <div
+            className="mt-4 overflow-hidden rounded-2xl border border-neutral-800 bg-black"
+            data-archive-album-manager={post.id}
+          >
+            <div className="border-b border-neutral-800 bg-black/95 px-3 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm text-neutral-300">
+                    {images.length === imageCount
+                      ? `${imageCount} foto${imageCount === 1 ? "" : "s"}`
+                      : `mostrando ${images.length} de ${imageCount} fotos`}
+                  </p>
+                  <p className="mt-1 text-xs text-neutral-500">
+                    {coverLabel ? `${coverLabel} / ` : ""}
+                    scroll para administrar todas
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {hasHiddenAlbumImages ? (
                     <button
-                      className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
-                      disabled={pendingImageId !== null}
-                      onClick={() => void changeCover(image.id)}
+                      className="rounded-full px-3 py-1.5 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 focus:outline-none focus-visible:bg-[#ff003c]/10 disabled:text-neutral-500 disabled:hover:bg-transparent"
+                      disabled={isLoadingAllImages}
+                      onClick={loadAllImages}
                       type="button"
                     >
-                      portada
+                      {isLoadingAllImages ? "cargando" : "cargar todas"}
                     </button>
-                  ) : (
-                    <>
-                      <button
-                        className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
-                        disabled={index === 0 || pendingImageId !== null}
-                        onClick={() => reorderImages(index, index - 1)}
-                        type="button"
-                      >
-                        &lt;
-                      </button>
-                      <button
-                        className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
-                        disabled={
-                          index === images.length - 1 || pendingImageId !== null
+                  ) : null}
+                  {images.length > 0 ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        aria-label="Ir a imagen"
+                        className="h-8 w-20 rounded-full border border-neutral-800 bg-black px-3 text-xs text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500/40"
+                        max={images.length}
+                        min={1}
+                        onChange={(event) =>
+                          setJumpToImageNumber(event.target.value)
                         }
-                        onClick={() => reorderImages(index, index + 1)}
+                        placeholder="#"
+                        ref={jumpToImageInputRef}
+                        type="number"
+                        value={jumpToImageNumber}
+                      />
+                      <button
+                        className="rounded-full px-3 py-1.5 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 focus:outline-none focus-visible:bg-[#ff003c]/10"
+                        onClick={jumpToImage}
                         type="button"
                       >
-                        &gt;
+                        ir
                       </button>
-                    </>
-                  )}
-                  <button
-                    className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:cursor-not-allowed disabled:text-neutral-500 disabled:hover:bg-transparent"
-                    disabled={pendingImageId !== null}
-                    onClick={() => removeImage(image.id)}
-                    type="button"
-                  >
-                    {pendingImageId === image.id ? "..." : "quitar"}
-                  </button>
+                    </div>
+                  ) : null}
                 </div>
               </div>
-            </>
-          )}
-        />
+            </div>
 
-        {hasHiddenAlbumImages ? (
-          <div className="mt-3 flex justify-center">
-            <button
-              className="rounded-full px-4 py-2 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-500 disabled:hover:bg-transparent"
-              disabled={isLoadingAllImages}
-              onClick={loadAllImages}
-              type="button"
-            >
-              {isLoadingAllImages
-                ? "cargando"
-                : `cargar ${imageCount - images.length} mas`}
-            </button>
+            <div className="max-h-[30rem] overflow-y-auto overscroll-contain p-2 sm:max-h-[36rem]">
+              {images.length === 0 ? (
+                <p className="px-3 py-10 text-center text-sm leading-6 text-neutral-500">
+                  este album no tiene imagenes
+                </p>
+              ) : (
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                  {visibleImages.map((image, index) => (
+                    <div
+                      className={
+                        image.id === coverImageId
+                          ? "overflow-hidden rounded-xl border border-[#ff003c] bg-neutral-950"
+                          : "overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950"
+                      }
+                      data-archive-image-number={image.order + 1}
+                      key={image.id}
+                      ref={(node) => {
+                        if (node) {
+                          imageItemRefs.current[image.id] = node;
+                        } else {
+                          delete imageItemRefs.current[image.id];
+                        }
+                      }}
+                    >
+                      <div className="relative aspect-square">
+                        <img
+                          alt={`album image ${image.order + 1}`}
+                          className="h-full w-full object-cover"
+                          loading={index < 12 ? "eager" : "lazy"}
+                          src={image.url}
+                        />
+                        <span className="absolute left-1.5 top-1.5 rounded-full bg-black/75 px-1.5 py-0.5 text-[11px] leading-none text-neutral-200">
+                          #{image.order + 1}
+                        </span>
+                        {image.id === coverImageId ? (
+                          <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/75 px-1.5 py-0.5 text-[11px] leading-none text-[#ff003c]">
+                            portada
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="grid grid-cols-2 gap-1 p-1.5">
+                        <a
+                          className="rounded-full px-2 py-1.5 text-center text-[11px] leading-none text-[#ff003c] transition hover:bg-[#ff003c]/10 focus:outline-none focus-visible:bg-[#ff003c]/10"
+                          href={image.url}
+                          rel="noopener noreferrer"
+                          target="_blank"
+                        >
+                          ver
+                        </a>
+                        <button
+                          className="rounded-full px-2 py-1.5 text-[11px] leading-none text-[#ff003c] transition hover:bg-[#ff003c]/10 focus:outline-none focus-visible:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
+                          disabled={
+                            pendingImageId !== null || image.id === coverImageId
+                          }
+                          onClick={() => void changeCover(image.id)}
+                          type="button"
+                        >
+                          portada
+                        </button>
+                        <button
+                          className="col-span-2 rounded-full px-2 py-1.5 text-[11px] leading-none text-[#ff003c] transition hover:bg-[#ff003c]/10 focus:outline-none focus-visible:bg-[#ff003c]/10 disabled:cursor-not-allowed disabled:text-neutral-500 disabled:hover:bg-transparent"
+                          disabled={pendingImageId !== null}
+                          onClick={() => removeImage(image.id)}
+                          type="button"
+                        >
+                          {pendingImageId === image.id ? "..." : "quitar"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        ) : null}
+        ) : (
+          <SortableImageGrid
+            className="mt-4"
+            disabled={pendingImageId !== null}
+            items={visibleImages}
+            onReorder={reorderImages}
+            renderItem={(image, index) => (
+              <>
+                <div className="aspect-square">
+                  <img
+                    alt={`archive image ${index + 1}`}
+                    className="h-full w-full object-cover"
+                    src={image.url}
+                  />
+                </div>
+                <div className="space-y-2 p-2">
+                  <p className="text-xs text-neutral-500">
+                    imagen {image.order + 1}
+                    {image.id === coverImageId ? " / portada" : ""}
+                  </p>
+                  <div className="grid grid-cols-3 gap-1">
+                    <button
+                      className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
+                      disabled={index === 0 || pendingImageId !== null}
+                      onClick={() => reorderImages(index, index - 1)}
+                      type="button"
+                    >
+                      &lt;
+                    </button>
+                    <button
+                      className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-700 disabled:hover:bg-transparent"
+                      disabled={
+                        index === images.length - 1 || pendingImageId !== null
+                      }
+                      onClick={() => reorderImages(index, index + 1)}
+                      type="button"
+                    >
+                      &gt;
+                    </button>
+                    <button
+                      className="rounded-full px-2 py-2 text-xs text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:cursor-not-allowed disabled:text-neutral-500 disabled:hover:bg-transparent"
+                      disabled={pendingImageId !== null}
+                      onClick={() => removeImage(image.id)}
+                      type="button"
+                    >
+                      {pendingImageId === image.id ? "..." : "quitar"}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          />
+        )}
 
         <form
           className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-neutral-900 pt-3"

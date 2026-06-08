@@ -62,6 +62,29 @@ export async function getArchivePostsPage(page: number) {
   };
 }
 
+export async function getAdminArchivePostsPage(page: number) {
+  const prisma = getPrisma();
+  const [totalPosts, posts] = await Promise.all([
+    prisma.archivePost.count(),
+    prisma.archivePost.findMany({
+      include: archiveFullPostInclude,
+      orderBy: { takenAt: "desc" },
+      skip: (page - 1) * ARCHIVE_POSTS_PER_PAGE,
+      take: ARCHIVE_POSTS_PER_PAGE,
+    }),
+  ]);
+
+  return {
+    posts: posts.map((post) => ({
+      ...post,
+      coverImage: post.coverImage ?? post.images[0] ?? null,
+      imageCount: post._count.images,
+    })),
+    totalPages: Math.ceil(totalPosts / ARCHIVE_POSTS_PER_PAGE),
+    totalPosts,
+  };
+}
+
 export async function getArchivePostById(id: string) {
   const postId = id.trim();
 
