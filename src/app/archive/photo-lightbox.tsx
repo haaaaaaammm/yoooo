@@ -16,7 +16,9 @@ type PhotoLightboxProps = {
 };
 
 const controlClassName =
-  "flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-lg text-white transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50";
+  "flex h-10 w-10 items-center justify-center rounded-full border border-neutral-800 bg-black/70 text-lg leading-none text-[#ff003c] transition hover:bg-[#ff003c]/10 hover:text-[#ff4d75] focus:outline-none focus-visible:border-neutral-500 focus-visible:bg-[#ff003c]/10";
+const counterClassName =
+  "rounded-full border border-neutral-800 bg-black/70 px-3 py-2 text-sm tabular-nums text-neutral-500";
 
 export default function PhotoLightbox({
   alt,
@@ -176,7 +178,7 @@ export default function PhotoLightbox({
       role="dialog"
     >
       <div className="flex flex-none items-center justify-between gap-3 px-4 py-3">
-        <span className="text-sm tabular-nums text-neutral-300">
+        <span className={counterClassName}>
           {index + 1} / {total}
         </span>
         <button

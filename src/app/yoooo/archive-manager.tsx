@@ -583,7 +583,7 @@ function ArchivePostManager({
                   />
                 ) : null}
                 <div className="min-w-0">
-                  <p className="text-xs uppercase tracking-[0.2em] text-neutral-600">
+                  <p className="text-sm text-neutral-500">
                     album
                   </p>
                   <h2 className="mt-1 truncate text-lg font-semibold leading-6 text-white">

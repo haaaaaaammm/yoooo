@@ -18,7 +18,7 @@ export default function AlbumPhotoGrid({ images, title }: AlbumPhotoGridProps) {
         {images.map((image, index) => (
           <button
             aria-label={`Ver foto ${index + 1} de ${title}`}
-            className="group block overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+            className="group block overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 transition focus:outline-none focus-visible:border-neutral-500 focus-visible:bg-[#ff003c]/10"
             key={image.id}
             onClick={() => setOpenIndex(index)}
             type="button"

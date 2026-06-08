@@ -157,7 +157,7 @@ export default function ArchiveCarousel({
           ) : enableLightbox ? (
             <button
               aria-label="Ver foto en grande"
-              className="block h-full w-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/40"
+              className="block h-full w-full cursor-pointer focus:outline-none focus-visible:bg-[#ff003c]/10"
               onClick={openLightbox}
               type="button"
             >

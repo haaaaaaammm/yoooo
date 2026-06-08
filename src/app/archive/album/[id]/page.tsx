@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import LinkifiedText from "@/app/_components/linkified-text";
+import NumberedPagination from "@/app/_components/numbered-pagination";
 import { ARCHIVE_ALBUM_KIND } from "@/lib/archive";
 import {
   formatArchiveTimestamp,
@@ -29,56 +30,6 @@ function getExcerpt(value: string, maxLength = 160) {
   }
 
   return `${excerpt.slice(0, maxLength - 1).trim()}...`;
-}
-
-function albumPageHref(postId: string, page: number) {
-  return `${ARCHIVE_PATH}/album/${postId}?page=${page}`;
-}
-
-function AlbumPagination({
-  page,
-  postId,
-  totalPages,
-}: {
-  page: number;
-  postId: string;
-  totalPages: number;
-}) {
-  if (totalPages <= 1) {
-    return null;
-  }
-
-  const navLinkClassName =
-    "rounded-full px-4 py-2 text-sm text-neutral-500 transition hover:bg-[#ff003c]/10 hover:text-[#ff003c]";
-
-  return (
-    <nav
-      aria-label="Paginacion del album"
-      className="mt-6 flex flex-wrap items-center justify-center gap-3 border-t border-neutral-900 pt-4"
-    >
-      {page > 1 ? (
-        <Link
-          aria-label="Pagina anterior"
-          className={navLinkClassName}
-          href={albumPageHref(postId, page - 1)}
-        >
-          {"<"}
-        </Link>
-      ) : null}
-      <span className="text-sm tabular-nums text-neutral-500">
-        {page} / {totalPages}
-      </span>
-      {page < totalPages ? (
-        <Link
-          aria-label="Pagina siguiente"
-          className={navLinkClassName}
-          href={albumPageHref(postId, page + 1)}
-        >
-          {">"}
-        </Link>
-      ) : null}
-    </nav>
-  );
 }
 
 export async function generateMetadata({
@@ -140,7 +91,7 @@ export default async function ArchiveAlbumPage({
   // Out-of-range page (e.g. photos were removed): send to the last valid page so
   // the URL and rendered photos stay in sync.
   if (requestedPage > album.totalPages) {
-    redirect(albumPageHref(album.post.id, album.totalPages));
+    redirect(`${ARCHIVE_PATH}/album/${album.post.id}?page=${album.totalPages}`);
   }
 
   const { coverImage, images, page, post, totalImages, totalPages } = album;
@@ -179,9 +130,7 @@ export default async function ArchiveAlbumPage({
             >
               {formatArchiveTimestamp(post.takenAt)}
             </time>
-            <span className="text-xs tracking-[0.2em] text-neutral-600">
-              album
-            </span>
+            <span className="text-sm text-neutral-500">album</span>
           </div>
 
           <h1 className="mt-3 text-2xl font-semibold leading-8 text-white">
@@ -214,9 +163,9 @@ export default async function ArchiveAlbumPage({
             title={post.title ?? "album"}
           />
 
-          <AlbumPagination
+          <NumberedPagination
+            basePath={`${ARCHIVE_PATH}/album/${post.id}`}
             page={page}
-            postId={post.id}
             totalPages={totalPages}
           />
         </article>

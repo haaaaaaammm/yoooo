@@ -68,7 +68,7 @@ function ArchiveAlbumCard({ post }: { post: ArchiveListPost }) {
       >
         {formatArchiveTimestamp(post.takenAt)}
       </time>
-      <span className="text-xs tracking-[0.2em] text-neutral-600">album</span>
+      <span className="text-sm text-neutral-500">album</span>
     </div>
   );
   const media = (

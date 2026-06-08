@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import FeedPagination from "@/app/_components/feed-pagination";
+import NumberedPagination from "@/app/_components/numbered-pagination";
 import { getArchivePostsPage } from "@/lib/archive-posts";
 import { getAdminAuthStatus, isAdminAuthenticated } from "@/lib/auth";
 import { getPoemarioPostsPage } from "@/lib/poemario-posts";
@@ -211,7 +211,7 @@ export default async function Home({ searchParams }: AdminPageProps) {
     );
   } else {
     const { posts, totalPosts } = await getPoemarioPostsPage(page);
-    const hasNextPage = page * POSTS_PER_PAGE < totalPosts;
+    const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
 
     pageContent = (
       <>
@@ -239,10 +239,10 @@ export default async function Home({ searchParams }: AdminPageProps) {
               ))}
             </ol>
           )}
-          <FeedPagination
+          <NumberedPagination
             basePath={ADMIN_PATH}
-            hasNextPage={hasNextPage}
             page={page}
+            totalPages={totalPages}
           />
         </section>
       </>
