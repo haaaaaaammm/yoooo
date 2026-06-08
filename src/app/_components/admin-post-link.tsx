@@ -3,7 +3,13 @@ import Link from "next/link";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { ADMIN_PATH } from "@/lib/posts";
 
-export default async function AdminPostLink() {
+type AdminPostLinkProps = {
+  href?: string;
+};
+
+export default async function AdminPostLink({
+  href = ADMIN_PATH,
+}: AdminPostLinkProps) {
   const isAuthenticated = await isAdminAuthenticated();
 
   if (!isAuthenticated) {
@@ -13,7 +19,7 @@ export default async function AdminPostLink() {
   return (
     <Link
       className="flex flex-none items-center rounded-full px-4 py-2 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10"
-      href={ADMIN_PATH}
+      href={href}
     >
       post
     </Link>

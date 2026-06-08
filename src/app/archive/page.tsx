@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import AdminPostLink from "@/app/_components/admin-post-link";
 import LinkifiedText, {
   hasLinkifiedText,
 } from "@/app/_components/linkified-text";
@@ -11,7 +12,7 @@ import {
   formatArchiveTimestamp,
   getArchivePostsPage,
 } from "@/lib/archive-posts";
-import { ARCHIVE_PATH, parsePageParam } from "@/lib/posts";
+import { ADMIN_PATH, ARCHIVE_PATH, parsePageParam } from "@/lib/posts";
 
 import ArchiveCarousel from "./archive-carousel";
 
@@ -182,7 +183,7 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
     <main className="min-h-screen min-h-dvh overflow-x-hidden bg-black text-white">
       <div className="mx-auto min-h-screen min-h-dvh w-full max-w-2xl border-neutral-800 bg-black sm:border-x">
         <header className="sticky top-0 z-10 border-b border-neutral-800 bg-black/90 px-4 py-4 backdrop-blur">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
               <Link
                 aria-label="Inicio"
@@ -195,6 +196,7 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
                 archive
               </h1>
             </div>
+            <AdminPostLink href={`${ADMIN_PATH}?app=archive`} />
           </div>
         </header>
 

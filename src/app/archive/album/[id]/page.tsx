@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import AdminPostLink from "@/app/_components/admin-post-link";
 import LinkifiedText from "@/app/_components/linkified-text";
 import NumberedPagination from "@/app/_components/numbered-pagination";
 import { ARCHIVE_ALBUM_KIND } from "@/lib/archive";
@@ -10,7 +11,7 @@ import {
   getArchiveAlbumMeta,
   getArchiveAlbumPage,
 } from "@/lib/archive-posts";
-import { ARCHIVE_PATH, parsePageParam } from "@/lib/posts";
+import { ADMIN_PATH, ARCHIVE_PATH, parsePageParam } from "@/lib/posts";
 
 import CopyLinkButton from "../../[id]/copy-link-button";
 import AlbumPhotoGrid from "./album-photo-grid";
@@ -118,6 +119,7 @@ export default async function ArchiveAlbumPage({
             </div>
             <div className="flex flex-none items-center gap-2">
               <CopyLinkButton />
+              <AdminPostLink href={`${ADMIN_PATH}?app=archive`} />
             </div>
           </div>
         </header>
