@@ -148,14 +148,7 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
                           </p>
                         ) : null}
 
-                        <div className="mt-3">
-                          <Link
-                            className="inline-flex rounded-full px-0 py-1 text-sm text-[#ff003c] transition hover:text-[#ff4d75] focus:outline-none focus-visible:text-[#ff4d75]"
-                            href={`${ARCHIVE_PATH}/${post.id}`}
-                          >
-                            ver post
-                          </Link>
-                        </div>
+                        
                       </>
                     )}
                   </article>

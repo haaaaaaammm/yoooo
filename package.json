@@ -17,6 +17,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@vercel/analytics": "^2.0.1",
     "framer-motion": "^12.23.24",
     "next": "^15.5.9",
     "pg": "^8.21.0",
