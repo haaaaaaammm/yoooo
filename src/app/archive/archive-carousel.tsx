@@ -24,12 +24,16 @@ type ArchiveCarouselProps = {
   images: ArchiveCarouselImage[];
 };
 
+// Loading is tracked per image so navigation is never blocked by an in-flight
+// image and a slow/broken one can't trap the carousel on a single frame.
+type ImageStatus = "loading" | "loaded" | "error";
+
+// Safety net: if neither onLoad nor onError fires (stalled request), fall back
+// to the error state instead of an endless spinner.
+const IMAGE_LOAD_TIMEOUT_MS = 12000;
+
 function getImageKey(image: ArchiveCarouselImage, index: number) {
   return image.id || image.url || String(index);
-}
-
-function getLoadedImageKey(image: ArchiveCarouselImage) {
-  return image.url || image.id;
 }
 
 export default function ArchiveCarousel({
@@ -40,7 +44,9 @@ export default function ArchiveCarousel({
 }: ArchiveCarouselProps) {
   const [index, setIndex] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
+  const [imageStatus, setImageStatus] = useState<Record<string, ImageStatus>>(
+    {}
+  );
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const swipeLastRef = useRef<{ x: number; y: number } | null>(null);
   const suppressClickRef = useRef(false);
@@ -50,17 +56,35 @@ export default function ArchiveCarousel({
   const hasMultipleImages = images.length > 1;
   const currentImage = images[index];
   const currentImageKey = currentImage ? getImageKey(currentImage, index) : "";
-  const currentLoadedImageKey = currentImage
-    ? getLoadedImageKey(currentImage)
-    : "";
-  const isCurrentImageLoaded =
-    currentLoadedImageKey !== "" && loadedImages[currentLoadedImageKey] === true;
+  // Always derive what to show from the active image; an unseen image defaults
+  // to "loading" and we never fall back to the previously shown photo.
+  const activeStatus: ImageStatus = currentImageKey
+    ? imageStatus[currentImageKey] ?? "loading"
+    : "loading";
 
-  const markImageLoaded = useCallback((imageKey: string) => {
-    setLoadedImages((current) =>
-      current[imageKey] ? current : { ...current, [imageKey]: true }
-    );
-  }, []);
+  const markImageStatus = useCallback(
+    (imageKey: string, status: ImageStatus) => {
+      if (!imageKey) {
+        return;
+      }
+
+      setImageStatus((current) => {
+        const existing = current[imageKey];
+
+        if (existing === status) {
+          return current;
+        }
+
+        // A loaded image stays loaded so navigating back never flickers.
+        if (existing === "loaded" && status === "loading") {
+          return current;
+        }
+
+        return { ...current, [imageKey]: status };
+      });
+    },
+    []
+  );
 
   useEffect(() => {
     if (!hasMultipleImages || typeof window === "undefined") {
@@ -80,16 +104,17 @@ export default function ArchiveCarousel({
         return;
       }
 
-      const loadedImageKey = getLoadedImageKey(image);
+      const imageKey = getImageKey(image, adjacentIndex);
 
-      if (loadedImages[loadedImageKey]) {
+      if (imageStatus[imageKey] === "loaded") {
         return;
       }
 
       const preload = new window.Image();
 
-      preload.onload = () => markImageLoaded(loadedImageKey);
-      preload.onerror = () => markImageLoaded(loadedImageKey);
+      // Only promote to "loaded" on success; a preload failure is left for the
+      // visible <img> (and its timeout) to confirm, so we never error early.
+      preload.onload = () => markImageStatus(imageKey, "loaded");
       preload.src = image.url;
       preloadedImages.push(preload);
     });
@@ -100,7 +125,33 @@ export default function ArchiveCarousel({
         preload.onerror = null;
       });
     };
-  }, [hasMultipleImages, images, index, loadedImages, markImageLoaded]);
+  }, [hasMultipleImages, images, index, imageStatus, markImageStatus]);
+
+  // Keep the index valid if the image set shrinks.
+  useEffect(() => {
+    setIndex((current) =>
+      current > images.length - 1 ? Math.max(0, images.length - 1) : current
+    );
+  }, [images.length]);
+
+  // Per-image safety timeout: if the active image never reports load or error,
+  // surface the error state instead of an endless spinner. Resets whenever the
+  // active image changes or leaves "loading".
+  useEffect(() => {
+    if (
+      !currentImageKey ||
+      activeStatus !== "loading" ||
+      typeof window === "undefined"
+    ) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      markImageStatus(currentImageKey, "error");
+    }, IMAGE_LOAD_TIMEOUT_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [activeStatus, currentImageKey, markImageStatus]);
 
   if (!currentImage) {
     return null;
@@ -204,20 +255,25 @@ export default function ArchiveCarousel({
 
     return (
       <span className="relative block h-full w-full">
-        {!isCurrentImageLoaded ? (
+        {activeStatus === "loading" ? (
           <span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-neutral-950 text-sm text-neutral-500">
             cargando
+          </span>
+        ) : null}
+        {activeStatus === "error" ? (
+          <span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-neutral-950 px-4 text-center text-sm text-neutral-500">
+            no se pudo cargar
           </span>
         ) : null}
         <img
           alt={imageAlt}
           className={`h-full w-full object-contain ${
-            isCurrentImageLoaded ? "opacity-100" : "opacity-0"
+            activeStatus === "loaded" ? "opacity-100" : "opacity-0"
           }`}
           draggable={false}
           key={currentImageKey}
-          onError={() => markImageLoaded(currentLoadedImageKey)}
-          onLoad={() => markImageLoaded(currentLoadedImageKey)}
+          onError={() => markImageStatus(currentImageKey, "error")}
+          onLoad={() => markImageStatus(currentImageKey, "loaded")}
           src={currentImage.url}
         />
       </span>

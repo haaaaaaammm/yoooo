@@ -25,13 +25,19 @@ const controlClassName =
   "flex h-10 w-10 items-center justify-center rounded-full border border-neutral-800 bg-black/70 text-lg leading-none text-[#ff003c] transition hover:bg-[#ff003c]/10 hover:text-[#ff4d75] focus:outline-none focus-visible:border-neutral-500 focus-visible:bg-[#ff003c]/10";
 const counterClassName =
   "rounded-full border border-neutral-800 bg-black/70 px-3 py-2 text-sm tabular-nums text-neutral-500";
+const retryButtonClassName =
+  "rounded-full border border-neutral-800 bg-black/70 px-4 py-2 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10 hover:text-[#ff4d75] focus:outline-none focus-visible:border-neutral-500 focus-visible:bg-[#ff003c]/10";
+
+// Loading is tracked per image so navigation never waits on (or is blocked by)
+// another image's load, and a slow/broken image can't trap the viewer.
+type ImageStatus = "loading" | "loaded" | "error";
+
+// Safety net: if neither onLoad nor onError fires (stalled request), fall back
+// to the error/retry state instead of spinning forever.
+const IMAGE_LOAD_TIMEOUT_MS = 12000;
 
 function getImageKey(image: LightboxImage, index: number) {
   return image.id || image.url || String(index);
-}
-
-function getLoadedImageKey(image: LightboxImage) {
-  return image.url || image.id;
 }
 
 export default function PhotoLightbox({
@@ -43,24 +49,64 @@ export default function PhotoLightbox({
 }: PhotoLightboxProps) {
   const isOpen = index !== null;
   const total = images.length;
-  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
+  const [imageStatus, setImageStatus] = useState<Record<string, ImageStatus>>(
+    {}
+  );
+  const [attempt, setAttempt] = useState<Record<string, number>>({});
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const currentImage = index === null ? undefined : images[index];
   const currentImageKey =
     currentImage && index !== null ? getImageKey(currentImage, index) : "";
-  const currentLoadedImageKey = currentImage
-    ? getLoadedImageKey(currentImage)
+  // Always derive what to show from the active image. An unseen image defaults
+  // to "loading"; we never fall back to a previously shown photo.
+  const activeStatus: ImageStatus = currentImageKey
+    ? imageStatus[currentImageKey] ?? "loading"
+    : "loading";
+  // The remount key changes on retry so the browser re-requests a failed image.
+  const renderKey = currentImageKey
+    ? `${currentImageKey}#${attempt[currentImageKey] ?? 0}`
     : "";
-  const isCurrentImageLoaded =
-    currentLoadedImageKey !== "" && loadedImages[currentLoadedImageKey] === true;
 
-  const markImageLoaded = useCallback((imageKey: string) => {
-    setLoadedImages((current) =>
-      current[imageKey] ? current : { ...current, [imageKey]: true }
-    );
-  }, []);
+  const markImageStatus = useCallback(
+    (imageKey: string, status: ImageStatus) => {
+      if (!imageKey) {
+        return;
+      }
+
+      setImageStatus((current) => {
+        const existing = current[imageKey];
+
+        if (existing === status) {
+          return current;
+        }
+
+        // A loaded image stays loaded so navigating back to it never flickers.
+        if (existing === "loaded" && status === "loading") {
+          return current;
+        }
+
+        return { ...current, [imageKey]: status };
+      });
+    },
+    []
+  );
+
+  const retryImage = useCallback(
+    (imageKey: string) => {
+      if (!imageKey) {
+        return;
+      }
+
+      setAttempt((current) => ({
+        ...current,
+        [imageKey]: (current[imageKey] ?? 0) + 1,
+      }));
+      markImageStatus(imageKey, "loading");
+    },
+    [markImageStatus]
+  );
 
   const goPrev = useCallback(() => {
     if (index === null || total <= 1) {
@@ -96,16 +142,17 @@ export default function PhotoLightbox({
         return;
       }
 
-      const loadedImageKey = getLoadedImageKey(image);
+      const imageKey = getImageKey(image, adjacentIndex);
 
-      if (loadedImages[loadedImageKey]) {
+      if (imageStatus[imageKey] === "loaded") {
         return;
       }
 
       const preload = new window.Image();
 
-      preload.onload = () => markImageLoaded(loadedImageKey);
-      preload.onerror = () => markImageLoaded(loadedImageKey);
+      // Only promote to "loaded" on success; a preload failure is left for the
+      // visible <img> (and its timeout) to confirm, so we never error early.
+      preload.onload = () => markImageStatus(imageKey, "loaded");
       preload.src = image.url;
       preloadedImages.push(preload);
     });
@@ -116,7 +163,26 @@ export default function PhotoLightbox({
         preload.onerror = null;
       });
     };
-  }, [images, index, loadedImages, markImageLoaded, total]);
+  }, [images, index, imageStatus, markImageStatus, total]);
+
+  // Per-image safety timeout: if the active image never reports load or error
+  // (stalled request), surface the error/retry state instead of an endless
+  // spinner. Resets whenever the active image changes or leaves "loading".
+  useEffect(() => {
+    if (
+      !currentImageKey ||
+      activeStatus !== "loading" ||
+      typeof window === "undefined"
+    ) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      markImageStatus(currentImageKey, "error");
+    }, IMAGE_LOAD_TIMEOUT_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [activeStatus, currentImageKey, markImageStatus, renderKey]);
 
   // Esc closes, arrow keys navigate — only while the viewer is open.
   useEffect(() => {
@@ -281,21 +347,37 @@ export default function PhotoLightbox({
           </button>
         ) : null}
 
-        {!isCurrentImageLoaded ? (
+        {activeStatus === "loading" ? (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-neutral-500">
             cargando
+          </div>
+        ) : null}
+
+        {activeStatus === "error" ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center text-sm text-neutral-500">
+            <span>no se pudo cargar la foto</span>
+            <button
+              className={retryButtonClassName}
+              onClick={(event) => {
+                event.stopPropagation();
+                retryImage(currentImageKey);
+              }}
+              type="button"
+            >
+              reintentar
+            </button>
           </div>
         ) : null}
 
         <img
           alt={alt ? alt(index) : `foto ${index + 1}`}
           className={`max-h-full max-w-full object-contain ${
-            isCurrentImageLoaded ? "opacity-100" : "opacity-0"
+            activeStatus === "loaded" ? "opacity-100" : "opacity-0"
           }`}
-          key={currentImageKey}
+          key={renderKey}
           onClick={(event) => event.stopPropagation()}
-          onError={() => markImageLoaded(currentLoadedImageKey)}
-          onLoad={() => markImageLoaded(currentLoadedImageKey)}
+          onError={() => markImageStatus(currentImageKey, "error")}
+          onLoad={() => markImageStatus(currentImageKey, "loaded")}
           src={currentImage.url}
         />
 
