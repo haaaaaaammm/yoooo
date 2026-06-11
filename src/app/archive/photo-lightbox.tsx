@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, type TouchEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type TouchEvent,
+} from "react";
 
 export type LightboxImage = {
   id: string;
@@ -20,6 +26,14 @@ const controlClassName =
 const counterClassName =
   "rounded-full border border-neutral-800 bg-black/70 px-3 py-2 text-sm tabular-nums text-neutral-500";
 
+function getImageKey(image: LightboxImage, index: number) {
+  return image.id || image.url || String(index);
+}
+
+function getLoadedImageKey(image: LightboxImage) {
+  return image.url || image.id;
+}
+
 export default function PhotoLightbox({
   alt,
   images,
@@ -29,9 +43,24 @@ export default function PhotoLightbox({
 }: PhotoLightboxProps) {
   const isOpen = index !== null;
   const total = images.length;
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const currentImage = index === null ? undefined : images[index];
+  const currentImageKey =
+    currentImage && index !== null ? getImageKey(currentImage, index) : "";
+  const currentLoadedImageKey = currentImage
+    ? getLoadedImageKey(currentImage)
+    : "";
+  const isCurrentImageLoaded =
+    currentLoadedImageKey !== "" && loadedImages[currentLoadedImageKey] === true;
+
+  const markImageLoaded = useCallback((imageKey: string) => {
+    setLoadedImages((current) =>
+      current[imageKey] ? current : { ...current, [imageKey]: true }
+    );
+  }, []);
 
   const goPrev = useCallback(() => {
     if (index === null || total <= 1) {
@@ -48,6 +77,46 @@ export default function PhotoLightbox({
 
     onNavigate((index + 1) % total);
   }, [index, onNavigate, total]);
+
+  useEffect(() => {
+    if (index === null || total <= 1 || typeof window === "undefined") {
+      return;
+    }
+
+    const adjacentIndexes = new Set([
+      (index - 1 + total) % total,
+      (index + 1) % total,
+    ]);
+    const preloadedImages: HTMLImageElement[] = [];
+
+    adjacentIndexes.forEach((adjacentIndex) => {
+      const image = images[adjacentIndex];
+
+      if (!image) {
+        return;
+      }
+
+      const loadedImageKey = getLoadedImageKey(image);
+
+      if (loadedImages[loadedImageKey]) {
+        return;
+      }
+
+      const preload = new window.Image();
+
+      preload.onload = () => markImageLoaded(loadedImageKey);
+      preload.onerror = () => markImageLoaded(loadedImageKey);
+      preload.src = image.url;
+      preloadedImages.push(preload);
+    });
+
+    return () => {
+      preloadedImages.forEach((preload) => {
+        preload.onload = null;
+        preload.onerror = null;
+      });
+    };
+  }, [images, index, loadedImages, markImageLoaded, total]);
 
   // Esc closes, arrow keys navigate — only while the viewer is open.
   useEffect(() => {
@@ -133,8 +202,6 @@ export default function PhotoLightbox({
     return null;
   }
 
-  const currentImage = images[index];
-
   if (!currentImage) {
     return null;
   }
@@ -214,10 +281,21 @@ export default function PhotoLightbox({
           </button>
         ) : null}
 
+        {!isCurrentImageLoaded ? (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-neutral-500">
+            cargando
+          </div>
+        ) : null}
+
         <img
           alt={alt ? alt(index) : `foto ${index + 1}`}
-          className="max-h-full max-w-full object-contain"
+          className={`max-h-full max-w-full object-contain ${
+            isCurrentImageLoaded ? "opacity-100" : "opacity-0"
+          }`}
+          key={currentImageKey}
           onClick={(event) => event.stopPropagation()}
+          onError={() => markImageLoaded(currentLoadedImageKey)}
+          onLoad={() => markImageLoaded(currentLoadedImageKey)}
           src={currentImage.url}
         />
 

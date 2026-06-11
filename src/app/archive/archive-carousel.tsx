@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState, type MouseEvent, type TouchEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type TouchEvent,
+} from "react";
 
 import PhotoLightbox from "./photo-lightbox";
 
@@ -17,6 +24,14 @@ type ArchiveCarouselProps = {
   images: ArchiveCarouselImage[];
 };
 
+function getImageKey(image: ArchiveCarouselImage, index: number) {
+  return image.id || image.url || String(index);
+}
+
+function getLoadedImageKey(image: ArchiveCarouselImage) {
+  return image.url || image.id;
+}
+
 export default function ArchiveCarousel({
   description,
   enableLightbox = false,
@@ -25,6 +40,7 @@ export default function ArchiveCarousel({
 }: ArchiveCarouselProps) {
   const [index, setIndex] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const swipeLastRef = useRef<{ x: number; y: number } | null>(null);
   const suppressClickRef = useRef(false);
@@ -33,6 +49,58 @@ export default function ArchiveCarousel({
   );
   const hasMultipleImages = images.length > 1;
   const currentImage = images[index];
+  const currentImageKey = currentImage ? getImageKey(currentImage, index) : "";
+  const currentLoadedImageKey = currentImage
+    ? getLoadedImageKey(currentImage)
+    : "";
+  const isCurrentImageLoaded =
+    currentLoadedImageKey !== "" && loadedImages[currentLoadedImageKey] === true;
+
+  const markImageLoaded = useCallback((imageKey: string) => {
+    setLoadedImages((current) =>
+      current[imageKey] ? current : { ...current, [imageKey]: true }
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!hasMultipleImages || typeof window === "undefined") {
+      return;
+    }
+
+    const adjacentIndexes = new Set([
+      (index - 1 + images.length) % images.length,
+      (index + 1) % images.length,
+    ]);
+    const preloadedImages: HTMLImageElement[] = [];
+
+    adjacentIndexes.forEach((adjacentIndex) => {
+      const image = images[adjacentIndex];
+
+      if (!image) {
+        return;
+      }
+
+      const loadedImageKey = getLoadedImageKey(image);
+
+      if (loadedImages[loadedImageKey]) {
+        return;
+      }
+
+      const preload = new window.Image();
+
+      preload.onload = () => markImageLoaded(loadedImageKey);
+      preload.onerror = () => markImageLoaded(loadedImageKey);
+      preload.src = image.url;
+      preloadedImages.push(preload);
+    });
+
+    return () => {
+      preloadedImages.forEach((preload) => {
+        preload.onload = null;
+        preload.onerror = null;
+      });
+    };
+  }, [hasMultipleImages, images, index, loadedImages, markImageLoaded]);
 
   if (!currentImage) {
     return null;
@@ -131,6 +199,31 @@ export default function ArchiveCarousel({
     setLightboxIndex(index);
   }
 
+  function renderCurrentImage() {
+    const imageAlt = description || `archive image ${index + 1}`;
+
+    return (
+      <span className="relative block h-full w-full">
+        {!isCurrentImageLoaded ? (
+          <span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-neutral-950 text-sm text-neutral-500">
+            cargando
+          </span>
+        ) : null}
+        <img
+          alt={imageAlt}
+          className={`h-full w-full object-contain ${
+            isCurrentImageLoaded ? "opacity-100" : "opacity-0"
+          }`}
+          draggable={false}
+          key={currentImageKey}
+          onError={() => markImageLoaded(currentLoadedImageKey)}
+          onLoad={() => markImageLoaded(currentLoadedImageKey)}
+          src={currentImage.url}
+        />
+      </span>
+    );
+  }
+
   return (
     <div className="mt-3">
       <div className="relative overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950">
@@ -147,12 +240,7 @@ export default function ArchiveCarousel({
               href={href}
               onClick={handleLinkClick}
             >
-              <img
-                alt={description || `archive image ${index + 1}`}
-                className="h-full w-full object-contain"
-                draggable={false}
-                src={currentImage.url}
-              />
+              {renderCurrentImage()}
             </Link>
           ) : enableLightbox ? (
             <button
@@ -161,20 +249,10 @@ export default function ArchiveCarousel({
               onClick={openLightbox}
               type="button"
             >
-              <img
-                alt={description || `archive image ${index + 1}`}
-                className="h-full w-full object-contain"
-                draggable={false}
-                src={currentImage.url}
-              />
+              {renderCurrentImage()}
             </button>
           ) : (
-            <img
-              alt={description || `archive image ${index + 1}`}
-              className="h-full w-full object-contain"
-              draggable={false}
-              src={currentImage.url}
-            />
+            renderCurrentImage()
           )}
         </div>
 
