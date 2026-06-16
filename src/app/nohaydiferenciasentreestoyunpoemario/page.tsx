@@ -33,14 +33,22 @@ type PublicFeedPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
+function formatPostCount(count: number) {
+  const formattedCount = new Intl.NumberFormat("es-MX").format(count);
+
+  return `${formattedCount} ${count === 1 ? "post" : "posts"}`;
+}
+
 export default async function Page({ searchParams }: PublicFeedPageProps) {
   const params = (await searchParams) ?? {};
   const page = parsePageParam(params.page);
-  const [{ posts, totalPages }, profileImageSettings] = await Promise.all([
-    getPoemarioPostsPage(page),
-    getProfileImageSettings(),
-  ]);
+  const [{ posts, totalPages, totalPosts }, profileImageSettings] =
+    await Promise.all([
+      getPoemarioPostsPage(page),
+      getProfileImageSettings(),
+    ]);
   const profileImageUrl = profileImageSettings.profileImageUrl;
+  const postCountLabel = formatPostCount(totalPosts);
 
   // Out-of-range page (e.g. posts were deleted): send to the last valid page so
   // the URL, content, and highlighted page number stay in sync.
@@ -61,9 +69,14 @@ export default async function Page({ searchParams }: PublicFeedPageProps) {
               >
                 {"<"}
               </Link>
-              <h1 className="min-w-0 truncate text-xl font-semibold tracking-wide text-white">
-                yoooooooooooo
-              </h1>
+              <div className="min-w-0">
+                <h1 className="truncate text-xl font-semibold leading-6 tracking-wide text-white">
+                  yoooooooooooo
+                </h1>
+                <p className="truncate mt-2 text-[13px] leading-4 text-neutral-500">
+                  {postCountLabel}
+                </p>
+              </div>
             </div>
             <AdminPostLink />
           </div>
