@@ -1,16 +1,16 @@
-"use client";
+﻿"use client";
 
 import {
-  ARCHIVE_IMAGE_JPEG_QUALITY,
-  ARCHIVE_IMAGE_MAX_DIMENSION,
-  ARCHIVE_IMAGE_MAX_SIZE_BYTES,
-  ARCHIVE_ORIGINAL_IMAGE_MAX_SIZE_BYTES,
-  formatArchiveFileSize,
-  getArchiveImageFileInfo,
-  getArchiveImageUploadType,
-} from "@/lib/archive";
+  ARCHIVO_IMAGE_JPEG_QUALITY,
+  ARCHIVO_IMAGE_MAX_DIMENSION,
+  ARCHIVO_IMAGE_MAX_SIZE_BYTES,
+  ARCHIVO_ORIGINAL_IMAGE_MAX_SIZE_BYTES,
+  formatArchivoFileSize,
+  getArchivoImageFileInfo,
+  getArchivoImageUploadType,
+} from "@/lib/archivo";
 
-export type PreparedArchiveImageFile = {
+export type PreparedArchivoImageFile = {
   file: File;
   originalFile: File;
   wasCompressed: boolean;
@@ -31,15 +31,15 @@ function isDevelopment() {
   return process.env.NODE_ENV === "development";
 }
 
-function logArchiveFiles(context: string, stage: string, files: File[]) {
+function logArchivoFiles(context: string, stage: string, files: File[]) {
   if (!isDevelopment()) {
     return;
   }
 
   console.info(
-    `[archive-upload:${context}] ${stage}`,
+    `[archivo-upload:${context}] ${stage}`,
     files.map((file) => ({
-      extension: getArchiveImageFileInfo(file).extension,
+      extension: getArchivoImageFileInfo(file).extension,
       name: file.name,
       size: file.size,
       type: file.type,
@@ -52,7 +52,7 @@ function getSourceFileError(file: File) {
     return "Selecciona una imagen valida.";
   }
 
-  const uploadType = getArchiveImageUploadType(file);
+  const uploadType = getArchivoImageUploadType(file);
 
   if (!uploadType.ok) {
     switch (uploadType.reason) {
@@ -67,19 +67,19 @@ function getSourceFileError(file: File) {
     return "Usa imagenes JPG, PNG, WebP o GIF.";
   }
 
-  if (file.size > ARCHIVE_ORIGINAL_IMAGE_MAX_SIZE_BYTES) {
-    return `pesa ${formatArchiveFileSize(
+  if (file.size > ARCHIVO_ORIGINAL_IMAGE_MAX_SIZE_BYTES) {
+    return `pesa ${formatArchivoFileSize(
       file.size
-    )}; el maximo antes de procesar es ${formatArchiveFileSize(
-      ARCHIVE_ORIGINAL_IMAGE_MAX_SIZE_BYTES
+    )}; el maximo antes de procesar es ${formatArchivoFileSize(
+      ARCHIVO_ORIGINAL_IMAGE_MAX_SIZE_BYTES
     )}.`;
   }
 
-  if (uploadType.extension === "gif" && file.size > ARCHIVE_IMAGE_MAX_SIZE_BYTES) {
-    return `GIF pesa ${formatArchiveFileSize(
+  if (uploadType.extension === "gif" && file.size > ARCHIVO_IMAGE_MAX_SIZE_BYTES) {
+    return `GIF pesa ${formatArchivoFileSize(
       file.size
-    )}; debe pesar menos de ${formatArchiveFileSize(
-      ARCHIVE_IMAGE_MAX_SIZE_BYTES
+    )}; debe pesar menos de ${formatArchivoFileSize(
+      ARCHIVO_IMAGE_MAX_SIZE_BYTES
     )}.`;
   }
 
@@ -147,7 +147,7 @@ function canvasToBlob(
 }
 
 function compressedFileName(fileName: string) {
-  const baseName = fileName.replace(/\.[^.]+$/, "").trim() || "archive-image";
+  const baseName = fileName.replace(/\.[^.]+$/, "").trim() || "archivo-image";
 
   return `${baseName}.jpg`;
 }
@@ -158,11 +158,11 @@ async function compressImage(file: File) {
   try {
     const maxSourceSide = Math.max(decoded.width, decoded.height);
     const baseScale =
-      maxSourceSide > ARCHIVE_IMAGE_MAX_DIMENSION
-        ? ARCHIVE_IMAGE_MAX_DIMENSION / maxSourceSide
+      maxSourceSide > ARCHIVO_IMAGE_MAX_DIMENSION
+        ? ARCHIVO_IMAGE_MAX_DIMENSION / maxSourceSide
         : 1;
     const attempts = [
-      { quality: ARCHIVE_IMAGE_JPEG_QUALITY, scale: baseScale },
+      { quality: ARCHIVO_IMAGE_JPEG_QUALITY, scale: baseScale },
       { quality: 0.78, scale: baseScale },
       { quality: 0.72, scale: baseScale * 0.85 },
       { quality: 0.66, scale: baseScale * 0.7 },
@@ -186,7 +186,7 @@ async function compressImage(file: File) {
 
       const blob = await canvasToBlob(canvas, "image/jpeg", attempt.quality);
 
-      if (blob.size <= ARCHIVE_IMAGE_MAX_SIZE_BYTES) {
+      if (blob.size <= ARCHIVO_IMAGE_MAX_SIZE_BYTES) {
         return new File([blob], compressedFileName(file.name), {
           lastModified: file.lastModified,
           type: "image/jpeg",
@@ -200,7 +200,7 @@ async function compressImage(file: File) {
   }
 }
 
-async function prepareArchiveImageFile(file: File) {
+async function prepareArchivoImageFile(file: File) {
   const sourceError = getSourceFileError(file);
 
   if (sourceError) {
@@ -210,7 +210,7 @@ async function prepareArchiveImageFile(file: File) {
     };
   }
 
-  const uploadType = getArchiveImageUploadType(file);
+  const uploadType = getArchivoImageUploadType(file);
 
   if (!uploadType.ok) {
     return {
@@ -219,7 +219,7 @@ async function prepareArchiveImageFile(file: File) {
     };
   }
 
-  if (uploadType.extension === "gif" || file.size <= ARCHIVE_IMAGE_MAX_SIZE_BYTES) {
+  if (uploadType.extension === "gif" || file.size <= ARCHIVO_IMAGE_MAX_SIZE_BYTES) {
     return {
       error: null,
       prepared: {
@@ -234,10 +234,10 @@ async function prepareArchiveImageFile(file: File) {
     const compressed = await compressImage(file);
 
     if (isDevelopment()) {
-      console.info(`[archive-upload] compressed image`, {
-        from: formatArchiveFileSize(file.size),
+      console.info(`[archivo-upload] compressed image`, {
+        from: formatArchivoFileSize(file.size),
         name: file.name,
-        to: formatArchiveFileSize(compressed.size),
+        to: formatArchivoFileSize(compressed.size),
       });
     }
 
@@ -253,8 +253,8 @@ async function prepareArchiveImageFile(file: File) {
     return {
       error: formatFileError(
         file,
-        `no se pudo comprimir debajo de ${formatArchiveFileSize(
-          ARCHIVE_IMAGE_MAX_SIZE_BYTES
+        `no se pudo comprimir debajo de ${formatArchivoFileSize(
+          ARCHIVO_IMAGE_MAX_SIZE_BYTES
         )}.`
       ),
       prepared: null,
@@ -262,16 +262,16 @@ async function prepareArchiveImageFile(file: File) {
   }
 }
 
-export async function prepareArchiveImageFiles(
+export async function prepareArchivoImageFiles(
   files: File[],
   context: string
 ) {
-  logArchiveFiles(context, "selected", files);
+  logArchivoFiles(context, "selected", files);
 
-  const results: Awaited<ReturnType<typeof prepareArchiveImageFile>>[] = [];
+  const results: Awaited<ReturnType<typeof prepareArchivoImageFile>>[] = [];
 
   for (const file of files) {
-    results.push(await prepareArchiveImageFile(file));
+    results.push(await prepareArchivoImageFile(file));
     await new Promise((resolve) => setTimeout(resolve, 0));
   }
 
@@ -281,10 +281,10 @@ export async function prepareArchiveImageFiles(
   const preparedFiles = results
     .map((result) => result.prepared)
     .filter(
-      (prepared): prepared is PreparedArchiveImageFile => prepared !== null
+      (prepared): prepared is PreparedArchivoImageFile => prepared !== null
     );
 
-  logArchiveFiles(
+  logArchivoFiles(
     context,
     "prepared",
     preparedFiles.map((prepared) => prepared.file)

@@ -1,23 +1,23 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
 
 import {
-  ARCHIVE_ALBUM_KIND,
-  ARCHIVE_IMAGE_MAX_SIZE_BYTES,
-  ARCHIVE_POST_KIND,
-  formatArchiveFileSize,
-  getArchiveImageFileInfo,
-  parseArchiveTakenAt,
-} from "@/lib/archive";
+  ARCHIVO_ALBUM_KIND,
+  ARCHIVO_IMAGE_MAX_SIZE_BYTES,
+  ARCHIVO_POST_KIND,
+  formatArchivoFileSize,
+  getArchivoImageFileInfo,
+  parseArchivoTakenAt,
+} from "@/lib/archivo";
 import { isAdminAuthenticated, loginAdmin, logoutAdmin } from "@/lib/auth";
-import { ADMIN_PATH, ARCHIVE_PATH, PUBLIC_FEED_PATH } from "@/lib/posts";
+import { ADMIN_PATH, ARCHIVO_PATH, PUBLIC_FEED_PATH } from "@/lib/posts";
 import { getPrisma } from "@/lib/prisma";
 import {
   deleteR2Object,
-  uploadArchiveImageToR2,
+  uploadArchivoImageToR2,
   uploadProfileImageToR2,
   validateImageFile,
   validateProfileImageFile,
@@ -383,43 +383,43 @@ export async function updateProfileImageAction(
   return { ok: true, message: "foto actualizada" };
 }
 
-type ArchiveImageResult = {
+type ArchivoImageResult = {
   id: string;
   key: string;
   order: number;
   url: string;
 };
 
-type ArchiveMutationResult =
+type ArchivoMutationResult =
   | {
       ok: true;
       coverImageId?: string | null;
       description?: string;
-      image?: ArchiveImageResult;
-      images?: ArchiveImageResult[];
+      image?: ArchivoImageResult;
+      images?: ArchivoImageResult[];
       postId?: string;
       takenAt?: string;
       title?: string | null;
     }
   | { ok: false; message: string };
 
-type CreateArchivePostMetadataResult =
+type CreateArchivoPostMetadataResult =
   | { ok: true; message: string; postId: string }
   | { ok: false; message: string };
 
-type UploadSingleArchiveImageResult =
-  | { ok: true; image: ArchiveImageResult; images?: ArchiveImageResult[] }
+type UploadSingleArchivoImageResult =
+  | { ok: true; image: ArchivoImageResult; images?: ArchivoImageResult[] }
   | { ok: false; message: string };
 
-type GetArchiveImagesResult =
+type GetArchivoImagesResult =
   | {
       ok: true;
       coverImageId: string | null;
-      images: ArchiveImageResult[];
+      images: ArchivoImageResult[];
     }
   | { ok: false; message: string };
 
-type CreateArchivePostOptions = {
+type CreateArchivoPostOptions = {
   kind?: string;
   title?: string;
 };
@@ -439,8 +439,8 @@ function imageErrorMessage(
     case "missing":
       return "Selecciona al menos una imagen.";
     case "too_large":
-      return `${prefix}La imagen procesada debe pesar menos de ${formatArchiveFileSize(
-        ARCHIVE_IMAGE_MAX_SIZE_BYTES
+      return `${prefix}La imagen procesada debe pesar menos de ${formatArchivoFileSize(
+        ARCHIVO_IMAGE_MAX_SIZE_BYTES
       )}.`;
     case "unsupported_heic":
       return `${prefix}HEIC photos from iPhone are not supported yet. Please select Most Compatible/JPEG or convert them first.`;
@@ -463,12 +463,12 @@ async function cleanupUploadedImages(keys: string[]) {
   );
 }
 
-function serializeArchiveImage(image: {
+function serializeArchivoImage(image: {
   id: string;
   key: string;
   order: number;
   url: string;
-}): ArchiveImageResult {
+}): ArchivoImageResult {
   return {
     id: image.id,
     key: image.key,
@@ -477,44 +477,44 @@ function serializeArchiveImage(image: {
   };
 }
 
-function normalizeArchiveKind(kind?: string) {
-  return kind === ARCHIVE_ALBUM_KIND ? ARCHIVE_ALBUM_KIND : ARCHIVE_POST_KIND;
+function normalizeArchivoKind(kind?: string) {
+  return kind === ARCHIVO_ALBUM_KIND ? ARCHIVO_ALBUM_KIND : ARCHIVO_POST_KIND;
 }
 
-async function getOrderedArchiveImages(postId: string) {
+async function getOrderedArchivoImages(postId: string) {
   const images = await getPrisma().archiveImage.findMany({
     orderBy: { order: "asc" },
     where: { postId },
   });
 
-  return images.map(serializeArchiveImage);
+  return images.map(serializeArchivoImage);
 }
 
-function revalidateArchiveAdmin(postId?: string) {
-  revalidatePath(ARCHIVE_PATH);
+function revalidateArchivoAdmin(postId?: string) {
+  revalidatePath(ARCHIVO_PATH);
   revalidatePath(ADMIN_PATH);
 
   if (postId) {
-    revalidatePath(`${ARCHIVE_PATH}/${postId}`);
-    revalidatePath(`${ARCHIVE_PATH}/album/${postId}`);
+    revalidatePath(`${ARCHIVO_PATH}/${postId}`);
+    revalidatePath(`${ARCHIVO_PATH}/album/${postId}`);
   }
 }
 
-export async function createArchivePostMetadataAction(
+export async function createArchivoPostMetadataAction(
   rawDescription: string,
   rawTakenAt: string,
-  options: CreateArchivePostOptions = {}
-): Promise<CreateArchivePostMetadataResult> {
+  options: CreateArchivoPostOptions = {}
+): Promise<CreateArchivoPostMetadataResult> {
   if (!(await isAdminAuthenticated())) {
     return { ok: false, message: "vuelve a iniciar sesion" };
   }
 
-  const kind = normalizeArchiveKind(options.kind);
+  const kind = normalizeArchivoKind(options.kind);
   const title = options.title?.trim() ?? "";
   const description = rawDescription.trim();
-  const takenAt = parseArchiveTakenAt(rawTakenAt);
+  const takenAt = parseArchivoTakenAt(rawTakenAt);
 
-  if (kind === ARCHIVE_ALBUM_KIND && !title) {
+  if (kind === ARCHIVO_ALBUM_KIND && !title) {
     return { ok: false, message: "Ponle titulo al album." };
   }
 
@@ -527,14 +527,14 @@ export async function createArchivePostMetadataAction(
       data: {
         id: randomUUID(),
         kind,
-        title: kind === ARCHIVE_ALBUM_KIND ? title : null,
+        title: kind === ARCHIVO_ALBUM_KIND ? title : null,
         description,
         takenAt,
       },
       select: { id: true },
     });
 
-    revalidateArchiveAdmin(post.id);
+    revalidateArchivoAdmin(post.id);
 
     return { ok: true, message: "archivo creado", postId: post.id };
   } catch {
@@ -542,10 +542,10 @@ export async function createArchivePostMetadataAction(
   }
 }
 
-export async function uploadSingleArchiveImageAction(
+export async function uploadSingleArchivoImageAction(
   postId: string,
   formData: FormData
-): Promise<UploadSingleArchiveImageResult> {
+): Promise<UploadSingleArchivoImageResult> {
   if (!(await isAdminAuthenticated())) {
     return { ok: false, message: "vuelve a iniciar sesion" };
   }
@@ -592,8 +592,8 @@ export async function uploadSingleArchiveImageAction(
       : nextOrder;
 
   if (process.env.NODE_ENV === "development") {
-    console.info("[archive-upload:single] uploading", {
-      extension: getArchiveImageFileInfo(file).extension,
+    console.info("[archivo-upload:single] uploading", {
+      extension: getArchivoImageFileInfo(file).extension,
       name: file.name,
       order: imageOrder,
       postId,
@@ -602,10 +602,10 @@ export async function uploadSingleArchiveImageAction(
     });
   }
 
-  let uploadedImage: Awaited<ReturnType<typeof uploadArchiveImageToR2>>;
+  let uploadedImage: Awaited<ReturnType<typeof uploadArchivoImageToR2>>;
 
   try {
-    uploadedImage = await uploadArchiveImageToR2(
+    uploadedImage = await uploadArchivoImageToR2(
       file,
       postId,
       imageOrder,
@@ -643,7 +643,7 @@ export async function uploadSingleArchiveImageAction(
   // Setting the album cover is best-effort: if it fails the image row is still
   // valid and cover resolution falls back to the first image everywhere, so we
   // must NOT delete the just-saved R2 object here.
-  if (post.kind === ARCHIVE_ALBUM_KIND && !post.coverImageId) {
+  if (post.kind === ARCHIVO_ALBUM_KIND && !post.coverImageId) {
     try {
       await prisma.archivePost.update({
         data: { coverImageId: image.id },
@@ -654,20 +654,20 @@ export async function uploadSingleArchiveImageAction(
     }
   }
 
-  revalidateArchiveAdmin(postId);
+  revalidateArchivoAdmin(postId);
 
   return {
     ok: true,
-    image: serializeArchiveImage(image),
+    image: serializeArchivoImage(image),
     images: shouldReturnImages
-      ? await getOrderedArchiveImages(postId)
+      ? await getOrderedArchivoImages(postId)
       : undefined,
   };
 }
 
-export async function getArchiveImagesAction(
+export async function getArchivoImagesAction(
   postId: string
-): Promise<GetArchiveImagesResult> {
+): Promise<GetArchivoImagesResult> {
   if (!(await isAdminAuthenticated())) {
     return { ok: false, message: "vuelve a iniciar sesion" };
   }
@@ -686,14 +686,14 @@ export async function getArchiveImagesAction(
   return {
     ok: true,
     coverImageId: post.coverImageId,
-    images: post.images.map(serializeArchiveImage),
+    images: post.images.map(serializeArchivoImage),
   };
 }
 
-export async function updateArchiveCoverImageAction(
+export async function updateArchivoCoverImageAction(
   postId: string,
   imageId: string
-): Promise<ArchiveMutationResult> {
+): Promise<ArchivoMutationResult> {
   if (!(await isAdminAuthenticated())) {
     return { ok: false, message: "vuelve a iniciar sesion" };
   }
@@ -716,25 +716,25 @@ export async function updateArchiveCoverImageAction(
     return { ok: false, message: "No se pudo cambiar la portada." };
   }
 
-  revalidateArchiveAdmin(postId);
+  revalidateArchivoAdmin(postId);
 
   return { ok: true, coverImageId: imageId };
 }
 
-export async function updateArchivePostAction(
+export async function updateArchivoPostAction(
   postId: string,
   rawDescription: string,
   rawTakenAt: string,
   rawTitle?: string,
   coverImageId?: string | null
-): Promise<ArchiveMutationResult> {
+): Promise<ArchivoMutationResult> {
   if (!(await isAdminAuthenticated())) {
     return { ok: false, message: "vuelve a iniciar sesion" };
   }
 
   const description = rawDescription.trim();
   const title = rawTitle?.trim() ?? "";
-  const takenAt = parseArchiveTakenAt(rawTakenAt);
+  const takenAt = parseArchivoTakenAt(rawTakenAt);
 
   if (!takenAt) {
     return { ok: false, message: "Elige una fecha valida." };
@@ -750,7 +750,7 @@ export async function updateArchivePostAction(
     return { ok: false, message: "Ese archivo ya no existe." };
   }
 
-  if (post.kind === ARCHIVE_ALBUM_KIND && !title) {
+  if (post.kind === ARCHIVO_ALBUM_KIND && !title) {
     return { ok: false, message: "Ponle titulo al album." };
   }
 
@@ -771,7 +771,7 @@ export async function updateArchivePostAction(
         coverImageId: coverImageId === undefined ? undefined : coverImageId,
         description,
         takenAt,
-        title: post.kind === ARCHIVE_ALBUM_KIND ? title : null,
+        title: post.kind === ARCHIVO_ALBUM_KIND ? title : null,
       },
       select: {
         coverImageId: true,
@@ -782,7 +782,7 @@ export async function updateArchivePostAction(
       where: { id: postId },
     });
 
-    revalidateArchiveAdmin(postId);
+    revalidateArchivoAdmin(postId);
 
     return {
       ok: true,
@@ -796,9 +796,9 @@ export async function updateArchivePostAction(
   }
 }
 
-export async function removeArchiveImageAction(
+export async function removeArchivoImageAction(
   imageId: string
-): Promise<ArchiveMutationResult> {
+): Promise<ArchivoMutationResult> {
   if (!(await isAdminAuthenticated())) {
     return { ok: false, message: "vuelve a iniciar sesion" };
   }
@@ -862,7 +862,7 @@ export async function removeArchiveImageAction(
     // The database already reflects the removal; R2 cleanup can be retried later.
   }
 
-  revalidateArchiveAdmin(image.postId);
+  revalidateArchivoAdmin(image.postId);
 
   return {
     ok: true,
@@ -871,14 +871,14 @@ export async function removeArchiveImageAction(
         ? image.post.images.find((postImage) => postImage.id !== imageId)?.id ??
           null
         : image.post.coverImageId,
-    images: await getOrderedArchiveImages(image.postId),
+    images: await getOrderedArchivoImages(image.postId),
   };
 }
 
-export async function reorderArchiveImagesAction(
+export async function reorderArchivoImagesAction(
   postId: string,
   imageIds: string[]
-): Promise<ArchiveMutationResult> {
+): Promise<ArchivoMutationResult> {
   if (!(await isAdminAuthenticated())) {
     return { ok: false, message: "vuelve a iniciar sesion" };
   }
@@ -915,17 +915,17 @@ export async function reorderArchiveImagesAction(
     return { ok: false, message: "No se pudo reordenar." };
   }
 
-  revalidateArchiveAdmin(postId);
+  revalidateArchivoAdmin(postId);
 
   return {
     ok: true,
-    images: await getOrderedArchiveImages(postId),
+    images: await getOrderedArchivoImages(postId),
   };
 }
 
-export async function deleteArchivePostAction(
+export async function deleteArchivoPostAction(
   postId: string
-): Promise<ArchiveMutationResult> {
+): Promise<ArchivoMutationResult> {
   if (!(await isAdminAuthenticated())) {
     return { ok: false, message: "vuelve a iniciar sesion" };
   }
@@ -951,7 +951,7 @@ export async function deleteArchivePostAction(
   }
 
   await cleanupUploadedImages(post.images.map((image) => image.key));
-  revalidateArchiveAdmin(postId);
+  revalidateArchivoAdmin(postId);
 
   return { ok: true };
 }

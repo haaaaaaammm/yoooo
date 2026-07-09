@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import {
   DeleteObjectCommand,
@@ -8,17 +8,17 @@ import {
 import { randomUUID } from "crypto";
 
 import {
-  ARCHIVE_ALBUM_KIND,
-  ARCHIVE_IMAGE_MAX_SIZE_BYTES,
-  ARCHIVE_MIME_TYPE_TO_EXTENSION,
-  ARCHIVE_POST_KIND,
-  getArchiveImageUploadType,
-} from "@/lib/archive";
+  ARCHIVO_ALBUM_KIND,
+  ARCHIVO_IMAGE_MAX_SIZE_BYTES,
+  ARCHIVO_MIME_TYPE_TO_EXTENSION,
+  ARCHIVO_POST_KIND,
+  getArchivoImageUploadType,
+} from "@/lib/archivo";
 
-export const IMAGE_MAX_SIZE_BYTES = ARCHIVE_IMAGE_MAX_SIZE_BYTES;
+export const IMAGE_MAX_SIZE_BYTES = ARCHIVO_IMAGE_MAX_SIZE_BYTES;
 export const PROFILE_IMAGE_MAX_SIZE_BYTES = IMAGE_MAX_SIZE_BYTES;
 
-export const IMAGE_FILE_EXTENSIONS = ARCHIVE_MIME_TYPE_TO_EXTENSION;
+export const IMAGE_FILE_EXTENSIONS = ARCHIVO_MIME_TYPE_TO_EXTENSION;
 export const PROFILE_IMAGE_EXTENSIONS = IMAGE_FILE_EXTENSIONS;
 
 type ImageMimeType = keyof typeof IMAGE_FILE_EXTENSIONS;
@@ -81,7 +81,7 @@ export function validateImageFile(file: File) {
     return { ok: false as const, reason: "too_large" as const };
   }
 
-  const uploadType = getArchiveImageUploadType(file);
+  const uploadType = getArchivoImageUploadType(file);
 
   if (!uploadType.ok) {
     return uploadType;
@@ -120,22 +120,22 @@ export async function uploadProfileImageToR2(file: File) {
   };
 }
 
-export async function uploadArchiveImageToR2(
+export async function uploadArchivoImageToR2(
   file: File,
   postId: string,
   order?: number,
-  kind: string = ARCHIVE_POST_KIND
+  kind: string = ARCHIVO_POST_KIND
 ) {
   const validation = validateImageFile(file);
 
   if (!validation.ok) {
-    throw new Error(`Invalid archive image: ${validation.reason}`);
+    throw new Error(`Imagen de archivo invalida: ${validation.reason}`);
   }
 
   const config = getR2Config();
   const normalizedOrder = typeof order === "number" ? Math.max(0, order) : 0;
   const keyPrefix =
-    kind === ARCHIVE_ALBUM_KIND ? "archive/albums" : "archive/posts";
+    kind === ARCHIVO_ALBUM_KIND ? "archivo/albums" : "archivo/posts";
   const key = `${keyPrefix}/${postId}/${Date.now()}-${randomUUID()}-${normalizedOrder}.${validation.extension}`;
   const body = Buffer.from(await file.arrayBuffer());
 

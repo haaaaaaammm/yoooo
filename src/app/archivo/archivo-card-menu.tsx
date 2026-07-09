@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 
-// Small three-dots menu for an archive feed card. `path` is the archive item's
-// app path (e.g. /archive/<id> or /archive/album/<id>); "copiar link" copies the
+// Small three-dots menu for an archivo feed card. `path` is the archivo item's
+// app path (e.g. /archivo/<id> or /archivo/album/<id>); "copiar link" copies the
 // absolute URL (origin + path) to the clipboard.
-export default function ArchiveCardMenu({ path }: { path: string }) {
+export default function ArchivoCardMenu({ path }: { path: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [open, setOpen] = useState(false);
@@ -96,7 +96,7 @@ export default function ArchiveCardMenu({ path }: { path: string }) {
         }}
         type="button"
       >
-        {"⋮"}
+        {"â‹®"}
       </button>
 
       {open ? (

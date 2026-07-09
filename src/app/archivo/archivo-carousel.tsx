@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import {
@@ -12,16 +12,16 @@ import {
 
 import PhotoLightbox from "./photo-lightbox";
 
-type ArchiveCarouselImage = {
+type ArchivoCarouselImage = {
   id: string;
   url: string;
 };
 
-type ArchiveCarouselProps = {
+type ArchivoCarouselProps = {
   description: string;
   enableLightbox?: boolean;
   href?: string;
-  images: ArchiveCarouselImage[];
+  images: ArchivoCarouselImage[];
 };
 
 // Loading is tracked per image so navigation is never blocked by an in-flight
@@ -32,16 +32,16 @@ type ImageStatus = "loading" | "loaded" | "error";
 // to the error state instead of an endless spinner.
 const IMAGE_LOAD_TIMEOUT_MS = 12000;
 
-function getImageKey(image: ArchiveCarouselImage, index: number) {
+function getImageKey(image: ArchivoCarouselImage, index: number) {
   return image.id || image.url || String(index);
 }
 
-export default function ArchiveCarousel({
+export default function ArchivoCarousel({
   description,
   enableLightbox = false,
   href,
   images,
-}: ArchiveCarouselProps) {
+}: ArchivoCarouselProps) {
   const [index, setIndex] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [imageStatus, setImageStatus] = useState<Record<string, ImageStatus>>(
@@ -251,7 +251,7 @@ export default function ArchiveCarousel({
   }
 
   function renderCurrentImage() {
-    const imageAlt = description || `archive image ${index + 1}`;
+    const imageAlt = description || `imagen de archivo ${index + 1}`;
 
     return (
       <span className="relative block h-full w-full">
@@ -291,7 +291,7 @@ export default function ArchiveCarousel({
         >
           {href ? (
             <Link
-              aria-label="Open archive post"
+              aria-label="Abrir post de archivo"
               className="block h-full w-full"
               href={href}
               onClick={handleLinkClick}
@@ -315,7 +315,7 @@ export default function ArchiveCarousel({
         {hasMultipleImages ? (
           <>
             <button
-              aria-label="Previous image"
+              aria-label="Imagen anterior"
               className="absolute left-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/70 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10"
               onClick={(event) => {
                 event.stopPropagation();
@@ -326,7 +326,7 @@ export default function ArchiveCarousel({
               &lt;
             </button>
             <button
-              aria-label="Next image"
+              aria-label="Imagen siguiente"
               className="absolute right-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/70 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10"
               onClick={(event) => {
                 event.stopPropagation();
@@ -344,7 +344,7 @@ export default function ArchiveCarousel({
         <div className="mt-3 flex flex-wrap justify-center gap-2">
           {images.map((image, dotIndex) => (
             <button
-              aria-label={`Show image ${dotIndex + 1}`}
+              aria-label={`Mostrar imagen ${dotIndex + 1}`}
               className={
                 dotIndex === index
                   ? "h-1.5 w-5 rounded-full bg-[#ff003c]"
@@ -364,7 +364,7 @@ export default function ArchiveCarousel({
       {enableLightbox ? (
         <PhotoLightbox
           alt={(currentIndex) =>
-            description || `archive image ${currentIndex + 1}`
+            description || `imagen de archivo ${currentIndex + 1}`
           }
           images={images}
           index={lightboxIndex}

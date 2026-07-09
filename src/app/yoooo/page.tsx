@@ -1,16 +1,16 @@
-
+﻿
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { permanentRedirect, redirect } from "next/navigation";
 
 import NumberedPagination from "@/app/_components/numbered-pagination";
-import { getAdminArchivePostsPage } from "@/lib/archive-posts";
+import { getAdminArchivoPostsPage } from "@/lib/archivo-posts";
 import { getAdminAuthStatus, isAdminAuthenticated } from "@/lib/auth";
 import { getPoemarioPostsPage } from "@/lib/poemario-posts";
 import {
   ADMIN_PATH,
-  ARCHIVE_PATH,
+  ARCHIVO_PATH,
   POSTS_PER_PAGE,
   PUBLIC_FEED_PATH,
   parsePageParam,
@@ -18,7 +18,7 @@ import {
 import { getProfileImageSettings } from "@/lib/site-settings";
 
 import AdminPostCard from "./admin-post-card";
-import ArchiveManager from "./archive-manager";
+import ArchivoManager from "./archivo-manager";
 import { loginAction } from "./actions";
 import Composer from "./composer";
 import ModeSwitcher from "./mode-switcher";
@@ -28,7 +28,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "yoooo",
-  description: "aquí posteo y eso:pp",
+  description: "aquÃ­ posteo y eso:pp",
   robots: {
     index: false,
     follow: false,
@@ -39,7 +39,7 @@ type AdminPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-type AdminMode = "archive" | "poemario";
+type AdminMode = "archivo" | "poemario";
 
 function getParam(
   params: Record<string, string | string[] | undefined>,
@@ -51,7 +51,30 @@ function getParam(
 }
 
 function parseAdminMode(value: string | undefined): AdminMode {
-  return value === "archive" ? "archive" : "poemario";
+  return value === "archivo" ? "archivo" : "poemario";
+}
+
+function getNormalizedAdminAppPath(
+  params: Record<string, string | string[] | undefined>
+) {
+  const query = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (key === "app" || value === undefined) {
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((item) => query.append(key, item));
+      return;
+    }
+
+    query.set(key, value);
+  });
+
+  query.set("app", "archivo");
+
+  return `${ADMIN_PATH}?${query.toString()}`;
 }
 
 function getStatusMessage(error?: string, published?: string, deleted?: string) {
@@ -86,12 +109,18 @@ function getStatusMessage(error?: string, published?: string, deleted?: string) 
 
 export default async function Home({ searchParams }: AdminPageProps) {
   const params = (await searchParams) ?? {};
+  const requestedApp = getParam(params, "app");
+
+  if (requestedApp === "archive") {
+    permanentRedirect(getNormalizedAdminAppPath(params));
+  }
+
   const message = getStatusMessage(
     getParam(params, "error"),
     getParam(params, "published"),
     getParam(params, "deleted")
   );
-  const mode = parseAdminMode(getParam(params, "app"));
+  const mode = parseAdminMode(requestedApp);
   const page = parsePageParam(params.page);
   const isAuthenticated = await isAdminAuthenticated();
 
@@ -166,23 +195,23 @@ export default async function Home({ searchParams }: AdminPageProps) {
 
   const profileImageSettings = await getProfileImageSettings();
   const profileImageUrl = profileImageSettings.profileImageUrl;
-  const publicTargetPath = mode === "archive" ? ARCHIVE_PATH : PUBLIC_FEED_PATH;
-  const publicTargetLabel = mode === "archive" ? "< archive" : "< poemario";
+  const publicTargetPath = mode === "archivo" ? ARCHIVO_PATH : PUBLIC_FEED_PATH;
+  const publicTargetLabel = mode === "archivo" ? "< archivo" : "< poemario";
   let pageContent: ReactNode;
 
-  if (mode === "archive") {
-    const { posts: archivePosts, totalPages } = await getAdminArchivePostsPage(page);
+  if (mode === "archivo") {
+    const { posts: archivoPosts, totalPages } = await getAdminArchivoPostsPage(page);
 
     // Out-of-range page (e.g. posts were deleted): send to the last valid page
     // so the URL, content, and highlighted page number stay in sync.
     if (totalPages > 0 && page > totalPages) {
-      redirect(`${ADMIN_PATH}?app=archive&page=${totalPages}`);
+      redirect(`${ADMIN_PATH}?app=archivo&page=${totalPages}`);
     }
 
     pageContent = (
-      <ArchiveManager
+      <ArchivoManager
         page={page}
-        posts={archivePosts.map((post) => ({
+        posts={archivoPosts.map((post) => ({
           coverImage: post.coverImage
             ? {
                 id: post.coverImage.id,

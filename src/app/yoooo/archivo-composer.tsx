@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   ChangeEvent,
@@ -11,20 +11,20 @@ import {
 } from "react";
 
 import {
-  ARCHIVE_ALBUM_KIND,
-  ARCHIVE_ALBUM_THRESHOLD,
-  ARCHIVE_IMAGE_ACCEPT,
-  ARCHIVE_POST_KIND,
-  getArchiveImageUploadType,
-} from "@/lib/archive";
+  ARCHIVO_ALBUM_KIND,
+  ARCHIVO_ALBUM_THRESHOLD,
+  ARCHIVO_IMAGE_ACCEPT,
+  ARCHIVO_POST_KIND,
+  getArchivoImageUploadType,
+} from "@/lib/archivo";
 
-import { prepareArchiveImageFiles } from "./archive-image-processing";
+import { prepareArchivoImageFiles } from "./archivo-image-processing";
 import SortableImageGrid from "./sortable-image-grid";
 import {
-  createArchivePostMetadataAction,
-  deleteArchivePostAction,
-  updateArchiveCoverImageAction,
-  uploadSingleArchiveImageAction,
+  createArchivoPostMetadataAction,
+  deleteArchivoPostAction,
+  updateArchivoCoverImageAction,
+  uploadSingleArchivoImageAction,
 } from "./actions";
 
 type DateMode = "oldest" | "newest";
@@ -32,7 +32,7 @@ type DateMode = "oldest" | "newest";
 type UploadStatus = "pending" | "uploading" | "uploaded" | "failed";
 
 type SelectedImage = {
-  archiveImageId?: string;
+  archivoImageId?: string;
   date: Date;
   error?: string;
   file: File;
@@ -130,7 +130,7 @@ function readIfdEntries(
 }
 
 async function readExifDateTimeOriginal(file: File) {
-  const uploadType = getArchiveImageUploadType(file);
+  const uploadType = getArchivoImageUploadType(file);
 
   if (!uploadType.ok || uploadType.extension !== "jpg") {
     return null;
@@ -246,7 +246,7 @@ function formatFailureSummary(messages: string[], limit = 8) {
     .join("\n");
 }
 
-export default function ArchiveComposer({
+export default function ArchivoComposer({
   onCreated,
 }: {
   onCreated?: () => void;
@@ -266,7 +266,7 @@ export default function ArchiveComposer({
   const [takenAt, setTakenAt] = useState(formatDateTimeLocal(new Date()));
   const [dateMode, setDateMode] = useState<DateMode>("oldest");
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
-  const isAlbumMode = selectedImages.length > ARCHIVE_ALBUM_THRESHOLD;
+  const isAlbumMode = selectedImages.length > ARCHIVO_ALBUM_THRESHOLD;
   const remainingUploadCount = selectedImages.filter(
     (image) => image.status !== "uploaded"
   ).length;
@@ -395,7 +395,7 @@ export default function ArchiveComposer({
     setIsProcessingImages(true);
 
     try {
-      const result = await prepareArchiveImageFiles(files, "create-select");
+      const result = await prepareArchivoImageFiles(files, "create-select");
 
       if (result.errors.length > 0) {
         setMessage({ ok: false, text: result.errors.join("\n") });
@@ -457,14 +457,14 @@ export default function ArchiveComposer({
     imageId: string,
     status: UploadStatus,
     error?: string,
-    archiveImageId?: string
+    archivoImageId?: string
   ) {
     setSelectedImages((current) =>
       current.map((image) =>
         image.id === imageId
           ? {
               ...image,
-              archiveImageId: archiveImageId ?? image.archiveImageId,
+              archivoImageId: archivoImageId ?? image.archivoImageId,
               error,
               status,
             }
@@ -511,11 +511,11 @@ export default function ArchiveComposer({
       let postId = metadataPostId;
 
       if (!postId) {
-        const metadataResult = await createArchivePostMetadataAction(
+        const metadataResult = await createArchivoPostMetadataAction(
           description,
           takenAt,
           {
-            kind: isAlbumMode ? ARCHIVE_ALBUM_KIND : ARCHIVE_POST_KIND,
+            kind: isAlbumMode ? ARCHIVO_ALBUM_KIND : ARCHIVO_POST_KIND,
             title: isAlbumMode ? albumTitle : undefined,
           }
         );
@@ -546,7 +546,7 @@ export default function ArchiveComposer({
         imageFormData.set("returnImages", "false");
 
         try {
-          const result = await uploadSingleArchiveImageAction(
+          const result = await uploadSingleArchivoImageAction(
             postId,
             imageFormData
           );
@@ -580,16 +580,16 @@ export default function ArchiveComposer({
           const requestedCover = latestImages.find(
             (image) => image.id === coverImageId
           );
-          const coverArchiveImageId =
-            requestedCover?.archiveImageId ??
+          const coverArchivoImageId =
+            requestedCover?.archivoImageId ??
             (requestedCover
               ? uploadedImageIdsByLocalId.get(requestedCover.id)
               : undefined) ??
-            latestImages.find((image) => image.archiveImageId)?.archiveImageId ??
+            latestImages.find((image) => image.archivoImageId)?.archivoImageId ??
             uploadedImageIdsByLocalId.values().next().value;
 
-          if (coverArchiveImageId) {
-            await updateArchiveCoverImageAction(postId, coverArchiveImageId);
+          if (coverArchivoImageId) {
+            await updateArchivoCoverImageAction(postId, coverArchivoImageId);
           }
         }
 
@@ -604,7 +604,7 @@ export default function ArchiveComposer({
         setShowAllAlbumPreviews(false);
         setTakenAt(formatDateTimeLocal(new Date()));
         setUploadProgress(null);
-        setMessage({ ok: true, text: "guardado en archive" });
+        setMessage({ ok: true, text: "guardado en archivo" });
         onCreated?.();
         return;
       }
@@ -614,7 +614,7 @@ export default function ArchiveComposer({
       );
 
       if (uploadedCount === 0 && postId) {
-        await deleteArchivePostAction(postId);
+        await deleteArchivoPostAction(postId);
         setMetadataPostId(null);
         setUploadProgress(null);
         setMessage({
@@ -629,16 +629,16 @@ export default function ArchiveComposer({
         const requestedCover = latestImages.find(
           (image) => image.id === coverImageId
         );
-        const coverArchiveImageId =
-          requestedCover?.archiveImageId ??
+        const coverArchivoImageId =
+          requestedCover?.archivoImageId ??
           (requestedCover
             ? uploadedImageIdsByLocalId.get(requestedCover.id)
             : undefined) ??
-          latestImages.find((image) => image.archiveImageId)?.archiveImageId ??
+          latestImages.find((image) => image.archivoImageId)?.archivoImageId ??
           uploadedImageIdsByLocalId.values().next().value;
 
-        if (coverArchiveImageId) {
-          await updateArchiveCoverImageAction(postId, coverArchiveImageId);
+        if (coverArchivoImageId) {
+          await updateArchivoCoverImageAction(postId, coverArchivoImageId);
         }
       }
 
@@ -681,7 +681,7 @@ export default function ArchiveComposer({
               </p>
             </div>
             <input
-              accept={ARCHIVE_IMAGE_ACCEPT}
+              accept={ARCHIVO_IMAGE_ACCEPT}
               className="sr-only"
               multiple
               name="images"
@@ -706,7 +706,7 @@ export default function ArchiveComposer({
               <div className="space-y-1">
                 <p className="text-sm text-neutral-300">album</p>
                 <p className="text-xs leading-5 text-neutral-500">
-                  seleccionaste mas de {ARCHIVE_ALBUM_THRESHOLD} imagenes, asi
+                  seleccionaste mas de {ARCHIVO_ALBUM_THRESHOLD} imagenes, asi
                   que se publicara como album. el titulo es obligatorio.
                 </p>
               </div>

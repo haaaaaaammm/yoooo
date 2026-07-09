@@ -39,14 +39,14 @@ export default function CopyLinkButton() {
   return (
     <div className="flex flex-none items-center gap-2">
       {copied ? (
-        <span className="text-xs text-neutral-500">link copied</span>
+        <span className="text-xs text-neutral-500">link copiado</span>
       ) : null}
       <button
         className="rounded-full px-4 py-2 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10"
         onClick={copyLink}
         type="button"
       >
-        copy link
+        copiar link
       </button>
     </div>
   );

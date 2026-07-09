@@ -1,14 +1,14 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useState } from "react";
 
 import LinkifiedText from "@/app/_components/linkified-text";
 
-import ArchiveCardMenu from "./archive-card-menu";
+import ArchivoCardMenu from "./archivo-card-menu";
 import PhotoLightbox, { type LightboxImage } from "./photo-lightbox";
 
-type ArchiveAlbumCardProps = {
+type ArchivoAlbumCardProps = {
   coverImage: LightboxImage | null;
   description: string;
   href: string;
@@ -20,9 +20,9 @@ type ArchiveAlbumCardProps = {
 };
 
 // The clickable images are the card's preview set only (cover + up to 3
-// thumbnails), so lightbox navigation is scoped to what the card shows — never
+// thumbnails), so lightbox navigation is scoped to what the card shows â€” never
 // the full album.
-export default function ArchiveAlbumCard({
+export default function ArchivoAlbumCard({
   coverImage,
   description,
   href,
@@ -31,7 +31,7 @@ export default function ArchiveAlbumCard({
   takenAtIso,
   takenAtLabel,
   title,
-}: ArchiveAlbumCardProps) {
+}: ArchivoAlbumCardProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const albumTitle = title ?? "album";
   const lightboxImages = coverImage ? [coverImage, ...previewImages] : [];

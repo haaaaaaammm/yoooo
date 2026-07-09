@@ -1,51 +1,51 @@
-"use client";
+﻿"use client";
 
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import NumberedPagination from "@/app/_components/numbered-pagination";
 import {
-  ARCHIVE_ALBUM_KIND,
-  ARCHIVE_IMAGE_ACCEPT,
-} from "@/lib/archive";
+  ARCHIVO_ALBUM_KIND,
+  ARCHIVO_IMAGE_ACCEPT,
+} from "@/lib/archivo";
 import { ADMIN_PATH } from "@/lib/posts";
 
-import { prepareArchiveImageFiles } from "./archive-image-processing";
-import ArchiveComposer from "./archive-composer";
+import { prepareArchivoImageFiles } from "./archivo-image-processing";
+import ArchivoComposer from "./archivo-composer";
 import SortableImageGrid from "./sortable-image-grid";
 import {
-  deleteArchivePostAction,
-  getArchiveImagesAction,
-  removeArchiveImageAction,
-  reorderArchiveImagesAction,
-  updateArchiveCoverImageAction,
-  updateArchivePostAction,
-  uploadSingleArchiveImageAction,
+  deleteArchivoPostAction,
+  getArchivoImagesAction,
+  removeArchivoImageAction,
+  reorderArchivoImagesAction,
+  updateArchivoCoverImageAction,
+  updateArchivoPostAction,
+  uploadSingleArchivoImageAction,
 } from "./actions";
 
-type AdminArchiveImage = {
+type AdminArchivoImage = {
   id: string;
   key: string;
   order: number;
   url: string;
 };
 
-export type AdminArchivePost = {
-  coverImage: AdminArchiveImage | null;
+export type AdminArchivoPost = {
+  coverImage: AdminArchivoImage | null;
   coverImageId: string | null;
   createdAt: string;
   description: string;
   id: string;
   imageCount: number;
-  images: AdminArchiveImage[];
+  images: AdminArchivoImage[];
   kind: string;
   takenAt: string;
   title: string | null;
 };
 
-type ArchiveManagerProps = {
+type ArchivoManagerProps = {
   page: number;
-  posts: AdminArchivePost[];
+  posts: AdminArchivoPost[];
   totalPages: number;
 };
 
@@ -83,7 +83,7 @@ function formatDateTimeLocal(value: string) {
   ].join("");
 }
 
-function formatArchiveDate(value: string) {
+function formatArchivoDate(value: string) {
   return new Intl.DateTimeFormat("es-MX", {
     month: "short",
     day: "numeric",
@@ -145,19 +145,19 @@ function useAutoDismissNotice() {
   return { clearNotice, notice, showNotice };
 }
 
-function ArchivePostManager({
+function ArchivoPostManager({
   onDeleted,
   post,
 }: {
   onDeleted: (postId: string) => void;
-  post: AdminArchivePost;
+  post: AdminArchivoPost;
 }) {
   const addImagesFormRef = useRef<HTMLFormElement>(null);
   const addImagesInputRef = useRef<HTMLInputElement>(null);
   const jumpToImageInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { clearNotice, notice, showNotice } = useAutoDismissNotice();
-  const isAlbum = post.kind === ARCHIVE_ALBUM_KIND;
+  const isAlbum = post.kind === ARCHIVO_ALBUM_KIND;
   const [addImageQueue, setAddImageQueue] = useState<AddImageQueueItem[]>([]);
   const [addUploadProgress, setAddUploadProgress] = useState<string | null>(
     null
@@ -224,7 +224,7 @@ function ArchivePostManager({
     clearNotice();
 
     try {
-      const result = await updateArchivePostAction(
+      const result = await updateArchivoPostAction(
         post.id,
         draftDescription,
         draftTakenAt,
@@ -282,8 +282,8 @@ function ArchivePostManager({
 
     try {
       let uploadedCount = 0;
-      let latestImages: AdminArchiveImage[] | null = null;
-      const uploadedImages: AdminArchiveImage[] = [];
+      let latestImages: AdminArchivoImage[] | null = null;
+      const uploadedImages: AdminArchivoImage[] = [];
       const failedItems: AddImageQueueItem[] = [];
 
       for (const [index, image] of uploadCandidates.entries()) {
@@ -302,7 +302,7 @@ function ArchivePostManager({
         formData.set("returnImages", isAlbum ? "false" : "true");
 
         try {
-          const result = await uploadSingleArchiveImageAction(post.id, formData);
+          const result = await uploadSingleArchivoImageAction(post.id, formData);
 
           if (!result.ok) {
             failedItems.push({
@@ -403,7 +403,7 @@ function ArchivePostManager({
     clearNotice();
 
     try {
-      const result = await removeArchiveImageAction(imageId);
+      const result = await removeArchivoImageAction(imageId);
 
       if (!result.ok) {
         setError(result.message);
@@ -438,7 +438,7 @@ function ArchivePostManager({
     setError(null);
 
     try {
-      const result = await reorderArchiveImagesAction(
+      const result = await reorderArchivoImagesAction(
         post.id,
         nextImages.map((image) => image.id)
       );
@@ -471,7 +471,7 @@ function ArchivePostManager({
     setError(null);
 
     try {
-      const result = await deleteArchivePostAction(post.id);
+      const result = await deleteArchivoPostAction(post.id);
 
       if (!result.ok) {
         setError(result.message);
@@ -493,7 +493,7 @@ function ArchivePostManager({
     clearNotice();
 
     try {
-      const result = await getArchiveImagesAction(post.id);
+      const result = await getArchivoImagesAction(post.id);
 
       if (!result.ok) {
         setError(result.message);
@@ -544,7 +544,7 @@ function ArchivePostManager({
     clearNotice();
 
     try {
-      const result = await updateArchiveCoverImageAction(post.id, imageId);
+      const result = await updateArchivoCoverImageAction(post.id, imageId);
 
       if (!result.ok) {
         setError(result.message);
@@ -577,7 +577,7 @@ function ArchivePostManager({
     setIsProcessingAddImages(true);
 
     try {
-      const result = await prepareArchiveImageFiles(files, `add-${post.id}`);
+      const result = await prepareArchivoImageFiles(files, `add-${post.id}`);
 
       if (result.errors.length > 0) {
         setError(result.errors.join("\n"));
@@ -603,7 +603,7 @@ function ArchivePostManager({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <time className="text-sm text-neutral-500" dateTime={takenAt}>
-              {formatArchiveDate(takenAt)}
+              {formatArchivoDate(takenAt)}
             </time>
             {isAlbum ? (
               <div className="mt-2 flex min-w-0 gap-3">
@@ -751,7 +751,7 @@ function ArchivePostManager({
         {isAlbum ? (
           <div
             className="mt-4 overflow-hidden rounded-2xl border border-neutral-800 bg-black"
-            data-archive-album-manager={post.id}
+            data-archivo-album-manager={post.id}
           >
             <div className="border-b border-neutral-800 bg-black/95 px-3 py-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -819,7 +819,7 @@ function ArchivePostManager({
                           ? "overflow-hidden rounded-xl border border-[#ff003c] bg-neutral-950"
                           : "overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950"
                       }
-                      data-archive-image-number={image.order + 1}
+                      data-archivo-image-number={image.order + 1}
                       key={image.id}
                       ref={(node) => {
                         if (node) {
@@ -889,7 +889,7 @@ function ArchivePostManager({
               <>
                 <div className="aspect-square">
                   <img
-                    alt={`archive image ${index + 1}`}
+                    alt={`imagen de archivo ${index + 1}`}
                     className="h-full w-full object-cover"
                     src={image.url}
                   />
@@ -940,7 +940,7 @@ function ArchivePostManager({
         >
           <div className="flex min-w-0 items-center gap-2">
             <input
-              accept={ARCHIVE_IMAGE_ACCEPT}
+              accept={ARCHIVO_IMAGE_ACCEPT}
               className="sr-only"
               multiple
               onChange={handleAddImagesChange}
@@ -1010,11 +1010,11 @@ function ArchivePostManager({
   );
 }
 
-export default function ArchiveManager({
+export default function ArchivoManager({
   page,
   posts: initialPosts,
   totalPages,
-}: ArchiveManagerProps) {
+}: ArchivoManagerProps) {
   const router = useRouter();
   const { notice, showNotice } = useAutoDismissNotice();
   const [posts, setPosts] = useState(initialPosts);
@@ -1025,9 +1025,9 @@ export default function ArchiveManager({
 
   return (
     <>
-      <ArchiveComposer onCreated={() => router.refresh()} />
+      <ArchivoComposer onCreated={() => router.refresh()} />
 
-      <section aria-label="Archive manager">
+      <section aria-label="Gestor de archivo">
         {notice ? (
           <p className="border-b border-neutral-800 px-4 py-3 text-sm text-green-400">
             {notice.text}
@@ -1040,7 +1040,7 @@ export default function ArchiveManager({
         ) : (
           <ol>
             {posts.map((post) => (
-              <ArchivePostManager
+              <ArchivoPostManager
                 key={post.id}
                 onDeleted={(postId) => {
                   setPosts((currentPosts) =>
@@ -1054,7 +1054,7 @@ export default function ArchiveManager({
           </ol>
         )}
         <NumberedPagination
-          basePath={`${ADMIN_PATH}?app=archive`}
+          basePath={`${ADMIN_PATH}?app=archivo`}
           page={page}
           totalPages={totalPages}
         />

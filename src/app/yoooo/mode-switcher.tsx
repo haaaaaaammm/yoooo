@@ -1,8 +1,8 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 import { ADMIN_PATH } from "@/lib/posts";
 
-type AdminMode = "archive" | "poemario";
+type AdminMode = "archivo" | "poemario";
 
 type ModeSwitcherProps = {
   activeMode: AdminMode;
@@ -10,7 +10,7 @@ type ModeSwitcherProps = {
 
 const modes: { href: string; id: AdminMode; label: string }[] = [
   { href: ADMIN_PATH, id: "poemario", label: "poemario" },
-  { href: `${ADMIN_PATH}?app=archive`, id: "archive", label: "archive" },
+  { href: `${ADMIN_PATH}?app=archivo`, id: "archivo", label: "archivo" },
 ];
 
 export default function ModeSwitcher({ activeMode }: ModeSwitcherProps) {
