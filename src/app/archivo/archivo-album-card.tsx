@@ -47,6 +47,7 @@ export default function ArchivoAlbumCard({
         </time>
         <div className="flex flex-none items-center gap-1">
           <span className="text-sm text-neutral-500">album</span>
+          <ArchivoCardMenu path={href} />
         </div>
       </div>
 

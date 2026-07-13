@@ -1,6 +1,12 @@
 ﻿"use client";
 
-import { useEffect, useRef, useState } from "react";
+import { EllipsisVertical } from "lucide-react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 
 // Small three-dots menu for an archivo feed card. `path` is the archivo item's
 // app path (e.g. /archivo/<id> or /archivo/album/<id>); "copiar link" copies the
@@ -49,7 +55,14 @@ export default function ArchivoCardMenu({ path }: { path: string }) {
     };
   }, []);
 
-  async function copyLink() {
+  function stopMenuClick(event: ReactMouseEvent<HTMLElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  async function copyLink(event: ReactMouseEvent<HTMLButtonElement>) {
+    stopMenuClick(event);
+
     const url = `${window.location.origin}${path}`;
 
     try {
@@ -84,24 +97,32 @@ export default function ArchivoCardMenu({ path }: { path: string }) {
   }
 
   return (
-    <div className="relative flex-none" ref={containerRef}>
+    <div
+      className="relative flex-none"
+      onClick={(event) => event.stopPropagation()}
+      onMouseDown={(event) => event.stopPropagation()}
+      ref={containerRef}
+    >
       <button
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label="abrir opciones"
+        aria-label="Más opciones"
         className="flex h-8 w-8 items-center justify-center rounded-full text-lg leading-none text-neutral-500 transition hover:bg-[#ff003c]/10 hover:text-[#ff003c] focus:outline-none focus-visible:bg-[#ff003c]/10 focus-visible:text-[#ff003c]"
-        onClick={() => {
+        onClick={(event) => {
+          stopMenuClick(event);
           setCopied(false);
           setOpen((current) => !current);
         }}
         type="button"
       >
-        {"â‹®"}
+        <EllipsisVertical size={20} aria-hidden="true" />
       </button>
 
       {open ? (
         <div
           className="absolute right-0 z-20 mt-1 min-w-32 overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950 shadow-lg shadow-black/40"
+          onClick={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
           role="menu"
         >
           <button
