@@ -6,16 +6,24 @@ import { useRouter } from "next/navigation";
 
 import ProfileImage from "@/app/_components/profile-image";
 import PoemarioContentInput from "@/app/yoooo/poemario-content-input";
-import { DIFERENCIAS_CONTENT_MAX_LENGTH } from "@/lib/posts";
+import {
+  DIFERENCIAS_CONTENT_MAX_LENGTH,
+  OTROGATO_PATH,
+} from "@/lib/posts";
 
 import { createPostAction } from "./actions";
 
 type ComposerProps = {
   avatarUrl: string | null;
+  currentPage: number;
   displayName: string;
 };
 
-export default function Composer({ avatarUrl, displayName }: ComposerProps) {
+export default function Composer({
+  avatarUrl,
+  currentPage,
+  displayName,
+}: ComposerProps) {
   const router = useRouter();
   const pendingRef = useRef(false);
   const [content, setContent] = useState("");
@@ -43,7 +51,11 @@ export default function Composer({ avatarUrl, displayName }: ComposerProps) {
       }
 
       setContent("");
-      router.refresh();
+      if (currentPage === 1) {
+        router.refresh();
+      } else {
+        router.replace(OTROGATO_PATH);
+      }
     } catch {
       setMessage("No se pudo publicar. Inténtalo de nuevo.");
     } finally {

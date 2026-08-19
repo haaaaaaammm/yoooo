@@ -5,13 +5,14 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import FeedPostCard from "@/app/_components/feed-post-card";
 import LinkifiedText, {
   hasLinkifiedText,
 } from "@/app/_components/linkified-text";
 import ProfileImage from "@/app/_components/profile-image";
 import {
+  DIFERENCIAS_PATH,
   DIFERENCIAS_CONTENT_MAX_LENGTH,
-  OTROGATO_PATH,
 } from "@/lib/posts";
 
 import { deletePostAction, updatePostAction } from "./actions";
@@ -23,6 +24,7 @@ export type ManagedPost = {
   createdAt: string;
   displayName: string;
   id: string;
+  isOwner: boolean;
 };
 
 function formatTimestamp(value: string) {
@@ -105,6 +107,22 @@ function PostItem({ post }: { post: ManagedPost }) {
     }
   }
 
+  if (!post.isOwner) {
+    return (
+      <FeedPostCard
+        href={`${DIFERENCIAS_PATH}/${post.id}`}
+        post={{
+          commentCount: post.commentCount,
+          content: post.content,
+          createdAt: new Date(post.createdAt),
+          customAuthorAvatarUrl: post.avatarUrl,
+          customAuthorName: post.displayName,
+          id: post.id,
+        }}
+      />
+    );
+  }
+
   return (
     <li className="border-b border-neutral-800 transition hover:bg-neutral-950">
       <article className="px-4 py-4">
@@ -120,7 +138,7 @@ function PostItem({ post }: { post: ManagedPost }) {
               </span>
               <Link
                 className="text-neutral-500"
-                href={`${OTROGATO_PATH}/${post.id}`}
+                href={`${DIFERENCIAS_PATH}/${post.id}`}
               >
                 {formatTimestamp(post.createdAt)}
               </Link>
@@ -159,7 +177,7 @@ function PostItem({ post }: { post: ManagedPost }) {
                 <LinkifiedText text={content} />
               </p>
             ) : (
-              <Link className="block" href={`${OTROGATO_PATH}/${post.id}`}>
+              <Link className="block" href={`${DIFERENCIAS_PATH}/${post.id}`}>
                 <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
                   <LinkifiedText text={content} />
                 </p>
@@ -170,7 +188,7 @@ function PostItem({ post }: { post: ManagedPost }) {
             {!isEditing ? (
               <Link
                 className="mt-2 inline-block text-sm text-neutral-500 transition hover:text-[#ff003c]"
-                href={`${OTROGATO_PATH}/${post.id}`}
+                href={`${DIFERENCIAS_PATH}/${post.id}`}
               >
                 {post.commentCount}
               </Link>

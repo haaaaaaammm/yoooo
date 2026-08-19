@@ -5,10 +5,14 @@ import { notFound } from "next/navigation";
 import CopyLinkButton from "@/app/_components/copy-link-button";
 import FeedPostCard from "@/app/_components/feed-post-card";
 import PoemarioCommentThread from "@/app/_components/poemario-comment-thread";
+import CommentManager, {
+  type ManagedComment,
+} from "@/app/otrogato/[id]/comment-manager";
 import { getDiferenciasSessionUser } from "@/lib/diferencias-auth";
 import {
   getDiferenciasPostById,
   getDiferenciasPostWithThread,
+  type DiferenciasCommentTree,
 } from "@/lib/diferencias-posts";
 import { DIFERENCIAS_PATH, OTROGATO_PATH } from "@/lib/posts";
 
@@ -17,6 +21,21 @@ export const dynamic = "force-dynamic";
 type DiferenciasPostPageProps = {
   params: Promise<{ id: string }>;
 };
+
+function serializeComment(comment: DiferenciasCommentTree): ManagedComment {
+  return {
+    authorAvatarUrl: comment.authorAvatarUrl,
+    authorId: comment.authorId,
+    authorName: comment.authorName,
+    createdAt: comment.createdAt.toISOString(),
+    id: comment.id,
+    parentId: comment.parentId,
+    postId: comment.postId,
+    replies: comment.replies.map(serializeComment),
+    text: comment.text,
+    updatedAt: comment.updatedAt.toISOString(),
+  };
+}
 
 function getExcerpt(value: string, maxLength: number) {
   const excerpt = value.replace(/\s+/g, " ").trim();
@@ -107,11 +126,19 @@ export default async function DiferenciasPostPage({
           </ol>
         </section>
 
-        <PoemarioCommentThread
-          basePath={DIFERENCIAS_PATH}
-          comments={post.thread}
-          defaultAuthorName="usuario"
-        />
+        {sessionUser ? (
+          <CommentManager
+            comments={post.thread.map(serializeComment)}
+            currentUserId={sessionUser.id}
+            postId={post.id}
+          />
+        ) : (
+          <PoemarioCommentThread
+            basePath={DIFERENCIAS_PATH}
+            comments={post.thread}
+            defaultAuthorName="usuario"
+          />
+        )}
       </div>
     </main>
   );

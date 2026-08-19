@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import NumberedPagination from "@/app/_components/numbered-pagination";
 import { getDiferenciasSessionUser } from "@/lib/diferencias-auth";
-import { getDiferenciasPostsByAuthorPage } from "@/lib/diferencias-posts";
+import { getDiferenciasPostsPage } from "@/lib/diferencias-posts";
 import {
   DIFERENCIAS_PATH,
   OTROGATO_PATH,
@@ -40,10 +40,7 @@ export default async function OtrogatoPage({
 
   const params = (await searchParams) ?? {};
   const page = parsePageParam(params.page);
-  const { posts, totalPages } = await getDiferenciasPostsByAuthorPage(
-    user.id,
-    page
-  );
+  const { posts, totalPages } = await getDiferenciasPostsPage(page);
 
   if (totalPages > 0 && page > totalPages) {
     redirect(`${OTROGATO_PATH}?page=${totalPages}`);
@@ -76,9 +73,19 @@ export default async function OtrogatoPage({
           displayName={user.displayName}
           username={user.username}
         />
-        <Composer avatarUrl={user.avatarUrl} displayName={user.displayName} />
+        <Composer
+          avatarUrl={user.avatarUrl}
+          currentPage={page}
+          displayName={user.displayName}
+        />
 
-        <section aria-label="Tus posts">
+        <section aria-labelledby="diferencias-feed-heading">
+          <h2
+            className="border-b border-neutral-800 px-4 py-3 text-sm font-semibold text-neutral-400"
+            id="diferencias-feed-heading"
+          >
+            Posts
+          </h2>
           <PostManager
             posts={posts.map((post) => ({
               avatarUrl: post.customAuthorAvatarUrl,
@@ -87,6 +94,7 @@ export default async function OtrogatoPage({
               createdAt: post.createdAt.toISOString(),
               displayName: post.customAuthorName ?? user.displayName,
               id: post.id,
+              isOwner: post.authorId === user.id,
             }))}
           />
           <NumberedPagination
