@@ -11,6 +11,8 @@ type FeedPost = {
   id: string;
   content: string;
   createdAt: Date;
+  customAuthorAvatarUrl?: string | null;
+  customAuthorName?: string | null;
 };
 
 type FeedPostCardProps = {
@@ -37,6 +39,11 @@ export default function FeedPostCard({
   post,
   profileImageUrl,
 }: FeedPostCardProps) {
+  const customAuthorName = post.customAuthorName?.trim();
+  const authorName = customAuthorName || "humberto";
+  const authorProfileImageUrl = customAuthorName
+    ? post.customAuthorAvatarUrl
+    : profileImageUrl;
   const hasContentLinks = hasLinkifiedText(post.content);
   const timestamp = (
     <time className="text-neutral-500" dateTime={post.createdAt.toISOString()}>
@@ -64,14 +71,14 @@ export default function FeedPostCard({
         <div className="flex items-start gap-3">
           <ProfileImage
             className="h-10 w-10 shrink-0 rounded-full object-cover"
-            profileImageUrl={profileImageUrl}
+            profileImageUrl={authorProfileImageUrl}
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm leading-5">
                   <span className="max-w-full truncate font-semibold text-white">
-                    humberto
+                    {authorName}
                   </span>
                   {href ? (
                     <Link

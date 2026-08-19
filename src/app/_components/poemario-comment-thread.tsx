@@ -4,16 +4,31 @@ import LinkifiedText, {
   hasLinkifiedText,
 } from "@/app/_components/linkified-text";
 import ProfileImage from "@/app/_components/profile-image";
-import type { PoemarioCommentTree } from "@/lib/poemario-posts";
 import { PUBLIC_FEED_PATH } from "@/lib/posts";
 
+export type DisplayCommentTree = {
+  authorAvatarUrl?: string | null;
+  authorName?: string | null;
+  createdAt: Date;
+  id: string;
+  parentId: string | null;
+  postId: string;
+  replies: DisplayCommentTree[];
+  text: string;
+  updatedAt: Date;
+};
+
 type PoemarioCommentThreadProps = {
-  comments: PoemarioCommentTree[];
+  basePath?: string;
+  comments: DisplayCommentTree[];
+  defaultAuthorName?: string;
   profileImageUrl?: string | null;
 };
 
 type PoemarioCommentBodyProps = {
-  comment: PoemarioCommentTree;
+  basePath?: string;
+  comment: DisplayCommentTree;
+  defaultAuthorName?: string;
   highlighted?: boolean;
   href?: string;
   profileImageUrl?: string | null;
@@ -37,17 +52,31 @@ export function getPoemarioCommentHref(comment: {
   return `${PUBLIC_FEED_PATH}/${comment.postId}/comment/${comment.id}`;
 }
 
+function getCommentHref(
+  comment: { id: string; postId: string },
+  basePath: string
+) {
+  return `${basePath}/${comment.postId}/comment/${comment.id}`;
+}
+
 export function PoemarioCommentBody({
+  basePath = PUBLIC_FEED_PATH,
   comment,
+  defaultAuthorName = "humberto",
   highlighted = false,
-  href = getPoemarioCommentHref(comment),
+  href,
   profileImageUrl,
 }: PoemarioCommentBodyProps) {
+  const commentHref = href ?? getCommentHref(comment, basePath);
+  const authorName = comment.authorName?.trim() || defaultAuthorName;
+  const authorProfileImageUrl = comment.authorName?.trim()
+    ? comment.authorAvatarUrl
+    : profileImageUrl;
   const directReplyCount = comment.replies.length;
   const hasCommentLinks = hasLinkifiedText(comment.text);
   const heading = (
     <div className="text-sm leading-5">
-      <span className="font-semibold text-white">humberto</span>{" "}
+      <span className="font-semibold text-white">{authorName}</span>{" "}
       <time
         className="text-neutral-500"
         dateTime={comment.createdAt.toISOString()}
@@ -73,18 +102,18 @@ export function PoemarioCommentBody({
       <div className="flex min-w-0 items-start gap-3">
         <ProfileImage
           className="mt-1 h-9 w-9 shrink-0 rounded-full object-cover"
-          profileImageUrl={profileImageUrl}
+          profileImageUrl={authorProfileImageUrl}
         />
         <div className="min-w-0 flex-1">
           {hasCommentLinks ? (
             <>
-              <Link className="block min-w-0" href={href}>
+              <Link className="block min-w-0" href={commentHref}>
                 {heading}
               </Link>
               {body}
             </>
           ) : (
-            <Link className="block min-w-0" href={href}>
+            <Link className="block min-w-0" href={commentHref}>
               {heading}
               {body}
             </Link>
@@ -94,7 +123,7 @@ export function PoemarioCommentBody({
             <Link
               aria-label={`${directReplyCount} respuestas`}
               className="rounded-full text-sm leading-5 text-neutral-500 transition hover:text-[#ff003c]"
-              href={href}
+              href={commentHref}
             >
               {directReplyCount}
             </Link>
@@ -106,12 +135,16 @@ export function PoemarioCommentBody({
 }
 
 function CommentNode({
+  basePath,
   comment,
+  defaultAuthorName,
   depth,
   highlightedCommentId,
   profileImageUrl,
 }: {
-  comment: PoemarioCommentTree;
+  basePath: string;
+  comment: DisplayCommentTree;
+  defaultAuthorName: string;
   depth: number;
   highlightedCommentId?: string;
   profileImageUrl?: string | null;
@@ -124,7 +157,9 @@ function CommentNode({
       style={depth > 0 ? { marginLeft: `${visualDepth * 0.6}rem` } : undefined}
     >
       <PoemarioCommentBody
+        basePath={basePath}
         comment={comment}
+        defaultAuthorName={defaultAuthorName}
         highlighted={comment.id === highlightedCommentId}
         profileImageUrl={profileImageUrl}
       />
@@ -133,7 +168,9 @@ function CommentNode({
         <ol>
           {comment.replies.map((reply) => (
             <CommentNode
+              basePath={basePath}
               comment={reply}
+              defaultAuthorName={defaultAuthorName}
               depth={depth + 1}
               highlightedCommentId={highlightedCommentId}
               key={reply.id}
@@ -147,7 +184,9 @@ function CommentNode({
 }
 
 export function PoemarioCommentList({
+  basePath = PUBLIC_FEED_PATH,
   comments,
+  defaultAuthorName = "humberto",
   highlightedCommentId,
   profileImageUrl,
 }: PoemarioCommentThreadProps & {
@@ -157,7 +196,9 @@ export function PoemarioCommentList({
     <ol>
       {comments.map((comment) => (
         <CommentNode
+          basePath={basePath}
           comment={comment}
+          defaultAuthorName={defaultAuthorName}
           depth={0}
           highlightedCommentId={highlightedCommentId}
           key={comment.id}
@@ -169,7 +210,9 @@ export function PoemarioCommentList({
 }
 
 export default function PoemarioCommentThread({
+  basePath = PUBLIC_FEED_PATH,
   comments,
+  defaultAuthorName = "humberto",
   profileImageUrl,
 }: PoemarioCommentThreadProps) {
   if (comments.length === 0) {
@@ -182,7 +225,9 @@ export default function PoemarioCommentThread({
       className="border-b border-neutral-800 px-4 py-2"
     >
       <PoemarioCommentList
+        basePath={basePath}
         comments={comments}
+        defaultAuthorName={defaultAuthorName}
         profileImageUrl={profileImageUrl}
       />
     </section>

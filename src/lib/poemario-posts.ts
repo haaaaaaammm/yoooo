@@ -1,74 +1,24 @@
 import "server-only";
 
+import {
+  buildCommentTree,
+  buildCommentTreeWithMap,
+  getCommentAncestorChain,
+  type CommentTreeNode,
+} from "@/lib/comment-tree";
 import { POSTS_PER_PAGE } from "@/lib/posts";
 import { getPrisma } from "@/lib/prisma";
 
-export type PoemarioCommentTree = {
+type PoemarioCommentRecord = {
   createdAt: Date;
   id: string;
   parentId: string | null;
   postId: string;
-  replies: PoemarioCommentTree[];
   text: string;
   updatedAt: Date;
 };
 
-type PoemarioCommentRecord = Omit<PoemarioCommentTree, "replies">;
-
-function buildPoemarioCommentTreeWithMap(comments: PoemarioCommentRecord[]) {
-  const commentMap = new Map<string, PoemarioCommentTree>();
-  const roots: PoemarioCommentTree[] = [];
-
-  comments.forEach((comment) => {
-    commentMap.set(comment.id, { ...comment, replies: [] });
-  });
-
-  comments.forEach((comment) => {
-    const node = commentMap.get(comment.id);
-
-    if (!node) {
-      return;
-    }
-
-    if (comment.parentId) {
-      const parent = commentMap.get(comment.parentId);
-
-      if (parent) {
-        parent.replies.push(node);
-        return;
-      }
-    }
-
-    roots.push(node);
-  });
-
-  return { commentMap, roots };
-}
-
-function buildPoemarioCommentTree(comments: PoemarioCommentRecord[]) {
-  return buildPoemarioCommentTreeWithMap(comments).roots;
-}
-
-function getPoemarioCommentAncestorChain(
-  comment: PoemarioCommentTree,
-  commentMap: Map<string, PoemarioCommentTree>
-) {
-  const ancestors: PoemarioCommentTree[] = [];
-  let parentId = comment.parentId;
-
-  while (parentId) {
-    const parent = commentMap.get(parentId);
-
-    if (!parent) {
-      break;
-    }
-
-    ancestors.unshift(parent);
-    parentId = parent.parentId;
-  }
-
-  return ancestors;
-}
+export type PoemarioCommentTree = CommentTreeNode<PoemarioCommentRecord>;
 
 export async function getPoemarioPostsPage(page: number) {
   const prisma = getPrisma();
@@ -91,6 +41,8 @@ export async function getPoemarioPostsPage(page: number) {
       commentCount: post._count.comments,
       content: post.content,
       createdAt: post.createdAt,
+      customAuthorAvatarUrl: post.customAuthorAvatarUrl,
+      customAuthorName: post.customAuthorName,
       id: post.id,
       updatedAt: post.updatedAt,
     })),
@@ -138,8 +90,10 @@ export async function getPoemarioPostWithThread(id: string) {
     commentCount: post._count.comments,
     content: post.content,
     createdAt: post.createdAt,
+    customAuthorAvatarUrl: post.customAuthorAvatarUrl,
+    customAuthorName: post.customAuthorName,
     id: post.id,
-    thread: buildPoemarioCommentTree(post.comments),
+    thread: buildCommentTree(post.comments),
     updatedAt: post.updatedAt,
   };
 }
@@ -171,7 +125,7 @@ export async function getPoemarioCommentPageData(
     return null;
   }
 
-  const { commentMap } = buildPoemarioCommentTreeWithMap(post.comments);
+  const { commentMap } = buildCommentTreeWithMap(post.comments);
   const comment = commentMap.get(normalizedCommentId);
 
   if (!comment || comment.postId !== post.id) {
@@ -179,12 +133,14 @@ export async function getPoemarioCommentPageData(
   }
 
   return {
-    ancestors: getPoemarioCommentAncestorChain(comment, commentMap),
+    ancestors: getCommentAncestorChain(comment, commentMap),
     comment,
     post: {
       commentCount: post._count.comments,
       content: post.content,
       createdAt: post.createdAt,
+      customAuthorAvatarUrl: post.customAuthorAvatarUrl,
+      customAuthorName: post.customAuthorName,
       id: post.id,
       updatedAt: post.updatedAt,
     },

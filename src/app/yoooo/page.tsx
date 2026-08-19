@@ -7,10 +7,12 @@ import { permanentRedirect, redirect } from "next/navigation";
 import NumberedPagination from "@/app/_components/numbered-pagination";
 import { getAdminArchivoPostsPage } from "@/lib/archivo-posts";
 import { getAdminAuthStatus, isAdminAuthenticated } from "@/lib/auth";
+import { getDiferenciasUsersForAdmin } from "@/lib/diferencias-posts";
 import { getPoemarioPostsPage } from "@/lib/poemario-posts";
 import {
   ADMIN_PATH,
   ARCHIVO_PATH,
+  DIFERENCIAS_PATH,
   POSTS_PER_PAGE,
   PUBLIC_FEED_PATH,
   parsePageParam,
@@ -22,7 +24,9 @@ import ArchivoManager from "./archivo-manager";
 import { loginAction } from "./actions";
 import Composer from "./composer";
 import ModeSwitcher from "./mode-switcher";
+import PlannedParenthoodManager from "./planned-parenthood-manager";
 import ProfileImageUpload from "./profile-image-upload";
+import WalterBazarComposer from "./walter-bazar-composer";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +43,11 @@ type AdminPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-type AdminMode = "archivo" | "poemario";
+type AdminMode =
+  | "archivo"
+  | "planned-parenthood"
+  | "poemario"
+  | "walter-bazar";
 
 function getParam(
   params: Record<string, string | string[] | undefined>,
@@ -51,7 +59,15 @@ function getParam(
 }
 
 function parseAdminMode(value: string | undefined): AdminMode {
-  return value === "archivo" ? "archivo" : "poemario";
+  if (
+    value === "archivo" ||
+    value === "planned-parenthood" ||
+    value === "walter-bazar"
+  ) {
+    return value;
+  }
+
+  return "poemario";
 }
 
 function getNormalizedAdminAppPath(
@@ -195,11 +211,39 @@ export default async function Home({ searchParams }: AdminPageProps) {
 
   const profileImageSettings = await getProfileImageSettings();
   const profileImageUrl = profileImageSettings.profileImageUrl;
-  const publicTargetPath = mode === "archivo" ? ARCHIVO_PATH : PUBLIC_FEED_PATH;
-  const publicTargetLabel = mode === "archivo" ? "< archivo" : "< poemario";
+  const publicTargetPath =
+    mode === "archivo"
+      ? ARCHIVO_PATH
+      : mode === "planned-parenthood"
+        ? DIFERENCIAS_PATH
+        : PUBLIC_FEED_PATH;
+  const publicTargetLabel =
+    mode === "archivo"
+      ? "< archivo"
+      : mode === "planned-parenthood"
+        ? "< diferencias"
+        : "< poemario";
   let pageContent: ReactNode;
 
-  if (mode === "archivo") {
+  if (mode === "planned-parenthood") {
+    const accounts = await getDiferenciasUsersForAdmin();
+
+    pageContent = (
+      <PlannedParenthoodManager
+        accounts={accounts.map((account) => ({
+          avatarUrl: account.avatarUrl,
+          createdAt: account.createdAt.toISOString(),
+          displayName: account.displayName,
+          id: account.id,
+          isActive: account.isActive,
+          lastLoginAt: account.lastLoginAt?.toISOString() ?? null,
+          lastPostAt: account.lastPostAt?.toISOString() ?? null,
+          postCount: account.postCount,
+          username: account.username,
+        }))}
+      />
+    );
+  } else if (mode === "archivo") {
     const { posts: archivoPosts, totalPages } = await getAdminArchivoPostsPage(page);
 
     // Out-of-range page (e.g. posts were deleted): send to the last valid page
@@ -242,9 +286,15 @@ export default async function Home({ searchParams }: AdminPageProps) {
     const { posts, totalPosts } = await getPoemarioPostsPage(page);
     const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
 
+    const isWalterBazar = mode === "walter-bazar";
+
     pageContent = (
       <>
-        <Composer profileImageUrl={profileImageUrl} />
+        {isWalterBazar ? (
+          <WalterBazarComposer />
+        ) : (
+          <Composer profileImageUrl={profileImageUrl} />
+        )}
 
         <section aria-label="Posts">
           {posts.length === 0 ? (
@@ -262,6 +312,8 @@ export default async function Home({ searchParams }: AdminPageProps) {
                     id: post.id,
                     content: post.content,
                     createdAt: post.createdAt.toISOString(),
+                    customAuthorAvatarUrl: post.customAuthorAvatarUrl,
+                    customAuthorName: post.customAuthorName,
                   }}
                   profileImageUrl={profileImageUrl}
                 />
@@ -269,7 +321,11 @@ export default async function Home({ searchParams }: AdminPageProps) {
             </ol>
           )}
           <NumberedPagination
-            basePath={ADMIN_PATH}
+            basePath={
+              isWalterBazar
+                ? `${ADMIN_PATH}?app=walter-bazar`
+                : ADMIN_PATH
+            }
             page={page}
             totalPages={totalPages}
           />
@@ -289,7 +345,7 @@ export default async function Home({ searchParams }: AdminPageProps) {
               </h1>
             </div>
             <div className="flex flex-none items-center gap-2">
-              <ProfileImageUpload />
+              {mode === "planned-parenthood" ? null : <ProfileImageUpload />}
               <Link
                 className="rounded-full px-4 py-2 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10"
                 href={publicTargetPath}

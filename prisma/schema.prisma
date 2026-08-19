@@ -8,25 +8,28 @@ datasource db {
 }
 
 model Post {
-  id        String            @id @default(cuid())
-  content   String
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-  comments  PoemarioComment[]
+  id                    String            @id @default(cuid())
+  content               String
+  customAuthorName      String?
+  customAuthorAvatarUrl String?
+  customAuthorAvatarKey String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  comments              PoemarioComment[]
 
   @@index([createdAt])
 }
 
 model PoemarioComment {
-  id        String             @id @default(cuid())
+  id        String            @id @default(cuid())
   postId    String
   parentId  String?
   text      String
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
-  post      Post               @relation(fields: [postId], references: [id], onDelete: Cascade)
-  parent    PoemarioComment?   @relation("PoemarioCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   PoemarioComment[]  @relation("PoemarioCommentReplies")
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  post      Post              @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent    PoemarioComment?  @relation("PoemarioCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   PoemarioComment[] @relation("PoemarioCommentReplies")
 
   @@index([postId, createdAt])
   @@index([parentId, createdAt])
@@ -58,14 +61,82 @@ model ArchivePost {
 }
 
 model ArchiveImage {
-  id        String      @id @default(cuid())
+  id        String       @id @default(cuid())
   postId    String
   key       String
   url       String
   order     Int
-  createdAt DateTime    @default(now())
+  createdAt DateTime     @default(now())
   coverFor  ArchivePost? @relation("ArchivePostCoverImage")
-  post      ArchivePost @relation("ArchivePostImages", fields: [postId], references: [id], onDelete: Cascade)
+  post      ArchivePost  @relation("ArchivePostImages", fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([postId, order])
+}
+
+model DiferenciasUser {
+  id           String               @id @default(cuid())
+  username     String               @unique
+  displayName  String
+  passwordHash String
+  avatarUrl    String?
+  avatarKey    String?
+  isActive     Boolean              @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  posts        DiferenciasPost[]
+  comments     DiferenciasComment[]
+  sessions     DiferenciasSession[]
+}
+
+model DiferenciasSession {
+  id        String          @id @default(cuid())
+  tokenHash String          @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime        @default(now())
+  user      DiferenciasUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model DiferenciasPost {
+  id        String               @id @default(cuid())
+  content   String
+  authorId  String
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  author    DiferenciasUser      @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  comments  DiferenciasComment[]
+
+  @@index([createdAt])
+  @@index([authorId, createdAt])
+}
+
+model DiferenciasComment {
+  id        String               @id @default(cuid())
+  postId    String
+  authorId  String
+  parentId  String?
+  text      String
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  post      DiferenciasPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    DiferenciasUser      @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  parent    DiferenciasComment?  @relation("DiferenciasCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   DiferenciasComment[] @relation("DiferenciasCommentReplies")
+
+  @@index([postId, createdAt])
+  @@index([parentId, createdAt])
+  @@index([authorId])
+}
+
+model DiferenciasLoginAttempt {
+  id          String   @id @default(cuid())
+  keyHash     String
+  attemptedAt DateTime @default(now())
+
+  @@index([keyHash, attemptedAt])
+  @@index([attemptedAt])
 }

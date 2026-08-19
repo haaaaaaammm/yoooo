@@ -14,6 +14,8 @@ type AdminPost = {
   id: string;
   content: string;
   createdAt: string;
+  customAuthorAvatarUrl?: string | null;
+  customAuthorName?: string | null;
 };
 
 type AdminPostCardProps = {
@@ -51,6 +53,11 @@ export default function AdminPostCard({
   post,
   profileImageUrl,
 }: AdminPostCardProps) {
+  const customAuthorName = post.customAuthorName?.trim();
+  const authorName = customAuthorName || "humberto";
+  const authorProfileImageUrl = customAuthorName
+    ? post.customAuthorAvatarUrl
+    : profileImageUrl;
   const router = useRouter();
   const [content, setContent] = useState(post.content);
   const [draft, setDraft] = useState(post.content);
@@ -124,14 +131,14 @@ export default function AdminPostCard({
         <div className="flex items-start gap-3">
           <ProfileImage
             className="h-10 w-10 shrink-0 rounded-full object-cover"
-            profileImageUrl={profileImageUrl}
+            profileImageUrl={authorProfileImageUrl}
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm leading-5">
                   <span className="max-w-full truncate font-semibold text-white">
-                    humberto
+                    {authorName}
                   </span>
                   {href && !isEditing ? (
                     <Link

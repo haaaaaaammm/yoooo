@@ -18,6 +18,7 @@ import { getPrisma } from "@/lib/prisma";
 import {
   deleteR2Object,
   uploadArchivoImageToR2,
+  uploadPoemarioAvatarToR2,
   uploadProfileImageToR2,
   validateImageFile,
   validateProfileImageFile,
@@ -62,6 +63,115 @@ export async function createPostAction(formData: FormData) {
   redirect(`${ADMIN_PATH}?published=1`);
 }
 
+export type WalterBazarPostActionResult =
+  | {
+      avatar: { key: string; url: string };
+      message: string;
+      ok: true;
+    }
+  | { message: string; ok: false };
+
+export async function createWalterBazarPostAction(
+  formData: FormData
+): Promise<WalterBazarPostActionResult> {
+  if (!(await isAdminAuthenticated())) {
+    return { ok: false, message: "vuelve a iniciar sesion" };
+  }
+
+  const customAuthorName = String(
+    formData.get("customAuthorName") ?? ""
+  ).trim();
+  const content = String(formData.get("content") ?? "").trim();
+  const avatar = formData.get("customAuthorAvatar");
+  const reusableAvatarKey = String(
+    formData.get("customAuthorAvatarKey") ?? ""
+  ).trim();
+
+  if (!customAuthorName) {
+    return { ok: false, message: "Escribe el nombre de la persona." };
+  }
+
+  if (!content) {
+    return { ok: false, message: "Escribe algo antes de publicar." };
+  }
+
+  const prisma = getPrisma();
+  let avatarReference: { key: string; url: string } | null = null;
+  let newlyUploadedAvatarKey: string | null = null;
+
+  if (reusableAvatarKey) {
+    try {
+      const existingAvatar = await prisma.post.findFirst({
+        where: { customAuthorAvatarKey: reusableAvatarKey },
+        select: {
+          customAuthorAvatarKey: true,
+          customAuthorAvatarUrl: true,
+        },
+      });
+
+      if (
+        existingAvatar?.customAuthorAvatarKey &&
+        existingAvatar.customAuthorAvatarUrl
+      ) {
+        avatarReference = {
+          key: existingAvatar.customAuthorAvatarKey,
+          url: existingAvatar.customAuthorAvatarUrl,
+        };
+      }
+    } catch {
+      return { ok: false, message: "No se pudo validar la foto de perfil." };
+    }
+  }
+
+  if (!avatarReference) {
+    if (!(avatar instanceof File)) {
+      return { ok: false, message: "Selecciona una foto de perfil." };
+    }
+
+    const avatarValidation = validateProfileImageFile(avatar);
+
+    if (!avatarValidation.ok) {
+      return {
+        ok: false,
+        message: profileImageErrorMessage(avatarValidation.reason),
+      };
+    }
+
+    try {
+      avatarReference = await uploadPoemarioAvatarToR2(avatar);
+      newlyUploadedAvatarKey = avatarReference.key;
+    } catch {
+      return { ok: false, message: "No se pudo subir la foto de perfil." };
+    }
+  }
+
+  try {
+    await prisma.post.create({
+      data: {
+        content,
+        customAuthorAvatarKey: avatarReference.key,
+        customAuthorAvatarUrl: avatarReference.url,
+        customAuthorName,
+      },
+    });
+  } catch {
+    if (newlyUploadedAvatarKey) {
+      try {
+        await deleteR2Object(newlyUploadedAvatarKey);
+      } catch {
+        // Best-effort cleanup; never mask the database error.
+      }
+    }
+
+    return { ok: false, message: "No se pudo guardar el post." };
+  }
+
+  revalidatePath(PUBLIC_FEED_PATH);
+  revalidatePath(ADMIN_PATH);
+
+  return { avatar: avatarReference, ok: true, message: "posteado" };
+}
+
 export async function deletePostAction(formData: FormData) {
   if (!(await isAdminAuthenticated())) {
     redirect(`${ADMIN_PATH}?error=auth`);
@@ -76,7 +186,7 @@ export async function deletePostAction(formData: FormData) {
   const prisma = getPrisma();
   const post = await prisma.post.findUnique({
     where: { id: postId },
-    select: { id: true },
+    select: { customAuthorAvatarKey: true, id: true },
   });
 
   if (!post) {
@@ -86,6 +196,29 @@ export async function deletePostAction(formData: FormData) {
   await prisma.post.delete({
     where: { id: postId },
   });
+
+  if (post.customAuthorAvatarKey) {
+    let remainingAvatarReference = true;
+
+    try {
+      remainingAvatarReference = Boolean(
+        await prisma.post.findFirst({
+          where: { customAuthorAvatarKey: post.customAuthorAvatarKey },
+          select: { id: true },
+        })
+      );
+    } catch {
+      // If reference lookup fails, preserve the object rather than break a post.
+    }
+
+    if (!remainingAvatarReference) {
+      try {
+        await deleteR2Object(post.customAuthorAvatarKey);
+      } catch {
+        // The post is already deleted; stale R2 cleanup must not block the UI.
+      }
+    }
+  }
 
   revalidatePath(PUBLIC_FEED_PATH);
   revalidatePath(ADMIN_PATH);

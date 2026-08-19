@@ -2,7 +2,11 @@
 
 import { ADMIN_PATH } from "@/lib/posts";
 
-type AdminMode = "archivo" | "poemario";
+type AdminMode =
+  | "archivo"
+  | "planned-parenthood"
+  | "poemario"
+  | "walter-bazar";
 
 type ModeSwitcherProps = {
   activeMode: AdminMode;
@@ -11,13 +15,23 @@ type ModeSwitcherProps = {
 const modes: { href: string; id: AdminMode; label: string }[] = [
   { href: ADMIN_PATH, id: "poemario", label: "poemario" },
   { href: `${ADMIN_PATH}?app=archivo`, id: "archivo", label: "archivo" },
+  {
+    href: `${ADMIN_PATH}?app=walter-bazar`,
+    id: "walter-bazar",
+    label: "walter bazar",
+  },
+  {
+    href: `${ADMIN_PATH}?app=planned-parenthood`,
+    id: "planned-parenthood",
+    label: "planned parenthood",
+  },
 ];
 
 export default function ModeSwitcher({ activeMode }: ModeSwitcherProps) {
   return (
     <nav
       aria-label="Publishing mode"
-      className="flex gap-2 border-b border-neutral-800 px-4 py-3"
+      className="flex flex-wrap gap-2 border-b border-neutral-800 px-4 py-3"
     >
       {modes.map((mode) => {
         const isActive = mode.id === activeMode;

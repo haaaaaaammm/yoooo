@@ -55,7 +55,12 @@ export const ModelName = {
   PoemarioComment: 'PoemarioComment',
   SiteSettings: 'SiteSettings',
   ArchivePost: 'ArchivePost',
-  ArchiveImage: 'ArchiveImage'
+  ArchiveImage: 'ArchiveImage',
+  DiferenciasUser: 'DiferenciasUser',
+  DiferenciasSession: 'DiferenciasSession',
+  DiferenciasPost: 'DiferenciasPost',
+  DiferenciasComment: 'DiferenciasComment',
+  DiferenciasLoginAttempt: 'DiferenciasLoginAttempt'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -77,6 +82,9 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 export const PostScalarFieldEnum = {
   id: 'id',
   content: 'content',
+  customAuthorName: 'customAuthorName',
+  customAuthorAvatarUrl: 'customAuthorAvatarUrl',
+  customAuthorAvatarKey: 'customAuthorAvatarKey',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -131,6 +139,66 @@ export const ArchiveImageScalarFieldEnum = {
 } as const
 
 export type ArchiveImageScalarFieldEnum = (typeof ArchiveImageScalarFieldEnum)[keyof typeof ArchiveImageScalarFieldEnum]
+
+
+export const DiferenciasUserScalarFieldEnum = {
+  id: 'id',
+  username: 'username',
+  displayName: 'displayName',
+  passwordHash: 'passwordHash',
+  avatarUrl: 'avatarUrl',
+  avatarKey: 'avatarKey',
+  isActive: 'isActive',
+  lastLoginAt: 'lastLoginAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DiferenciasUserScalarFieldEnum = (typeof DiferenciasUserScalarFieldEnum)[keyof typeof DiferenciasUserScalarFieldEnum]
+
+
+export const DiferenciasSessionScalarFieldEnum = {
+  id: 'id',
+  tokenHash: 'tokenHash',
+  userId: 'userId',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+} as const
+
+export type DiferenciasSessionScalarFieldEnum = (typeof DiferenciasSessionScalarFieldEnum)[keyof typeof DiferenciasSessionScalarFieldEnum]
+
+
+export const DiferenciasPostScalarFieldEnum = {
+  id: 'id',
+  content: 'content',
+  authorId: 'authorId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DiferenciasPostScalarFieldEnum = (typeof DiferenciasPostScalarFieldEnum)[keyof typeof DiferenciasPostScalarFieldEnum]
+
+
+export const DiferenciasCommentScalarFieldEnum = {
+  id: 'id',
+  postId: 'postId',
+  authorId: 'authorId',
+  parentId: 'parentId',
+  text: 'text',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DiferenciasCommentScalarFieldEnum = (typeof DiferenciasCommentScalarFieldEnum)[keyof typeof DiferenciasCommentScalarFieldEnum]
+
+
+export const DiferenciasLoginAttemptScalarFieldEnum = {
+  id: 'id',
+  keyHash: 'keyHash',
+  attemptedAt: 'attemptedAt'
+} as const
+
+export type DiferenciasLoginAttemptScalarFieldEnum = (typeof DiferenciasLoginAttemptScalarFieldEnum)[keyof typeof DiferenciasLoginAttemptScalarFieldEnum]
 
 
 export const SortOrder = {

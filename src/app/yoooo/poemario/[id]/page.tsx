@@ -104,6 +104,8 @@ export default async function AdminPoemarioPostPage({
                 commentCount: post.commentCount,
                 content: post.content,
                 createdAt: post.createdAt,
+                customAuthorAvatarUrl: post.customAuthorAvatarUrl,
+                customAuthorName: post.customAuthorName,
                 id: post.id,
               }}
               profileImageUrl={profileImageSettings.profileImageUrl}

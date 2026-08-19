@@ -66,3 +66,28 @@ export type ArchivePost = Prisma.ArchivePostModel
  * 
  */
 export type ArchiveImage = Prisma.ArchiveImageModel
+/**
+ * Model DiferenciasUser
+ * 
+ */
+export type DiferenciasUser = Prisma.DiferenciasUserModel
+/**
+ * Model DiferenciasSession
+ * 
+ */
+export type DiferenciasSession = Prisma.DiferenciasSessionModel
+/**
+ * Model DiferenciasPost
+ * 
+ */
+export type DiferenciasPost = Prisma.DiferenciasPostModel
+/**
+ * Model DiferenciasComment
+ * 
+ */
+export type DiferenciasComment = Prisma.DiferenciasCommentModel
+/**
+ * Model DiferenciasLoginAttempt
+ * 
+ */
+export type DiferenciasLoginAttempt = Prisma.DiferenciasLoginAttemptModel

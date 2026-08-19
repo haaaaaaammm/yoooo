@@ -114,6 +114,8 @@ export default async function PoemarioCommentPage({
                 commentCount: data.post.commentCount,
                 content: data.post.content,
                 createdAt: data.post.createdAt,
+                customAuthorAvatarUrl: data.post.customAuthorAvatarUrl,
+                customAuthorName: data.post.customAuthorName,
                 id: data.post.id,
               }}
               profileImageUrl={profileImageUrl}

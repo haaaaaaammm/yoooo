@@ -6,6 +6,7 @@ import { useFormStatus } from "react-dom";
 import ProfileImage from "@/app/_components/profile-image";
 
 import { createPostAction } from "./actions";
+import PoemarioContentInput from "./poemario-content-input";
 
 function PublishButton({ canSubmit }: { canSubmit: boolean }) {
   const { pending } = useFormStatus();
@@ -41,13 +42,10 @@ export default function Composer({
           profileImageUrl={profileImageUrl}
         />
         <div className="min-w-0 flex-1">
-          <textarea
-            className="min-h-32 w-full resize-y rounded-2xl border border-transparent bg-black px-1 text-md leading-7 text-white outline-none transition placeholder:text-neutral-500 "
-            name="content"
+          <PoemarioContentInput
+            content={content}
             onChange={(event) => setContent(event.target.value)}
             placeholder="en qué piensas y así??"
-            required
-            value={content}
           />
           <div className="mt-3 flex items-center justify-end border-t border-neutral-900 pt-3">
             <PublishButton canSubmit={canSubmit} />

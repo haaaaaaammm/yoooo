@@ -69,7 +69,27 @@ function getS3Client(config: R2Config) {
 }
 
 export function validateProfileImageFile(file: File) {
-  return validateImageFile(file);
+  const validation = validateImageFile(file);
+
+  if (!validation.ok) {
+    return validation;
+  }
+
+  const normalizedMimeType = file.type.trim().toLowerCase();
+  const canonicalMimeType =
+    normalizedMimeType === "image/jpg" ||
+    normalizedMimeType === "image/pjpeg"
+      ? "image/jpeg"
+      : normalizedMimeType;
+
+  if (
+    !Object.hasOwn(IMAGE_FILE_EXTENSIONS, canonicalMimeType) ||
+    validation.mimeType !== canonicalMimeType
+  ) {
+    return { ok: false as const, reason: "invalid_type" as const };
+  }
+
+  return validation;
 }
 
 export function validateImageFile(file: File) {
@@ -94,7 +114,7 @@ export function validateImageFile(file: File) {
   };
 }
 
-export async function uploadProfileImageToR2(file: File) {
+async function uploadProfileStyleImageToR2(file: File, keyBase: string) {
   const validation = validateProfileImageFile(file);
 
   if (!validation.ok) {
@@ -102,7 +122,7 @@ export async function uploadProfileImageToR2(file: File) {
   }
 
   const config = getR2Config();
-  const key = `profile/pfp-${Date.now()}-${randomUUID()}.${validation.extension}`;
+  const key = `${keyBase}-${Date.now()}-${randomUUID()}.${validation.extension}`;
   const body = Buffer.from(await file.arrayBuffer());
 
   await getS3Client(config).send(
@@ -118,6 +138,18 @@ export async function uploadProfileImageToR2(file: File) {
     key,
     url: `${config.publicUrl}/${key}`,
   };
+}
+
+export async function uploadProfileImageToR2(file: File) {
+  return uploadProfileStyleImageToR2(file, "profile/pfp");
+}
+
+export async function uploadPoemarioAvatarToR2(file: File) {
+  return uploadProfileStyleImageToR2(file, "poemario/avatars/avatar");
+}
+
+export async function uploadDiferenciasAvatarToR2(file: File) {
+  return uploadProfileStyleImageToR2(file, "diferencias/avatars/avatar");
 }
 
 export async function uploadArchivoImageToR2(

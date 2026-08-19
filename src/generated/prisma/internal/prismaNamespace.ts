@@ -80,12 +80,12 @@ export type PrismaVersion = {
 }
 
 /**
- * Prisma Client JS version: 7.8.0
- * Query Engine version: 3c6e192761c0362d496ed980de936e2f3cebcd3a
+ * Prisma Client JS version: 7.9.1
+ * Query Engine version: e922089b7d7502aff4249d5da3420f6fa55fc6ad
  */
 export const prismaVersion: PrismaVersion = {
-  client: "7.8.0",
-  engine: "3c6e192761c0362d496ed980de936e2f3cebcd3a"
+  client: "7.9.1",
+  engine: "e922089b7d7502aff4249d5da3420f6fa55fc6ad"
 }
 
 /**
@@ -156,6 +156,19 @@ export type Subset<T, U> = {
 };
 
 /**
+ * Resolved type of the argument passed to the `PrismaClient` constructor.
+ *
+ * When called without a narrower options type (the common case), this resolves
+ * to `PrismaClientOptions` directly, which produces a clear TypeScript error
+ * message (`not assignable to parameter of type 'PrismaClientOptions'`) when
+ * the argument is missing or incomplete. When the user supplies a narrower
+ * options type (e.g. via a literal), it falls back to `Subset` to keep
+ * filtering out unknown properties.
+ */
+export type PrismaClientConstructorArgs<Options extends PrismaClientOptions> =
+  [PrismaClientOptions] extends [Options] ? PrismaClientOptions : Subset<Options, PrismaClientOptions>;
+
+/**
  * SelectSubset
  * @desc From `T` pick properties that exist in `U`. Simple version of Intersection.
  * Additionally, it validates, if both select and include are present. If the case, it errors.
@@ -187,7 +200,7 @@ type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never };
 export type XOR<T, U> =
   T extends object ?
   U extends object ?
-    (Without<T, U> & U) | (Without<U, T> & T)
+    ((Without<T, U> & U) | (Without<U, T> & T)) & object
   : U : T
 
 
@@ -388,7 +401,12 @@ export const ModelName = {
   PoemarioComment: 'PoemarioComment',
   SiteSettings: 'SiteSettings',
   ArchivePost: 'ArchivePost',
-  ArchiveImage: 'ArchiveImage'
+  ArchiveImage: 'ArchiveImage',
+  DiferenciasUser: 'DiferenciasUser',
+  DiferenciasSession: 'DiferenciasSession',
+  DiferenciasPost: 'DiferenciasPost',
+  DiferenciasComment: 'DiferenciasComment',
+  DiferenciasLoginAttempt: 'DiferenciasLoginAttempt'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -404,7 +422,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "post" | "poemarioComment" | "siteSettings" | "archivePost" | "archiveImage"
+    modelProps: "post" | "poemarioComment" | "siteSettings" | "archivePost" | "archiveImage" | "diferenciasUser" | "diferenciasSession" | "diferenciasPost" | "diferenciasComment" | "diferenciasLoginAttempt"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -778,6 +796,376 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    DiferenciasUser: {
+      payload: Prisma.$DiferenciasUserPayload<ExtArgs>
+      fields: Prisma.DiferenciasUserFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DiferenciasUserFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasUserPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DiferenciasUserFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasUserPayload>
+        }
+        findFirst: {
+          args: Prisma.DiferenciasUserFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasUserPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DiferenciasUserFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasUserPayload>
+        }
+        findMany: {
+          args: Prisma.DiferenciasUserFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasUserPayload>[]
+        }
+        create: {
+          args: Prisma.DiferenciasUserCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasUserPayload>
+        }
+        createMany: {
+          args: Prisma.DiferenciasUserCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DiferenciasUserCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasUserPayload>[]
+        }
+        delete: {
+          args: Prisma.DiferenciasUserDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasUserPayload>
+        }
+        update: {
+          args: Prisma.DiferenciasUserUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasUserPayload>
+        }
+        deleteMany: {
+          args: Prisma.DiferenciasUserDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DiferenciasUserUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DiferenciasUserUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasUserPayload>[]
+        }
+        upsert: {
+          args: Prisma.DiferenciasUserUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasUserPayload>
+        }
+        aggregate: {
+          args: Prisma.DiferenciasUserAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDiferenciasUser>
+        }
+        groupBy: {
+          args: Prisma.DiferenciasUserGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DiferenciasUserGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DiferenciasUserCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DiferenciasUserCountAggregateOutputType> | number
+        }
+      }
+    }
+    DiferenciasSession: {
+      payload: Prisma.$DiferenciasSessionPayload<ExtArgs>
+      fields: Prisma.DiferenciasSessionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DiferenciasSessionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasSessionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DiferenciasSessionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasSessionPayload>
+        }
+        findFirst: {
+          args: Prisma.DiferenciasSessionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasSessionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DiferenciasSessionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasSessionPayload>
+        }
+        findMany: {
+          args: Prisma.DiferenciasSessionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasSessionPayload>[]
+        }
+        create: {
+          args: Prisma.DiferenciasSessionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasSessionPayload>
+        }
+        createMany: {
+          args: Prisma.DiferenciasSessionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DiferenciasSessionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasSessionPayload>[]
+        }
+        delete: {
+          args: Prisma.DiferenciasSessionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasSessionPayload>
+        }
+        update: {
+          args: Prisma.DiferenciasSessionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasSessionPayload>
+        }
+        deleteMany: {
+          args: Prisma.DiferenciasSessionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DiferenciasSessionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DiferenciasSessionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasSessionPayload>[]
+        }
+        upsert: {
+          args: Prisma.DiferenciasSessionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasSessionPayload>
+        }
+        aggregate: {
+          args: Prisma.DiferenciasSessionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDiferenciasSession>
+        }
+        groupBy: {
+          args: Prisma.DiferenciasSessionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DiferenciasSessionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DiferenciasSessionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DiferenciasSessionCountAggregateOutputType> | number
+        }
+      }
+    }
+    DiferenciasPost: {
+      payload: Prisma.$DiferenciasPostPayload<ExtArgs>
+      fields: Prisma.DiferenciasPostFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DiferenciasPostFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPostPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DiferenciasPostFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPostPayload>
+        }
+        findFirst: {
+          args: Prisma.DiferenciasPostFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPostPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DiferenciasPostFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPostPayload>
+        }
+        findMany: {
+          args: Prisma.DiferenciasPostFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPostPayload>[]
+        }
+        create: {
+          args: Prisma.DiferenciasPostCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPostPayload>
+        }
+        createMany: {
+          args: Prisma.DiferenciasPostCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DiferenciasPostCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPostPayload>[]
+        }
+        delete: {
+          args: Prisma.DiferenciasPostDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPostPayload>
+        }
+        update: {
+          args: Prisma.DiferenciasPostUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPostPayload>
+        }
+        deleteMany: {
+          args: Prisma.DiferenciasPostDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DiferenciasPostUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DiferenciasPostUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPostPayload>[]
+        }
+        upsert: {
+          args: Prisma.DiferenciasPostUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPostPayload>
+        }
+        aggregate: {
+          args: Prisma.DiferenciasPostAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDiferenciasPost>
+        }
+        groupBy: {
+          args: Prisma.DiferenciasPostGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DiferenciasPostGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DiferenciasPostCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DiferenciasPostCountAggregateOutputType> | number
+        }
+      }
+    }
+    DiferenciasComment: {
+      payload: Prisma.$DiferenciasCommentPayload<ExtArgs>
+      fields: Prisma.DiferenciasCommentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DiferenciasCommentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasCommentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DiferenciasCommentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasCommentPayload>
+        }
+        findFirst: {
+          args: Prisma.DiferenciasCommentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasCommentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DiferenciasCommentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasCommentPayload>
+        }
+        findMany: {
+          args: Prisma.DiferenciasCommentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasCommentPayload>[]
+        }
+        create: {
+          args: Prisma.DiferenciasCommentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasCommentPayload>
+        }
+        createMany: {
+          args: Prisma.DiferenciasCommentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DiferenciasCommentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasCommentPayload>[]
+        }
+        delete: {
+          args: Prisma.DiferenciasCommentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasCommentPayload>
+        }
+        update: {
+          args: Prisma.DiferenciasCommentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasCommentPayload>
+        }
+        deleteMany: {
+          args: Prisma.DiferenciasCommentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DiferenciasCommentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DiferenciasCommentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasCommentPayload>[]
+        }
+        upsert: {
+          args: Prisma.DiferenciasCommentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasCommentPayload>
+        }
+        aggregate: {
+          args: Prisma.DiferenciasCommentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDiferenciasComment>
+        }
+        groupBy: {
+          args: Prisma.DiferenciasCommentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DiferenciasCommentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DiferenciasCommentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DiferenciasCommentCountAggregateOutputType> | number
+        }
+      }
+    }
+    DiferenciasLoginAttempt: {
+      payload: Prisma.$DiferenciasLoginAttemptPayload<ExtArgs>
+      fields: Prisma.DiferenciasLoginAttemptFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DiferenciasLoginAttemptFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasLoginAttemptPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DiferenciasLoginAttemptFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasLoginAttemptPayload>
+        }
+        findFirst: {
+          args: Prisma.DiferenciasLoginAttemptFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasLoginAttemptPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DiferenciasLoginAttemptFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasLoginAttemptPayload>
+        }
+        findMany: {
+          args: Prisma.DiferenciasLoginAttemptFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasLoginAttemptPayload>[]
+        }
+        create: {
+          args: Prisma.DiferenciasLoginAttemptCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasLoginAttemptPayload>
+        }
+        createMany: {
+          args: Prisma.DiferenciasLoginAttemptCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DiferenciasLoginAttemptCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasLoginAttemptPayload>[]
+        }
+        delete: {
+          args: Prisma.DiferenciasLoginAttemptDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasLoginAttemptPayload>
+        }
+        update: {
+          args: Prisma.DiferenciasLoginAttemptUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasLoginAttemptPayload>
+        }
+        deleteMany: {
+          args: Prisma.DiferenciasLoginAttemptDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DiferenciasLoginAttemptUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DiferenciasLoginAttemptUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasLoginAttemptPayload>[]
+        }
+        upsert: {
+          args: Prisma.DiferenciasLoginAttemptUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasLoginAttemptPayload>
+        }
+        aggregate: {
+          args: Prisma.DiferenciasLoginAttemptAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDiferenciasLoginAttempt>
+        }
+        groupBy: {
+          args: Prisma.DiferenciasLoginAttemptGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DiferenciasLoginAttemptGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DiferenciasLoginAttemptCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DiferenciasLoginAttemptCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -820,6 +1208,9 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 export const PostScalarFieldEnum = {
   id: 'id',
   content: 'content',
+  customAuthorName: 'customAuthorName',
+  customAuthorAvatarUrl: 'customAuthorAvatarUrl',
+  customAuthorAvatarKey: 'customAuthorAvatarKey',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -874,6 +1265,66 @@ export const ArchiveImageScalarFieldEnum = {
 } as const
 
 export type ArchiveImageScalarFieldEnum = (typeof ArchiveImageScalarFieldEnum)[keyof typeof ArchiveImageScalarFieldEnum]
+
+
+export const DiferenciasUserScalarFieldEnum = {
+  id: 'id',
+  username: 'username',
+  displayName: 'displayName',
+  passwordHash: 'passwordHash',
+  avatarUrl: 'avatarUrl',
+  avatarKey: 'avatarKey',
+  isActive: 'isActive',
+  lastLoginAt: 'lastLoginAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DiferenciasUserScalarFieldEnum = (typeof DiferenciasUserScalarFieldEnum)[keyof typeof DiferenciasUserScalarFieldEnum]
+
+
+export const DiferenciasSessionScalarFieldEnum = {
+  id: 'id',
+  tokenHash: 'tokenHash',
+  userId: 'userId',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+} as const
+
+export type DiferenciasSessionScalarFieldEnum = (typeof DiferenciasSessionScalarFieldEnum)[keyof typeof DiferenciasSessionScalarFieldEnum]
+
+
+export const DiferenciasPostScalarFieldEnum = {
+  id: 'id',
+  content: 'content',
+  authorId: 'authorId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DiferenciasPostScalarFieldEnum = (typeof DiferenciasPostScalarFieldEnum)[keyof typeof DiferenciasPostScalarFieldEnum]
+
+
+export const DiferenciasCommentScalarFieldEnum = {
+  id: 'id',
+  postId: 'postId',
+  authorId: 'authorId',
+  parentId: 'parentId',
+  text: 'text',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DiferenciasCommentScalarFieldEnum = (typeof DiferenciasCommentScalarFieldEnum)[keyof typeof DiferenciasCommentScalarFieldEnum]
+
+
+export const DiferenciasLoginAttemptScalarFieldEnum = {
+  id: 'id',
+  keyHash: 'keyHash',
+  attemptedAt: 'attemptedAt'
+} as const
+
+export type DiferenciasLoginAttemptScalarFieldEnum = (typeof DiferenciasLoginAttemptScalarFieldEnum)[keyof typeof DiferenciasLoginAttemptScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -949,6 +1400,13 @@ export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -971,19 +1429,10 @@ export type BatchPayload = {
 export const defineExtension = runtime.Extensions.defineExtension as unknown as runtime.Types.Extensions.ExtendsHook<"define", TypeMapCb, runtime.Types.Extensions.DefaultArgs>
 export type DefaultPrismaClient = PrismaClient
 export type ErrorFormat = 'pretty' | 'colorless' | 'minimal'
-export type PrismaClientOptions = ({
-  /**
-   * Instance of a Driver Adapter, e.g., like one provided by `@prisma/adapter-pg`.
-   */
-  adapter: runtime.SqlDriverAdapterFactory
-  accelerateUrl?: never
-} | {
-  /**
-   * Prisma Accelerate URL allowing the client to connect through Accelerate instead of a direct database.
-   */
-  accelerateUrl: string
-  adapter?: never
-}) & {
+/**
+ * Options common to all variants of `PrismaClientOptions`, regardless of whether you connect to your database through a driver adapter or through Prisma Accelerate.
+ */
+export interface PrismaClientBaseOptions {
   /**
    * @default "colorless"
    */
@@ -1070,12 +1519,67 @@ export type PrismaClientOptions = ({
    */
   queryPlanCacheMaxSize?: number
 }
+
+/**
+ * `PrismaClient` options for connecting to your database through Prisma Accelerate instead of a driver adapter.
+ * 
+ * Learn more: https://pris.ly/d/accelerate
+ */
+export interface PrismaClientOptionsWithAccelerateUrl extends PrismaClientBaseOptions {
+  /**
+   * The Prisma Accelerate connection URL. Use this option to connect to your database through Prisma Accelerate instead of using a driver adapter to connect directly.
+   * 
+   * Learn more: https://pris.ly/d/accelerate
+   */
+  accelerateUrl: string
+  adapter?: never
+}
+
+/**
+ * `PrismaClient` options for connecting to your database through a driver adapter. This is the common case in Prisma 7.
+ * 
+ * Learn more: https://pris.ly/d/driver-adapters
+ */
+export interface PrismaClientOptionsWithAdapter extends PrismaClientBaseOptions {
+  /**
+   * A driver adapter that PrismaClient uses to connect to your database, such as the ones provided by `@prisma/adapter-pg`, `@prisma/adapter-libsql`, `@prisma/adapter-planetscale`, etc.
+   * 
+   * A driver adapter is **required** unless you connect to your database through Prisma Accelerate (in which case use `accelerateUrl` instead).
+   * 
+   * Learn more: https://pris.ly/d/driver-adapters
+   * 
+   * @example
+   * ```ts
+   * import { PrismaPg } from '@prisma/adapter-pg'
+   * import { PrismaClient } from './generated/prisma/client'
+   * 
+   * const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+   * const prisma = new PrismaClient({ adapter })
+   * ```
+   */
+  adapter: runtime.SqlDriverAdapterFactory
+  accelerateUrl?: never
+}
+
+/**
+ * Options passed to the `PrismaClient` constructor.
+ * 
+ * A driver adapter (or, alternatively, a Prisma Accelerate URL) is **required**. See {@link PrismaClientOptionsWithAdapter} and {@link PrismaClientOptionsWithAccelerateUrl} for the two variants. All other properties live in {@link PrismaClientBaseOptions} and are optional.
+ * 
+ * Learn more about driver adapters: https://pris.ly/d/driver-adapters
+ */
+export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaClientOptionsWithAdapter
 export type GlobalOmitConfig = {
   post?: Prisma.PostOmit
   poemarioComment?: Prisma.PoemarioCommentOmit
   siteSettings?: Prisma.SiteSettingsOmit
   archivePost?: Prisma.ArchivePostOmit
   archiveImage?: Prisma.ArchiveImageOmit
+  diferenciasUser?: Prisma.DiferenciasUserOmit
+  diferenciasSession?: Prisma.DiferenciasSessionOmit
+  diferenciasPost?: Prisma.DiferenciasPostOmit
+  diferenciasComment?: Prisma.DiferenciasCommentOmit
+  diferenciasLoginAttempt?: Prisma.DiferenciasLoginAttemptOmit
 }
 
 /* Types for Logging */

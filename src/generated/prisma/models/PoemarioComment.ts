@@ -439,10 +439,6 @@ export type PoemarioCommentUpdateManyWithoutParentNestedInput = {
   deleteMany?: Prisma.PoemarioCommentScalarWhereInput | Prisma.PoemarioCommentScalarWhereInput[]
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
 export type PoemarioCommentUncheckedUpdateManyWithoutParentNestedInput = {
   create?: Prisma.XOR<Prisma.PoemarioCommentCreateWithoutParentInput, Prisma.PoemarioCommentUncheckedCreateWithoutParentInput> | Prisma.PoemarioCommentCreateWithoutParentInput[] | Prisma.PoemarioCommentUncheckedCreateWithoutParentInput[]
   connectOrCreate?: Prisma.PoemarioCommentCreateOrConnectWithoutParentInput | Prisma.PoemarioCommentCreateOrConnectWithoutParentInput[]
