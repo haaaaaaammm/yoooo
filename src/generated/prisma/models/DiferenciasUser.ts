@@ -225,6 +225,7 @@ export type DiferenciasUserWhereInput = {
   posts?: Prisma.DiferenciasPostListRelationFilter
   comments?: Prisma.DiferenciasCommentListRelationFilter
   sessions?: Prisma.DiferenciasSessionListRelationFilter
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionListRelationFilter
 }
 
 export type DiferenciasUserOrderByWithRelationInput = {
@@ -241,6 +242,7 @@ export type DiferenciasUserOrderByWithRelationInput = {
   posts?: Prisma.DiferenciasPostOrderByRelationAggregateInput
   comments?: Prisma.DiferenciasCommentOrderByRelationAggregateInput
   sessions?: Prisma.DiferenciasSessionOrderByRelationAggregateInput
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionOrderByRelationAggregateInput
 }
 
 export type DiferenciasUserWhereUniqueInput = Prisma.AtLeast<{
@@ -260,6 +262,7 @@ export type DiferenciasUserWhereUniqueInput = Prisma.AtLeast<{
   posts?: Prisma.DiferenciasPostListRelationFilter
   comments?: Prisma.DiferenciasCommentListRelationFilter
   sessions?: Prisma.DiferenciasSessionListRelationFilter
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionListRelationFilter
 }, "id" | "username">
 
 export type DiferenciasUserOrderByWithAggregationInput = {
@@ -308,6 +311,7 @@ export type DiferenciasUserCreateInput = {
   posts?: Prisma.DiferenciasPostCreateNestedManyWithoutAuthorInput
   comments?: Prisma.DiferenciasCommentCreateNestedManyWithoutAuthorInput
   sessions?: Prisma.DiferenciasSessionCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionCreateNestedManyWithoutUserInput
 }
 
 export type DiferenciasUserUncheckedCreateInput = {
@@ -324,6 +328,7 @@ export type DiferenciasUserUncheckedCreateInput = {
   posts?: Prisma.DiferenciasPostUncheckedCreateNestedManyWithoutAuthorInput
   comments?: Prisma.DiferenciasCommentUncheckedCreateNestedManyWithoutAuthorInput
   sessions?: Prisma.DiferenciasSessionUncheckedCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type DiferenciasUserUpdateInput = {
@@ -340,6 +345,7 @@ export type DiferenciasUserUpdateInput = {
   posts?: Prisma.DiferenciasPostUpdateManyWithoutAuthorNestedInput
   comments?: Prisma.DiferenciasCommentUpdateManyWithoutAuthorNestedInput
   sessions?: Prisma.DiferenciasSessionUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionUpdateManyWithoutUserNestedInput
 }
 
 export type DiferenciasUserUncheckedUpdateInput = {
@@ -356,6 +362,7 @@ export type DiferenciasUserUncheckedUpdateInput = {
   posts?: Prisma.DiferenciasPostUncheckedUpdateManyWithoutAuthorNestedInput
   comments?: Prisma.DiferenciasCommentUncheckedUpdateManyWithoutAuthorNestedInput
   sessions?: Prisma.DiferenciasSessionUncheckedUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type DiferenciasUserCreateManyInput = {
@@ -449,6 +456,20 @@ export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
 }
 
+export type DiferenciasUserCreateNestedOneWithoutPushSubscriptionsInput = {
+  create?: Prisma.XOR<Prisma.DiferenciasUserCreateWithoutPushSubscriptionsInput, Prisma.DiferenciasUserUncheckedCreateWithoutPushSubscriptionsInput>
+  connectOrCreate?: Prisma.DiferenciasUserCreateOrConnectWithoutPushSubscriptionsInput
+  connect?: Prisma.DiferenciasUserWhereUniqueInput
+}
+
+export type DiferenciasUserUpdateOneRequiredWithoutPushSubscriptionsNestedInput = {
+  create?: Prisma.XOR<Prisma.DiferenciasUserCreateWithoutPushSubscriptionsInput, Prisma.DiferenciasUserUncheckedCreateWithoutPushSubscriptionsInput>
+  connectOrCreate?: Prisma.DiferenciasUserCreateOrConnectWithoutPushSubscriptionsInput
+  upsert?: Prisma.DiferenciasUserUpsertWithoutPushSubscriptionsInput
+  connect?: Prisma.DiferenciasUserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DiferenciasUserUpdateToOneWithWhereWithoutPushSubscriptionsInput, Prisma.DiferenciasUserUpdateWithoutPushSubscriptionsInput>, Prisma.DiferenciasUserUncheckedUpdateWithoutPushSubscriptionsInput>
+}
+
 export type DiferenciasUserCreateNestedOneWithoutSessionsInput = {
   create?: Prisma.XOR<Prisma.DiferenciasUserCreateWithoutSessionsInput, Prisma.DiferenciasUserUncheckedCreateWithoutSessionsInput>
   connectOrCreate?: Prisma.DiferenciasUserCreateOrConnectWithoutSessionsInput
@@ -491,6 +512,86 @@ export type DiferenciasUserUpdateOneRequiredWithoutCommentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.DiferenciasUserUpdateToOneWithWhereWithoutCommentsInput, Prisma.DiferenciasUserUpdateWithoutCommentsInput>, Prisma.DiferenciasUserUncheckedUpdateWithoutCommentsInput>
 }
 
+export type DiferenciasUserCreateWithoutPushSubscriptionsInput = {
+  id?: string
+  username: string
+  displayName: string
+  passwordHash: string
+  avatarUrl?: string | null
+  avatarKey?: string | null
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  posts?: Prisma.DiferenciasPostCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.DiferenciasCommentCreateNestedManyWithoutAuthorInput
+  sessions?: Prisma.DiferenciasSessionCreateNestedManyWithoutUserInput
+}
+
+export type DiferenciasUserUncheckedCreateWithoutPushSubscriptionsInput = {
+  id?: string
+  username: string
+  displayName: string
+  passwordHash: string
+  avatarUrl?: string | null
+  avatarKey?: string | null
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  posts?: Prisma.DiferenciasPostUncheckedCreateNestedManyWithoutAuthorInput
+  comments?: Prisma.DiferenciasCommentUncheckedCreateNestedManyWithoutAuthorInput
+  sessions?: Prisma.DiferenciasSessionUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type DiferenciasUserCreateOrConnectWithoutPushSubscriptionsInput = {
+  where: Prisma.DiferenciasUserWhereUniqueInput
+  create: Prisma.XOR<Prisma.DiferenciasUserCreateWithoutPushSubscriptionsInput, Prisma.DiferenciasUserUncheckedCreateWithoutPushSubscriptionsInput>
+}
+
+export type DiferenciasUserUpsertWithoutPushSubscriptionsInput = {
+  update: Prisma.XOR<Prisma.DiferenciasUserUpdateWithoutPushSubscriptionsInput, Prisma.DiferenciasUserUncheckedUpdateWithoutPushSubscriptionsInput>
+  create: Prisma.XOR<Prisma.DiferenciasUserCreateWithoutPushSubscriptionsInput, Prisma.DiferenciasUserUncheckedCreateWithoutPushSubscriptionsInput>
+  where?: Prisma.DiferenciasUserWhereInput
+}
+
+export type DiferenciasUserUpdateToOneWithWhereWithoutPushSubscriptionsInput = {
+  where?: Prisma.DiferenciasUserWhereInput
+  data: Prisma.XOR<Prisma.DiferenciasUserUpdateWithoutPushSubscriptionsInput, Prisma.DiferenciasUserUncheckedUpdateWithoutPushSubscriptionsInput>
+}
+
+export type DiferenciasUserUpdateWithoutPushSubscriptionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  posts?: Prisma.DiferenciasPostUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.DiferenciasCommentUpdateManyWithoutAuthorNestedInput
+  sessions?: Prisma.DiferenciasSessionUpdateManyWithoutUserNestedInput
+}
+
+export type DiferenciasUserUncheckedUpdateWithoutPushSubscriptionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  posts?: Prisma.DiferenciasPostUncheckedUpdateManyWithoutAuthorNestedInput
+  comments?: Prisma.DiferenciasCommentUncheckedUpdateManyWithoutAuthorNestedInput
+  sessions?: Prisma.DiferenciasSessionUncheckedUpdateManyWithoutUserNestedInput
+}
+
 export type DiferenciasUserCreateWithoutSessionsInput = {
   id?: string
   username: string
@@ -504,6 +605,7 @@ export type DiferenciasUserCreateWithoutSessionsInput = {
   updatedAt?: Date | string
   posts?: Prisma.DiferenciasPostCreateNestedManyWithoutAuthorInput
   comments?: Prisma.DiferenciasCommentCreateNestedManyWithoutAuthorInput
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionCreateNestedManyWithoutUserInput
 }
 
 export type DiferenciasUserUncheckedCreateWithoutSessionsInput = {
@@ -519,6 +621,7 @@ export type DiferenciasUserUncheckedCreateWithoutSessionsInput = {
   updatedAt?: Date | string
   posts?: Prisma.DiferenciasPostUncheckedCreateNestedManyWithoutAuthorInput
   comments?: Prisma.DiferenciasCommentUncheckedCreateNestedManyWithoutAuthorInput
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type DiferenciasUserCreateOrConnectWithoutSessionsInput = {
@@ -550,6 +653,7 @@ export type DiferenciasUserUpdateWithoutSessionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   posts?: Prisma.DiferenciasPostUpdateManyWithoutAuthorNestedInput
   comments?: Prisma.DiferenciasCommentUpdateManyWithoutAuthorNestedInput
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionUpdateManyWithoutUserNestedInput
 }
 
 export type DiferenciasUserUncheckedUpdateWithoutSessionsInput = {
@@ -565,6 +669,7 @@ export type DiferenciasUserUncheckedUpdateWithoutSessionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   posts?: Prisma.DiferenciasPostUncheckedUpdateManyWithoutAuthorNestedInput
   comments?: Prisma.DiferenciasCommentUncheckedUpdateManyWithoutAuthorNestedInput
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type DiferenciasUserCreateWithoutPostsInput = {
@@ -580,6 +685,7 @@ export type DiferenciasUserCreateWithoutPostsInput = {
   updatedAt?: Date | string
   comments?: Prisma.DiferenciasCommentCreateNestedManyWithoutAuthorInput
   sessions?: Prisma.DiferenciasSessionCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionCreateNestedManyWithoutUserInput
 }
 
 export type DiferenciasUserUncheckedCreateWithoutPostsInput = {
@@ -595,6 +701,7 @@ export type DiferenciasUserUncheckedCreateWithoutPostsInput = {
   updatedAt?: Date | string
   comments?: Prisma.DiferenciasCommentUncheckedCreateNestedManyWithoutAuthorInput
   sessions?: Prisma.DiferenciasSessionUncheckedCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type DiferenciasUserCreateOrConnectWithoutPostsInput = {
@@ -626,6 +733,7 @@ export type DiferenciasUserUpdateWithoutPostsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   comments?: Prisma.DiferenciasCommentUpdateManyWithoutAuthorNestedInput
   sessions?: Prisma.DiferenciasSessionUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionUpdateManyWithoutUserNestedInput
 }
 
 export type DiferenciasUserUncheckedUpdateWithoutPostsInput = {
@@ -641,6 +749,7 @@ export type DiferenciasUserUncheckedUpdateWithoutPostsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   comments?: Prisma.DiferenciasCommentUncheckedUpdateManyWithoutAuthorNestedInput
   sessions?: Prisma.DiferenciasSessionUncheckedUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type DiferenciasUserCreateWithoutCommentsInput = {
@@ -656,6 +765,7 @@ export type DiferenciasUserCreateWithoutCommentsInput = {
   updatedAt?: Date | string
   posts?: Prisma.DiferenciasPostCreateNestedManyWithoutAuthorInput
   sessions?: Prisma.DiferenciasSessionCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionCreateNestedManyWithoutUserInput
 }
 
 export type DiferenciasUserUncheckedCreateWithoutCommentsInput = {
@@ -671,6 +781,7 @@ export type DiferenciasUserUncheckedCreateWithoutCommentsInput = {
   updatedAt?: Date | string
   posts?: Prisma.DiferenciasPostUncheckedCreateNestedManyWithoutAuthorInput
   sessions?: Prisma.DiferenciasSessionUncheckedCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type DiferenciasUserCreateOrConnectWithoutCommentsInput = {
@@ -702,6 +813,7 @@ export type DiferenciasUserUpdateWithoutCommentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   posts?: Prisma.DiferenciasPostUpdateManyWithoutAuthorNestedInput
   sessions?: Prisma.DiferenciasSessionUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionUpdateManyWithoutUserNestedInput
 }
 
 export type DiferenciasUserUncheckedUpdateWithoutCommentsInput = {
@@ -717,6 +829,7 @@ export type DiferenciasUserUncheckedUpdateWithoutCommentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   posts?: Prisma.DiferenciasPostUncheckedUpdateManyWithoutAuthorNestedInput
   sessions?: Prisma.DiferenciasSessionUncheckedUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.DiferenciasPushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -728,12 +841,14 @@ export type DiferenciasUserCountOutputType = {
   posts: number
   comments: number
   sessions: number
+  pushSubscriptions: number
 }
 
 export type DiferenciasUserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   posts?: boolean | DiferenciasUserCountOutputTypeCountPostsArgs
   comments?: boolean | DiferenciasUserCountOutputTypeCountCommentsArgs
   sessions?: boolean | DiferenciasUserCountOutputTypeCountSessionsArgs
+  pushSubscriptions?: boolean | DiferenciasUserCountOutputTypeCountPushSubscriptionsArgs
 }
 
 /**
@@ -767,6 +882,13 @@ export type DiferenciasUserCountOutputTypeCountSessionsArgs<ExtArgs extends runt
   where?: Prisma.DiferenciasSessionWhereInput
 }
 
+/**
+ * DiferenciasUserCountOutputType without action
+ */
+export type DiferenciasUserCountOutputTypeCountPushSubscriptionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DiferenciasPushSubscriptionWhereInput
+}
+
 
 export type DiferenciasUserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -782,6 +904,7 @@ export type DiferenciasUserSelect<ExtArgs extends runtime.Types.Extensions.Inter
   posts?: boolean | Prisma.DiferenciasUser$postsArgs<ExtArgs>
   comments?: boolean | Prisma.DiferenciasUser$commentsArgs<ExtArgs>
   sessions?: boolean | Prisma.DiferenciasUser$sessionsArgs<ExtArgs>
+  pushSubscriptions?: boolean | Prisma.DiferenciasUser$pushSubscriptionsArgs<ExtArgs>
   _count?: boolean | Prisma.DiferenciasUserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["diferenciasUser"]>
 
@@ -829,6 +952,7 @@ export type DiferenciasUserInclude<ExtArgs extends runtime.Types.Extensions.Inte
   posts?: boolean | Prisma.DiferenciasUser$postsArgs<ExtArgs>
   comments?: boolean | Prisma.DiferenciasUser$commentsArgs<ExtArgs>
   sessions?: boolean | Prisma.DiferenciasUser$sessionsArgs<ExtArgs>
+  pushSubscriptions?: boolean | Prisma.DiferenciasUser$pushSubscriptionsArgs<ExtArgs>
   _count?: boolean | Prisma.DiferenciasUserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DiferenciasUserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -840,6 +964,7 @@ export type $DiferenciasUserPayload<ExtArgs extends runtime.Types.Extensions.Int
     posts: Prisma.$DiferenciasPostPayload<ExtArgs>[]
     comments: Prisma.$DiferenciasCommentPayload<ExtArgs>[]
     sessions: Prisma.$DiferenciasSessionPayload<ExtArgs>[]
+    pushSubscriptions: Prisma.$DiferenciasPushSubscriptionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1249,6 +1374,7 @@ export interface Prisma__DiferenciasUserClient<T, Null = never, ExtArgs extends 
   posts<T extends Prisma.DiferenciasUser$postsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DiferenciasUser$postsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DiferenciasPostPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   comments<T extends Prisma.DiferenciasUser$commentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DiferenciasUser$commentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DiferenciasCommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   sessions<T extends Prisma.DiferenciasUser$sessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DiferenciasUser$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DiferenciasSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  pushSubscriptions<T extends Prisma.DiferenciasUser$pushSubscriptionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DiferenciasUser$pushSubscriptionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DiferenciasPushSubscriptionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1750,6 +1876,30 @@ export type DiferenciasUser$sessionsArgs<ExtArgs extends runtime.Types.Extension
   take?: number
   skip?: number
   distinct?: Prisma.DiferenciasSessionScalarFieldEnum | Prisma.DiferenciasSessionScalarFieldEnum[]
+}
+
+/**
+ * DiferenciasUser.pushSubscriptions
+ */
+export type DiferenciasUser$pushSubscriptionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DiferenciasPushSubscription
+   */
+  select?: Prisma.DiferenciasPushSubscriptionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DiferenciasPushSubscription
+   */
+  omit?: Prisma.DiferenciasPushSubscriptionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DiferenciasPushSubscriptionInclude<ExtArgs> | null
+  where?: Prisma.DiferenciasPushSubscriptionWhereInput
+  orderBy?: Prisma.DiferenciasPushSubscriptionOrderByWithRelationInput | Prisma.DiferenciasPushSubscriptionOrderByWithRelationInput[]
+  cursor?: Prisma.DiferenciasPushSubscriptionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DiferenciasPushSubscriptionScalarFieldEnum | Prisma.DiferenciasPushSubscriptionScalarFieldEnum[]
 }
 
 /**

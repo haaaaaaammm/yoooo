@@ -72,6 +72,11 @@ export type ArchiveImage = Prisma.ArchiveImageModel
  */
 export type DiferenciasUser = Prisma.DiferenciasUserModel
 /**
+ * Model DiferenciasPushSubscription
+ * 
+ */
+export type DiferenciasPushSubscription = Prisma.DiferenciasPushSubscriptionModel
+/**
  * Model DiferenciasSession
  * 
  */

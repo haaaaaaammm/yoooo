@@ -215,6 +215,9 @@ export async function setDiferenciasAccountActiveAction(
         where: { id: userId },
       }),
       prisma.diferenciasSession.deleteMany({ where: { userId } }),
+      ...(!isActive
+        ? [prisma.diferenciasPushSubscription.deleteMany({ where: { userId } })]
+        : []),
     ]);
   } catch {
     return { message: "No se pudo actualizar la cuenta.", ok: false };
@@ -222,7 +225,9 @@ export async function setDiferenciasAccountActiveAction(
 
   revalidateAccounts();
   return {
-    message: isActive ? "cuenta reactivada" : "cuenta desactivada y sesiones cerradas",
+    message: isActive
+      ? "cuenta reactivada"
+      : "cuenta desactivada; sesiones y notificaciones cerradas",
     ok: true,
   };
 }

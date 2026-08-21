@@ -57,6 +57,7 @@ export const ModelName = {
   ArchivePost: 'ArchivePost',
   ArchiveImage: 'ArchiveImage',
   DiferenciasUser: 'DiferenciasUser',
+  DiferenciasPushSubscription: 'DiferenciasPushSubscription',
   DiferenciasSession: 'DiferenciasSession',
   DiferenciasPost: 'DiferenciasPost',
   DiferenciasComment: 'DiferenciasComment',
@@ -155,6 +156,19 @@ export const DiferenciasUserScalarFieldEnum = {
 } as const
 
 export type DiferenciasUserScalarFieldEnum = (typeof DiferenciasUserScalarFieldEnum)[keyof typeof DiferenciasUserScalarFieldEnum]
+
+
+export const DiferenciasPushSubscriptionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  endpoint: 'endpoint',
+  p256dh: 'p256dh',
+  auth: 'auth',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DiferenciasPushSubscriptionScalarFieldEnum = (typeof DiferenciasPushSubscriptionScalarFieldEnum)[keyof typeof DiferenciasPushSubscriptionScalarFieldEnum]
 
 
 export const DiferenciasSessionScalarFieldEnum = {

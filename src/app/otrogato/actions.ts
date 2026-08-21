@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 
 import {
   getDiferenciasLoginIp,
@@ -16,6 +17,10 @@ import {
   OTROGATO_PATH,
 } from "@/lib/posts";
 import { getPrisma } from "@/lib/prisma";
+import {
+  sendDiferenciasActivityPush,
+} from "@/lib/diferencias-push";
+import type { DiferenciasActivity } from "@/lib/diferencias-push-core";
 import {
   deleteR2Object,
   uploadDiferenciasAvatarToR2,
@@ -52,6 +57,18 @@ function revalidateDiferencias(postId?: string, commentId?: string | null) {
 
   if (postId && commentId) {
     revalidatePath(`${DIFERENCIAS_PATH}/${postId}/comment/${commentId}`);
+  }
+}
+
+function scheduleDiferenciasActivityPush(activity: DiferenciasActivity) {
+  try {
+    after(() => sendDiferenciasActivityPush(activity));
+  } catch (error) {
+    // Scheduling is deliberately best-effort after the database mutation.
+    console.error(
+      `[diferencias-push] Could not schedule ${activity.type} delivery.`,
+      error
+    );
   }
 }
 
@@ -117,15 +134,24 @@ export async function createPostAction(formData: FormData): Promise<MutationResu
     return { message: "Escribe algo antes de publicar.", ok: false };
   }
 
+  let post: { id: string };
+
   try {
-    await getPrisma().diferenciasPost.create({
+    post = await getPrisma().diferenciasPost.create({
       data: { authorId: user.id, content },
+      select: { id: true },
     });
   } catch {
     return { message: "No se pudo publicar. Inténtalo de nuevo.", ok: false };
   }
 
   revalidateDiferencias();
+  scheduleDiferenciasActivityPush({
+    actorDisplayName: user.displayName,
+    content,
+    postId: post.id,
+    type: "post",
+  });
   return { message: "posteado", ok: true };
 }
 
@@ -297,15 +323,25 @@ export async function createCommentAction(
     }
   }
 
+  let comment: { id: string };
+
   try {
-    await prisma.diferenciasComment.create({
+    comment = await prisma.diferenciasComment.create({
       data: { authorId: user.id, parentId, postId, text },
+      select: { id: true },
     });
   } catch {
     return { message: "No se pudo guardar el comentario.", ok: false };
   }
 
   revalidateDiferencias(postId, parentId);
+  scheduleDiferenciasActivityPush({
+    actorDisplayName: user.displayName,
+    commentId: comment.id,
+    content: text,
+    postId,
+    type: parentId ? "reply" : "comment",
+  });
   return { message: "comentario guardado", ok: true };
 }
 

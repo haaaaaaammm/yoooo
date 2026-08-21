@@ -403,6 +403,7 @@ export const ModelName = {
   ArchivePost: 'ArchivePost',
   ArchiveImage: 'ArchiveImage',
   DiferenciasUser: 'DiferenciasUser',
+  DiferenciasPushSubscription: 'DiferenciasPushSubscription',
   DiferenciasSession: 'DiferenciasSession',
   DiferenciasPost: 'DiferenciasPost',
   DiferenciasComment: 'DiferenciasComment',
@@ -422,7 +423,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "post" | "poemarioComment" | "siteSettings" | "archivePost" | "archiveImage" | "diferenciasUser" | "diferenciasSession" | "diferenciasPost" | "diferenciasComment" | "diferenciasLoginAttempt"
+    modelProps: "post" | "poemarioComment" | "siteSettings" | "archivePost" | "archiveImage" | "diferenciasUser" | "diferenciasPushSubscription" | "diferenciasSession" | "diferenciasPost" | "diferenciasComment" | "diferenciasLoginAttempt"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -870,6 +871,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    DiferenciasPushSubscription: {
+      payload: Prisma.$DiferenciasPushSubscriptionPayload<ExtArgs>
+      fields: Prisma.DiferenciasPushSubscriptionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DiferenciasPushSubscriptionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPushSubscriptionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DiferenciasPushSubscriptionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPushSubscriptionPayload>
+        }
+        findFirst: {
+          args: Prisma.DiferenciasPushSubscriptionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPushSubscriptionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DiferenciasPushSubscriptionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPushSubscriptionPayload>
+        }
+        findMany: {
+          args: Prisma.DiferenciasPushSubscriptionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPushSubscriptionPayload>[]
+        }
+        create: {
+          args: Prisma.DiferenciasPushSubscriptionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPushSubscriptionPayload>
+        }
+        createMany: {
+          args: Prisma.DiferenciasPushSubscriptionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DiferenciasPushSubscriptionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPushSubscriptionPayload>[]
+        }
+        delete: {
+          args: Prisma.DiferenciasPushSubscriptionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPushSubscriptionPayload>
+        }
+        update: {
+          args: Prisma.DiferenciasPushSubscriptionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPushSubscriptionPayload>
+        }
+        deleteMany: {
+          args: Prisma.DiferenciasPushSubscriptionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DiferenciasPushSubscriptionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DiferenciasPushSubscriptionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPushSubscriptionPayload>[]
+        }
+        upsert: {
+          args: Prisma.DiferenciasPushSubscriptionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DiferenciasPushSubscriptionPayload>
+        }
+        aggregate: {
+          args: Prisma.DiferenciasPushSubscriptionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDiferenciasPushSubscription>
+        }
+        groupBy: {
+          args: Prisma.DiferenciasPushSubscriptionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DiferenciasPushSubscriptionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DiferenciasPushSubscriptionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DiferenciasPushSubscriptionCountAggregateOutputType> | number
+        }
+      }
+    }
     DiferenciasSession: {
       payload: Prisma.$DiferenciasSessionPayload<ExtArgs>
       fields: Prisma.DiferenciasSessionFieldRefs
@@ -1283,6 +1358,19 @@ export const DiferenciasUserScalarFieldEnum = {
 export type DiferenciasUserScalarFieldEnum = (typeof DiferenciasUserScalarFieldEnum)[keyof typeof DiferenciasUserScalarFieldEnum]
 
 
+export const DiferenciasPushSubscriptionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  endpoint: 'endpoint',
+  p256dh: 'p256dh',
+  auth: 'auth',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DiferenciasPushSubscriptionScalarFieldEnum = (typeof DiferenciasPushSubscriptionScalarFieldEnum)[keyof typeof DiferenciasPushSubscriptionScalarFieldEnum]
+
+
 export const DiferenciasSessionScalarFieldEnum = {
   id: 'id',
   tokenHash: 'tokenHash',
@@ -1576,6 +1664,7 @@ export type GlobalOmitConfig = {
   archivePost?: Prisma.ArchivePostOmit
   archiveImage?: Prisma.ArchiveImageOmit
   diferenciasUser?: Prisma.DiferenciasUserOmit
+  diferenciasPushSubscription?: Prisma.DiferenciasPushSubscriptionOmit
   diferenciasSession?: Prisma.DiferenciasSessionOmit
   diferenciasPost?: Prisma.DiferenciasPostOmit
   diferenciasComment?: Prisma.DiferenciasCommentOmit

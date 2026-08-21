@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import NumberedPagination from "@/app/_components/numbered-pagination";
 import { getDiferenciasSessionUser } from "@/lib/diferencias-auth";
 import { getDiferenciasPostsPage } from "@/lib/diferencias-posts";
+import { getDiferenciasVapidPublicKey } from "@/lib/diferencias-push";
 import {
   DIFERENCIAS_PATH,
   OTROGATO_PATH,
@@ -72,6 +73,7 @@ export default async function OtrogatoPage({
           avatarUrl={user.avatarUrl}
           displayName={user.displayName}
           username={user.username}
+          vapidPublicKey={getDiferenciasVapidPublicKey()}
         />
         <Composer
           avatarUrl={user.avatarUrl}

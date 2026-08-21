@@ -179,6 +179,7 @@ function CommentItem({
   return (
     <li
       className={depth > 0 ? "border-l border-neutral-800 pl-3" : undefined}
+      id={`comment-${comment.id}`}
       style={depth > 0 ? { marginLeft: `${visualDepth * 0.6}rem` } : undefined}
     >
       <article className="py-4">

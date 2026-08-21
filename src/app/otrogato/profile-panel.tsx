@@ -11,6 +11,7 @@ import {
 } from "@/lib/archivo";
 
 import { updateAvatarAction } from "./actions";
+import NotificationSettings from "./notification-settings";
 
 const AVATAR_ACCEPT =
   "image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif";
@@ -19,12 +20,14 @@ type ProfilePanelProps = {
   avatarUrl: string | null;
   displayName: string;
   username: string;
+  vapidPublicKey: string | null;
 };
 
 export default function ProfilePanel({
   avatarUrl,
   displayName,
   username,
+  vapidPublicKey,
 }: ProfilePanelProps) {
   const router = useRouter();
   const pendingRef = useRef(false);
@@ -132,6 +135,7 @@ export default function ProfilePanel({
           </button>
         </div>
       </form>
+      <NotificationSettings vapidPublicKey={vapidPublicKey} />
     </section>
   );
 }

@@ -74,19 +74,33 @@ model ArchiveImage {
 }
 
 model DiferenciasUser {
-  id           String               @id @default(cuid())
-  username     String               @unique
-  displayName  String
-  passwordHash String
-  avatarUrl    String?
-  avatarKey    String?
-  isActive     Boolean              @default(true)
-  lastLoginAt  DateTime?
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  posts        DiferenciasPost[]
-  comments     DiferenciasComment[]
-  sessions     DiferenciasSession[]
+  id                String                        @id @default(cuid())
+  username          String                        @unique
+  displayName       String
+  passwordHash      String
+  avatarUrl         String?
+  avatarKey         String?
+  isActive          Boolean                       @default(true)
+  lastLoginAt       DateTime?
+  createdAt         DateTime                      @default(now())
+  updatedAt         DateTime                      @updatedAt
+  posts             DiferenciasPost[]
+  comments          DiferenciasComment[]
+  sessions          DiferenciasSession[]
+  pushSubscriptions DiferenciasPushSubscription[]
+}
+
+model DiferenciasPushSubscription {
+  id        String          @id @default(cuid())
+  userId    String
+  endpoint  String          @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  user      DiferenciasUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model DiferenciasSession {
