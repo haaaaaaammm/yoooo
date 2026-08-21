@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import FeedPostCard from "@/app/_components/feed-post-card";
+import LiveRefresh from "@/app/_components/live-refresh";
 import NumberedPagination from "@/app/_components/numbered-pagination";
 import { getDiferenciasSessionUser } from "@/lib/diferencias-auth";
 import { getDiferenciasPostsPage } from "@/lib/diferencias-posts";
@@ -52,6 +53,7 @@ export default async function DiferenciasFeedPage({
 
   return (
     <main className="min-h-screen min-h-dvh overflow-x-hidden bg-black text-white">
+      <LiveRefresh />
       <div className="mx-auto min-h-screen min-h-dvh w-full max-w-2xl border-neutral-800 bg-black sm:border-x">
         <header className="sticky top-0 z-10 border-b border-neutral-800 bg-black/90 px-4 py-4 backdrop-blur">
           <div className="flex items-center justify-between gap-4">

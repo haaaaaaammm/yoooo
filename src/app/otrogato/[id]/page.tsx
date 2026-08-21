@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import FeedPostCard from "@/app/_components/feed-post-card";
+import LiveRefresh from "@/app/_components/live-refresh";
 import { getDiferenciasSessionUser } from "@/lib/diferencias-auth";
 import {
   getDiferenciasPostWithThread,
@@ -56,6 +57,7 @@ export default async function OtrogatoPostPage({
 
   return (
     <main className="min-h-dvh overflow-x-hidden bg-black text-white">
+      <LiveRefresh />
       <div className="mx-auto min-h-dvh w-full max-w-2xl border-neutral-800 sm:border-x">
         <header className="sticky top-0 z-10 border-b border-neutral-800 bg-black/90 px-4 py-4 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-3">

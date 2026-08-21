@@ -1,5 +1,6 @@
 "use client";
 
+import { Bell, BellOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import {
@@ -22,32 +23,21 @@ type NotificationState =
   | "enabled"
   | "unavailable";
 
-export default function NotificationSettings({
+export default function NotificationBell({
   vapidPublicKey,
 }: {
   vapidPublicKey: string | null;
 }) {
   const operationRef = useRef(false);
   const [isPending, setIsPending] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
   const [state, setState] = useState<NotificationState>("checking");
 
   useEffect(() => {
     let cancelled = false;
 
     async function inspectExistingSubscription() {
-      const capability = getDiferenciasPushCapability();
-
-      if (!capability.supported) {
+      if (!getDiferenciasPushCapability().supported || !vapidPublicKey) {
         if (!cancelled) {
-          setState("unavailable");
-        }
-        return;
-      }
-
-      if (!vapidPublicKey) {
-        if (!cancelled) {
-          setMessage("Notifications are unavailable right now.");
           setState("unavailable");
         }
         return;
@@ -70,19 +60,17 @@ export default function NotificationSettings({
           return;
         }
 
-        // Reassign an existing browser endpoint to the currently authenticated
-        // account. This makes shared-browser logout/login switching safe.
+        // Keep an existing browser endpoint associated with whichever account
+        // is currently authenticated in this browser profile.
         const result = await savePushSubscriptionAction(
           serializePushSubscription(subscription)
         );
 
         if (!cancelled) {
-          setMessage(result.ok ? null : result.message);
           setState(result.ok ? "enabled" : "disabled");
         }
       } catch {
         if (!cancelled) {
-          setMessage("Could not check this device subscription.");
           setState("disabled");
         }
       }
@@ -102,13 +90,9 @@ export default function NotificationSettings({
 
     operationRef.current = true;
     setIsPending(true);
-    setMessage(null);
-    let newSubscription: PushSubscription | null = null;
 
     try {
-      const capability = getDiferenciasPushCapability();
-
-      if (!capability.supported) {
+      if (!getDiferenciasPushCapability().supported) {
         setState("unavailable");
         return;
       }
@@ -125,14 +109,14 @@ export default function NotificationSettings({
       }
 
       if (permission !== "granted") {
-        setMessage("Notification permission was not granted.");
+        window.alert("Notification permission was not granted.");
         setState("disabled");
         return;
       }
 
       const existingSubscription =
         await registration.pushManager.getSubscription();
-      newSubscription =
+      const subscription =
         existingSubscription ??
         (await registration.pushManager.subscribe({
           applicationServerKey:
@@ -140,27 +124,27 @@ export default function NotificationSettings({
           userVisibleOnly: true,
         }));
       const result = await savePushSubscriptionAction(
-        serializePushSubscription(newSubscription)
+        serializePushSubscription(subscription)
       );
 
       if (!result.ok) {
         if (!existingSubscription) {
-          await newSubscription.unsubscribe().catch(() => false);
+          await subscription.unsubscribe().catch(() => false);
         }
-        setMessage(result.message);
+
+        window.alert(result.message);
         setState("disabled");
         return;
       }
 
-      setMessage(null);
       setState("enabled");
     } catch {
-      setState(Notification.permission === "denied" ? "denied" : "disabled");
-      setMessage(
-        Notification.permission === "denied"
-          ? null
-          : "Could not enable notifications on this device."
-      );
+      if (Notification.permission === "denied") {
+        setState("denied");
+      } else {
+        window.alert("Could not enable notifications on this device.");
+        setState("disabled");
+      }
     } finally {
       operationRef.current = false;
       setIsPending(false);
@@ -168,13 +152,15 @@ export default function NotificationSettings({
   }
 
   async function disable() {
-    if (operationRef.current) {
+    if (
+      operationRef.current ||
+      !window.confirm("Disable notifications on this device?")
+    ) {
       return;
     }
 
     operationRef.current = true;
     setIsPending(true);
-    setMessage(null);
 
     try {
       const subscription = await getExistingDiferenciasPushSubscription();
@@ -187,77 +173,65 @@ export default function NotificationSettings({
       const result = await deletePushSubscriptionAction(subscription.endpoint);
 
       if (!result.ok) {
-        setMessage(result.message);
+        window.alert(result.message);
         return;
       }
 
       const unsubscribed = await subscription.unsubscribe();
 
       if (!unsubscribed) {
-        setMessage(
-          "The account was disconnected, but the browser could not finish unsubscribing. Try again."
+        window.alert(
+          "This device was disconnected, but the browser could not finish unsubscribing."
         );
-        setState("disabled");
-        return;
       }
 
-      setMessage(result.message);
       setState("disabled");
     } catch {
-      setMessage("Could not disable notifications on this device.");
+      window.alert("Could not disable notifications on this device.");
     } finally {
       operationRef.current = false;
       setIsPending(false);
     }
   }
 
-  if (state === "checking") {
+  if (state === "checking" || state === "unavailable") {
     return null;
   }
 
-  if (state === "unavailable" && !message) {
-    return null;
-  }
+  const isBlocked = state === "denied";
+  const isEnabled = state === "enabled";
+  const label = isBlocked
+    ? "Notifications blocked by browser"
+    : isEnabled
+      ? "Disable notifications"
+      : "Enable notifications";
 
   return (
-    <div className="mt-4 border-t border-neutral-900 pt-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-neutral-200">Notifications</p>
-          {state === "denied" ? (
-            <p className="mt-1 text-sm text-neutral-500">
-              Notifications are blocked. You can allow them in your browser or
-              device settings.
-            </p>
-          ) : state === "enabled" ? (
-            <p className="mt-1 text-sm text-neutral-500">
-              Notifications enabled
-            </p>
-          ) : message ? (
-            <p className="mt-1 text-sm text-neutral-500">{message}</p>
-          ) : null}
-        </div>
-
-        {state === "enabled" ? (
-          <button
-            className="rounded-full px-3 py-2 text-sm text-neutral-500 transition hover:bg-[#ff003c]/10 hover:text-[#ff003c] disabled:cursor-not-allowed disabled:text-neutral-700"
-            disabled={isPending}
-            onClick={() => void disable()}
-            type="button"
-          >
-            {isPending ? "Disabling..." : "Disable notifications"}
-          </button>
-        ) : state === "disabled" ? (
-          <button
-            className="rounded-full px-4 py-2 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:cursor-not-allowed disabled:text-neutral-500"
-            disabled={isPending}
-            onClick={() => void enable()}
-            type="button"
-          >
-            {isPending ? "Enabling..." : "Enable notifications"}
-          </button>
-        ) : null}
-      </div>
-    </div>
+    <button
+      aria-label={label}
+      aria-pressed={isBlocked ? undefined : isEnabled}
+      className={`flex h-10 w-10 flex-none items-center justify-center rounded-full transition hover:bg-[#ff003c]/10 disabled:cursor-not-allowed disabled:hover:bg-transparent ${
+        isBlocked
+          ? "text-neutral-600"
+          : isPending
+            ? "animate-pulse text-[#ff003c]/60"
+            : "text-[#ff003c]"
+      }`}
+      disabled={isBlocked || isPending}
+      onClick={() => void (isEnabled ? disable() : enable())}
+      title={label}
+      type="button"
+    >
+      {isBlocked ? (
+        <BellOff aria-hidden="true" size={19} strokeWidth={1.8} />
+      ) : (
+        <Bell
+          aria-hidden="true"
+          fill={isEnabled ? "currentColor" : "none"}
+          size={19}
+          strokeWidth={isEnabled ? 2 : 1.8}
+        />
+      )}
+    </button>
   );
 }

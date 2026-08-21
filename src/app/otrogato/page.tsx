@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import NumberedPagination from "@/app/_components/numbered-pagination";
+import LiveRefresh from "@/app/_components/live-refresh";
 import { getDiferenciasSessionUser } from "@/lib/diferencias-auth";
 import { getDiferenciasPostsPage } from "@/lib/diferencias-posts";
 import { getDiferenciasVapidPublicKey } from "@/lib/diferencias-push";
@@ -16,6 +17,7 @@ import { logoutAction } from "./actions";
 import Composer from "./composer";
 import LoginForm from "./login-form";
 import LogoutButton from "./logout-button";
+import NotificationBell from "./notification-bell";
 import PostManager from "./post-manager";
 import ProfilePanel from "./profile-panel";
 
@@ -49,18 +51,22 @@ export default async function OtrogatoPage({
 
   return (
     <main className="min-h-dvh overflow-x-hidden bg-black text-white">
+      <LiveRefresh />
       <div className="mx-auto min-h-dvh w-full max-w-2xl border-neutral-800 sm:border-x">
         <header className="sticky top-0 z-10 border-b border-neutral-800 bg-black/90 px-4 py-4 backdrop-blur">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h1 className="min-w-0 truncate text-xl font-semibold tracking-wide text-white">
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="min-w-0 flex-1 truncate text-xl font-semibold tracking-wide text-white">
               otrogato
             </h1>
-            <div className="flex flex-none items-center gap-2">
+            <div className="flex flex-none items-center gap-1 sm:gap-2">
+              <NotificationBell
+                vapidPublicKey={getDiferenciasVapidPublicKey()}
+              />
               <form action={logoutAction}>
                 <LogoutButton />
               </form>
               <Link
-                className="rounded-full px-4 py-2 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10"
+                className="rounded-full px-2 py-2 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10 sm:px-4"
                 href={DIFERENCIAS_PATH}
               >
                 {"< diferencias"}
@@ -73,7 +79,6 @@ export default async function OtrogatoPage({
           avatarUrl={user.avatarUrl}
           displayName={user.displayName}
           username={user.username}
-          vapidPublicKey={getDiferenciasVapidPublicKey()}
         />
         <Composer
           avatarUrl={user.avatarUrl}

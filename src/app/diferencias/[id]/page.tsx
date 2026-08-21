@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import CopyLinkButton from "@/app/_components/copy-link-button";
 import FeedPostCard from "@/app/_components/feed-post-card";
+import LiveRefresh from "@/app/_components/live-refresh";
 import PoemarioCommentThread from "@/app/_components/poemario-comment-thread";
 import CommentManager, {
   type ManagedComment,
@@ -88,6 +89,7 @@ export default async function DiferenciasPostPage({
 
   return (
     <main className="min-h-screen min-h-dvh overflow-x-hidden bg-black text-white">
+      <LiveRefresh />
       <div className="mx-auto min-h-screen min-h-dvh w-full max-w-2xl border-neutral-800 bg-black sm:border-x">
         <header className="sticky top-0 z-10 border-b border-neutral-800 bg-black/90 px-4 py-4 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-3">
