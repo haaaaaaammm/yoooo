@@ -95,7 +95,7 @@ export default function LinkifiedText({ text }: { text: string }) {
       {getLinkifiedTextParts(text).map((part, index) =>
         part.type === "link" ? (
           <a
-            className="break-words text-[#ff003c] no-underline transition hover:text-[#ff4d75]"
+            className="break-words [overflow-wrap:anywhere] text-[#ff003c] no-underline transition hover:text-[#ff4d75]"
             href={part.href}
             key={`${part.href}-${index}`}
             rel="noopener noreferrer"

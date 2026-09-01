@@ -4,6 +4,9 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import {
+  getCommentThreadNodeClassName,
+} from "@/app/_components/comment-thread-layout";
 import ProfileImage from "@/app/_components/profile-image";
 import { ADMIN_PATH } from "@/lib/posts";
 
@@ -95,10 +98,10 @@ function CommentForm({
   }
 
   return (
-    <form className="space-y-2" onSubmit={handleSubmit}>
+    <form className="min-w-0 max-w-full space-y-2" onSubmit={handleSubmit}>
       <textarea
         autoFocus={autoFocus}
-        className="min-h-24 w-full resize-y rounded-2xl border border-neutral-800 bg-black px-4 py-3 text-base leading-7 text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500/40"
+        className="min-h-24 w-full min-w-0 max-w-full resize-y rounded-2xl border border-neutral-800 bg-black px-4 py-3 text-base leading-7 text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500/40"
         onChange={(event) => setText(event.target.value)}
         placeholder={placeholder}
         value={text}
@@ -145,7 +148,6 @@ function CommentItem({
   const [isEditing, setIsEditing] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
   const isHighlighted = comment.id === highlightedCommentId;
-  const visualDepth = Math.min(depth, 3);
   const commentHref = getAdminCommentHref(comment);
   const directReplyCount = comment.replies.length;
 
@@ -200,15 +202,12 @@ function CommentItem({
   }
 
   return (
-    <li
-      className={depth > 0 ? "border-l border-neutral-800 pl-3" : undefined}
-      style={depth > 0 ? { marginLeft: `${visualDepth * 0.6}rem` } : undefined}
-    >
+    <li className={getCommentThreadNodeClassName(depth)}>
       <article
         className={
           isHighlighted
-            ? "rounded-2xl bg-neutral-950/70 px-3 py-4"
-            : "py-4"
+            ? "min-w-0 max-w-full rounded-2xl bg-neutral-950/70 px-3 py-4"
+            : "min-w-0 max-w-full py-4"
         }
       >
         <div className="flex min-w-0 items-start gap-3">
@@ -219,7 +218,7 @@ function CommentItem({
           <div className="min-w-0 flex-1">
             {isEditing ? (
               <div>
-                <div className="text-sm leading-5">
+                <div className="text-sm leading-5 [overflow-wrap:anywhere]">
                   <span className="font-semibold text-white">humberto</span>{" "}
                   <time className="text-neutral-500" dateTime={comment.createdAt}>
                     {formatTimestamp(comment.createdAt)}
@@ -238,13 +237,13 @@ function CommentItem({
               </div>
             ) : (
               <Link className="block min-w-0" href={commentHref}>
-                <div className="text-sm leading-5">
+                <div className="text-sm leading-5 [overflow-wrap:anywhere]">
                   <span className="font-semibold text-white">humberto</span>{" "}
                   <time className="text-neutral-500" dateTime={comment.createdAt}>
                     {formatTimestamp(comment.createdAt)}
                   </time>
                 </div>
-                <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+                <p className="mt-1 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[15px] leading-6 text-neutral-100">
                   {comment.text}
                 </p>
               </Link>
@@ -284,7 +283,6 @@ function CommentItem({
                 </button>
               </div>
             ) : null}
-
             {isReplying ? (
               <div className="mt-3">
                 <CommentForm
@@ -297,23 +295,24 @@ function CommentItem({
               </div>
             ) : null}
 
-            {comment.replies.length > 0 ? (
-              <ol className="mt-2">
-                {comment.replies.map((reply) => (
-                  <CommentItem
-                    comment={reply}
-                    depth={depth + 1}
-                    highlightedCommentId={highlightedCommentId}
-                    key={reply.id}
-                    onSuccess={onSuccess}
-                    profileImageUrl={profileImageUrl}
-                  />
-                ))}
-              </ol>
-            ) : null}
           </div>
         </div>
       </article>
+
+      {comment.replies.length > 0 ? (
+        <ol className="min-w-0 max-w-full">
+          {comment.replies.map((reply) => (
+            <CommentItem
+              comment={reply}
+              depth={depth + 1}
+              highlightedCommentId={highlightedCommentId}
+              key={reply.id}
+              onSuccess={onSuccess}
+              profileImageUrl={profileImageUrl}
+            />
+          ))}
+        </ol>
+      ) : null}
     </li>
   );
 }
@@ -369,7 +368,13 @@ export default function CommentThreadManager({
       {notice ? <p className="mt-3 text-sm text-green-400">{notice}</p> : null}
 
       {comments.length > 0 ? (
-        <ol className={showComposer ? "mt-4" : undefined}>
+        <ol
+          className={
+            showComposer
+              ? "mt-4 min-w-0 max-w-full"
+              : "min-w-0 max-w-full"
+          }
+        >
           {comments.map((comment) => (
             <CommentItem
               comment={comment}

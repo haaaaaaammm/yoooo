@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+import {
+  getCommentThreadNodeClassName,
+} from "@/app/_components/comment-thread-layout";
 import LinkifiedText, {
   hasLinkifiedText,
 } from "@/app/_components/linkified-text";
@@ -75,7 +78,7 @@ export function PoemarioCommentBody({
   const directReplyCount = comment.replies.length;
   const hasCommentLinks = hasLinkifiedText(comment.text);
   const heading = (
-    <div className="text-sm leading-5">
+    <div className="text-sm leading-5 [overflow-wrap:anywhere]">
       <span className="font-semibold text-white">{authorName}</span>{" "}
       <time
         className="text-neutral-500"
@@ -86,7 +89,7 @@ export function PoemarioCommentBody({
     </div>
   );
   const body = (
-    <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+    <p className="mt-1 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[15px] leading-6 text-neutral-100">
       <LinkifiedText text={comment.text} />
     </p>
   );
@@ -95,8 +98,8 @@ export function PoemarioCommentBody({
     <article
       className={
         highlighted
-          ? "rounded-2xl bg-neutral-950/70 px-3 py-4"
-          : "py-4"
+          ? "min-w-0 max-w-full rounded-2xl bg-neutral-950/70 px-3 py-4"
+          : "min-w-0 max-w-full py-4"
       }
     >
       <div className="flex min-w-0 items-start gap-3">
@@ -149,13 +152,8 @@ function CommentNode({
   highlightedCommentId?: string;
   profileImageUrl?: string | null;
 }) {
-  const visualDepth = Math.min(depth, 3);
-
   return (
-    <li
-      className={depth > 0 ? "border-l border-neutral-800 pl-3" : undefined}
-      style={depth > 0 ? { marginLeft: `${visualDepth * 0.6}rem` } : undefined}
-    >
+    <li className={getCommentThreadNodeClassName(depth)}>
       <PoemarioCommentBody
         basePath={basePath}
         comment={comment}
@@ -165,7 +163,7 @@ function CommentNode({
       />
 
       {comment.replies.length > 0 ? (
-        <ol>
+        <ol className="min-w-0 max-w-full">
           {comment.replies.map((reply) => (
             <CommentNode
               basePath={basePath}
@@ -193,7 +191,7 @@ export function PoemarioCommentList({
   highlightedCommentId?: string;
 }) {
   return (
-    <ol>
+    <ol className="min-w-0 max-w-full">
       {comments.map((comment) => (
         <CommentNode
           basePath={basePath}

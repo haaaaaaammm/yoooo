@@ -5,6 +5,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import {
+  getCommentThreadNodeClassName,
+} from "@/app/_components/comment-thread-layout";
 import LinkifiedText from "@/app/_components/linkified-text";
 import ProfileImage from "@/app/_components/profile-image";
 import {
@@ -80,9 +83,9 @@ function CommentForm({
   }
 
   return (
-    <form className="space-y-2" onSubmit={submit}>
+    <form className="min-w-0 max-w-full space-y-2" onSubmit={submit}>
       <textarea
-        className="min-h-24 w-full resize-y rounded-2xl border border-neutral-800 bg-black px-4 py-3 text-base leading-7 text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500/40"
+        className="min-h-24 w-full min-w-0 max-w-full resize-y rounded-2xl border border-neutral-800 bg-black px-4 py-3 text-base leading-7 text-white outline-none transition placeholder:text-neutral-600 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500/40"
         maxLength={DIFERENCIAS_COMMENT_MAX_LENGTH}
         onChange={(event) => setText(event.target.value)}
         placeholder={placeholder}
@@ -127,7 +130,6 @@ function CommentItem({
   const [isReplying, setIsReplying] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const isOwner = comment.authorId === currentUserId;
-  const visualDepth = Math.min(depth, 3);
   const href = `${DIFERENCIAS_PATH}/${comment.postId}/comment/${comment.id}`;
 
   async function reply(text: string) {
@@ -178,11 +180,10 @@ function CommentItem({
 
   return (
     <li
-      className={depth > 0 ? "border-l border-neutral-800 pl-3" : undefined}
+      className={getCommentThreadNodeClassName(depth)}
       id={`comment-${comment.id}`}
-      style={depth > 0 ? { marginLeft: `${visualDepth * 0.6}rem` } : undefined}
     >
-      <article className="py-4">
+      <article className="min-w-0 max-w-full py-4">
         <div className="flex min-w-0 items-start gap-3">
           <ProfileImage
             className="mt-1 h-9 w-9 shrink-0 rounded-full object-cover"
@@ -190,7 +191,7 @@ function CommentItem({
           />
           <div className="min-w-0 flex-1">
             <Link className="block min-w-0" href={href}>
-              <div className="text-sm leading-5">
+              <div className="text-sm leading-5 [overflow-wrap:anywhere]">
                 <span className="font-semibold text-white">
                   {comment.authorName}
                 </span>{" "}
@@ -211,7 +212,7 @@ function CommentItem({
                 />
               </div>
             ) : (
-              <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+              <p className="mt-1 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[15px] leading-6 text-neutral-100">
                 <LinkifiedText text={comment.text} />
               </p>
             )}
@@ -265,22 +266,22 @@ function CommentItem({
                 />
               </div>
             ) : null}
-
-            {comment.replies.length > 0 ? (
-              <ol className="mt-2">
-                {comment.replies.map((replyComment) => (
-                  <CommentItem
-                    comment={replyComment}
-                    currentUserId={currentUserId}
-                    depth={depth + 1}
-                    key={replyComment.id}
-                  />
-                ))}
-              </ol>
-            ) : null}
           </div>
         </div>
       </article>
+
+      {comment.replies.length > 0 ? (
+        <ol className="min-w-0 max-w-full">
+          {comment.replies.map((replyComment) => (
+            <CommentItem
+              comment={replyComment}
+              currentUserId={currentUserId}
+              depth={depth + 1}
+              key={replyComment.id}
+            />
+          ))}
+        </ol>
+      ) : null}
     </li>
   );
 }
@@ -318,7 +319,7 @@ export default function CommentManager({
       </div>
 
       {comments.length > 0 ? (
-        <ol className="mt-4">
+        <ol className="mt-4 min-w-0 max-w-full">
           {comments.map((comment) => (
             <CommentItem
               comment={comment}
