@@ -7,6 +7,9 @@ export default function Home() {
     <Link href="/nohaydiferenciasentreestoyunpoemario" className=" hover:underline text-blue-500 hover:text-blue-700 block">no hay diferencias entre esto y un poemario</Link>
     <Link href="/archivo" className=" hover:underline text-blue-500 hover:text-blue-700 block">archivo</Link>
     <Link href="/diferencias" className=" hover:underline text-blue-500 hover:text-blue-700 block">diferencias</Link>
+     
+    <Link href="/42" className=" hover:underline text-blue-500 hover:text-blue-700 block">42</Link>
+  
     <Image src="/images/VISANAME.png" alt="name" width={300} height={300}/>
   </div>
   );
