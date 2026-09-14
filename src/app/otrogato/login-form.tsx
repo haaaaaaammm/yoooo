@@ -6,7 +6,7 @@ import { loginAction, type LoginState } from "./actions";
 
 const initialState: LoginState = { message: "", ok: false };
 
-export default function LoginForm() {
+export default function LoginForm({ nextPath }: { nextPath?: string | null }) {
   const [state, formAction, isPending] = useActionState(
     loginAction,
     initialState
@@ -22,6 +22,9 @@ export default function LoginForm() {
           <h1 className="mt-3 text-3xl font-semibold text-white">otrogato</h1>
 
           <form action={formAction} className="mt-8 space-y-4">
+            {nextPath ? (
+              <input name="next" type="hidden" value={nextPath} />
+            ) : null}
             <label className="block">
               <span className="mb-2 block text-sm text-neutral-400">
                 username

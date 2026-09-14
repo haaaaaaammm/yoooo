@@ -12,7 +12,7 @@ import { getPoemarioPostsPage } from "@/lib/poemario-posts";
 import {
   ADMIN_PATH,
   ARCHIVO_PATH,
-  DIFERENCIAS_PATH,
+  OTROGATO_PATH,
   POSTS_PER_PAGE,
   PUBLIC_FEED_PATH,
   parsePageParam,
@@ -215,7 +215,7 @@ export default async function Home({ searchParams }: AdminPageProps) {
     mode === "archivo"
       ? ARCHIVO_PATH
       : mode === "planned-parenthood"
-        ? DIFERENCIAS_PATH
+        ? OTROGATO_PATH
         : PUBLIC_FEED_PATH;
   const publicTargetLabel =
     mode === "archivo"

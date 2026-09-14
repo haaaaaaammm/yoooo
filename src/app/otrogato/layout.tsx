@@ -23,6 +23,7 @@ export const metadata: Metadata = {
   other: {
     "apple-mobile-web-app-capable": "yes",
   },
+  robots: { follow: false, index: false },
 };
 
 export const viewport: Viewport = {

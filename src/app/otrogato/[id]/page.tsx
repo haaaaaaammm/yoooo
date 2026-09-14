@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import CopyLinkButton from "@/app/_components/copy-link-button";
 import FeedPostCard from "@/app/_components/feed-post-card";
 import LiveRefresh from "@/app/_components/live-refresh";
 import { getDiferenciasSessionUser } from "@/lib/diferencias-auth";
@@ -9,7 +10,7 @@ import {
   getDiferenciasPostWithThread,
   type DiferenciasCommentTree,
 } from "@/lib/diferencias-posts";
-import { DIFERENCIAS_PATH, OTROGATO_PATH } from "@/lib/posts";
+import { getOtrogatoLoginPath, OTROGATO_PATH } from "@/lib/posts";
 
 import CommentManager, { type ManagedComment } from "./comment-manager";
 
@@ -42,13 +43,13 @@ function serializeComment(comment: DiferenciasCommentTree): ManagedComment {
 export default async function OtrogatoPostPage({
   params,
 }: OtrogatoPostPageProps) {
+  const { id } = await params;
   const user = await getDiferenciasSessionUser();
 
   if (!user) {
-    redirect(OTROGATO_PATH);
+    redirect(getOtrogatoLoginPath(`${OTROGATO_PATH}/${encodeURIComponent(id)}`));
   }
 
-  const { id } = await params;
   const post = await getDiferenciasPostWithThread(id);
 
   if (!post) {
@@ -73,12 +74,9 @@ export default async function OtrogatoPostPage({
                 otrogato
               </h1>
             </div>
-            <Link
-              className="rounded-full px-4 py-2 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10"
-              href={`${DIFERENCIAS_PATH}/${post.id}`}
-            >
-              view
-            </Link>
+            <CopyLinkButton
+              path={`${OTROGATO_PATH}/${encodeURIComponent(post.id)}`}
+            />
           </div>
         </header>
 

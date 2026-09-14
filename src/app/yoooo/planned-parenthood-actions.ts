@@ -11,7 +11,6 @@ import {
 import { isAdminAuthenticated } from "@/lib/auth";
 import {
   ADMIN_PATH,
-  DIFERENCIAS_PATH,
   OTROGATO_PATH,
 } from "@/lib/posts";
 import { getPrisma } from "@/lib/prisma";
@@ -34,7 +33,6 @@ function isUniqueConstraintError(error: unknown) {
 
 function revalidateAccounts() {
   revalidatePath(ADMIN_PATH);
-  revalidatePath(DIFERENCIAS_PATH);
   revalidatePath(OTROGATO_PATH);
 }
 

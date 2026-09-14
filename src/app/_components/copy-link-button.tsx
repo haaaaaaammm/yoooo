@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export default function CopyLinkButton() {
+export default function CopyLinkButton({ path }: { path?: string }) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -16,7 +16,9 @@ export default function CopyLinkButton() {
   }, [copied]);
 
   async function copyLink() {
-    const url = window.location.href;
+    const url = path
+      ? new URL(path, window.location.origin).href
+      : window.location.href;
 
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(url);

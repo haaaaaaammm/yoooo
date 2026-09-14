@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import NumberedPagination from "@/app/_components/numbered-pagination";
@@ -8,7 +7,7 @@ import { getDiferenciasSessionUser } from "@/lib/diferencias-auth";
 import { getDiferenciasPostsPage } from "@/lib/diferencias-posts";
 import { getDiferenciasVapidPublicKey } from "@/lib/diferencias-push";
 import {
-  DIFERENCIAS_PATH,
+  getSafeOtrogatoPath,
   OTROGATO_PATH,
   parsePageParam,
 } from "@/lib/posts";
@@ -38,7 +37,8 @@ export default async function OtrogatoPage({
   const user = await getDiferenciasSessionUser();
 
   if (!user) {
-    return <LoginForm />;
+    const params = (await searchParams) ?? {};
+    return <LoginForm nextPath={getSafeOtrogatoPath(params.next)} />;
   }
 
   const params = (await searchParams) ?? {};
@@ -65,12 +65,6 @@ export default async function OtrogatoPage({
               <form action={logoutAction}>
                 <LogoutButton />
               </form>
-              <Link
-                className="rounded-full px-2 py-2 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10 sm:px-4"
-                href={DIFERENCIAS_PATH}
-              >
-                {"< diferencias"}
-              </Link>
             </div>
           </div>
         </header>

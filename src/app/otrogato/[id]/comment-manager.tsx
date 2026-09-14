@@ -12,7 +12,7 @@ import LinkifiedText from "@/app/_components/linkified-text";
 import ProfileImage from "@/app/_components/profile-image";
 import {
   DIFERENCIAS_COMMENT_MAX_LENGTH,
-  DIFERENCIAS_PATH,
+  OTROGATO_PATH,
 } from "@/lib/posts";
 
 import {
@@ -130,7 +130,7 @@ function CommentItem({
   const [isReplying, setIsReplying] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const isOwner = comment.authorId === currentUserId;
-  const href = `${DIFERENCIAS_PATH}/${comment.postId}/comment/${comment.id}`;
+  const href = `${OTROGATO_PATH}/${comment.postId}#comment-${encodeURIComponent(comment.id)}`;
 
   async function reply(text: string) {
     const result = await createCommentAction(comment.postId, comment.id, text);

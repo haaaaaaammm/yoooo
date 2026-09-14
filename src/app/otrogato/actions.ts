@@ -13,7 +13,7 @@ import {
 import {
   DIFERENCIAS_COMMENT_MAX_LENGTH,
   DIFERENCIAS_CONTENT_MAX_LENGTH,
-  DIFERENCIAS_PATH,
+  getSafeOtrogatoPath,
   OTROGATO_PATH,
 } from "@/lib/posts";
 import { getPrisma } from "@/lib/prisma";
@@ -46,17 +46,11 @@ function avatarErrorMessage(reason: string) {
   }
 }
 
-function revalidateDiferencias(postId?: string, commentId?: string | null) {
-  revalidatePath(DIFERENCIAS_PATH);
+function revalidateDiferencias(postId?: string) {
   revalidatePath(OTROGATO_PATH);
 
   if (postId) {
-    revalidatePath(`${DIFERENCIAS_PATH}/${postId}`);
     revalidatePath(`${OTROGATO_PATH}/${postId}`);
-  }
-
-  if (postId && commentId) {
-    revalidatePath(`${DIFERENCIAS_PATH}/${postId}/comment/${commentId}`);
   }
 }
 
@@ -106,7 +100,9 @@ export async function loginAction(
     return { message: "Invalid username or password.", ok: false };
   }
 
-  redirect(OTROGATO_PATH);
+  redirect(
+    getSafeOtrogatoPath(String(formData.get("next") ?? "")) ?? OTROGATO_PATH
+  );
 }
 
 export async function logoutAction() {
@@ -334,7 +330,7 @@ export async function createCommentAction(
     return { message: "No se pudo guardar el comentario.", ok: false };
   }
 
-  revalidateDiferencias(postId, parentId);
+  revalidateDiferencias(postId);
   scheduleDiferenciasActivityPush({
     actorDisplayName: user.displayName,
     commentId: comment.id,
@@ -384,7 +380,7 @@ export async function updateCommentAction(
     return { message: "No se pudo editar el comentario.", ok: false };
   }
 
-  revalidateDiferencias(comment.postId, commentId);
+  revalidateDiferencias(comment.postId);
   return { message: "comentario actualizado", ok: true };
 }
 
@@ -415,6 +411,6 @@ export async function deleteCommentAction(
     return { message: "No se pudo borrar el comentario.", ok: false };
   }
 
-  revalidateDiferencias(comment.postId, commentId);
+  revalidateDiferencias(comment.postId);
   return { message: "comentario borrado", ok: true };
 }

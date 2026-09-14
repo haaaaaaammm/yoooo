@@ -150,7 +150,11 @@ export async function getDiferenciasSessionUser(): Promise<DiferenciasSessionUse
     return null;
   }
 
-  if (session.expiresAt <= new Date() || !session.user.isActive) {
+  if (
+    !session.user ||
+    session.expiresAt <= new Date() ||
+    !session.user.isActive
+  ) {
     try {
       await prisma.diferenciasSession.delete({ where: { id: session.id } });
     } catch {
