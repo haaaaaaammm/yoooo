@@ -96,6 +96,7 @@ export default async function OtrogatoPage({
               displayName: post.customAuthorName ?? user.displayName,
               id: post.id,
               isOwner: post.authorId === user.id,
+              preview: post.preview,
             }))}
           />
           <NumberedPagination

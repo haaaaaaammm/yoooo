@@ -1,10 +1,13 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 
+import CommentCount from "@/app/_components/comment-count";
 import LinkifiedText, {
   hasLinkifiedText,
 } from "@/app/_components/linkified-text";
+import LinkPreview from "@/app/_components/link-preview";
 import ProfileImage from "@/app/_components/profile-image";
+import type { LinkPreviewData } from "@/lib/link-previews";
 
 type FeedPost = {
   commentCount?: number;
@@ -13,6 +16,7 @@ type FeedPost = {
   createdAt: Date;
   customAuthorAvatarUrl?: string | null;
   customAuthorName?: string | null;
+  preview?: LinkPreviewData | null;
 };
 
 type FeedPostCardProps = {
@@ -56,14 +60,7 @@ export default function FeedPostCard({
     </p>
   );
   const commentCount =
-    typeof post.commentCount === "number" ? (
-      <span
-        aria-label={`${post.commentCount} comentarios`}
-        className="text-sm leading-5 text-neutral-500"
-      >
-        {post.commentCount}
-      </span>
-    ) : null;
+    typeof post.commentCount === "number" ? post.commentCount : null;
 
   return (
     <li className="border-b border-neutral-800 transition hover:bg-neutral-950">
@@ -102,19 +99,10 @@ export default function FeedPostCard({
             ) : (
               content
             )}
-            {commentCount ? (
-              <div className="mt-2 flex items-center gap-2">
-                {href ? (
-                  <Link
-                    aria-label={`${post.commentCount} comentarios`}
-                    className="rounded-full text-sm leading-5 text-neutral-500 transition hover:text-[#ff003c]"
-                    href={href}
-                  >
-                    {post.commentCount}
-                  </Link>
-                ) : (
-                  commentCount
-                )}
+            <LinkPreview preview={post.preview} />
+            {commentCount !== null ? (
+              <div className="mt-1.5 flex items-center">
+                <CommentCount count={commentCount} href={href} />
               </div>
             ) : null}
           </div>

@@ -61,7 +61,8 @@ export const ModelName = {
   DiferenciasSession: 'DiferenciasSession',
   DiferenciasPost: 'DiferenciasPost',
   DiferenciasComment: 'DiferenciasComment',
-  DiferenciasLoginAttempt: 'DiferenciasLoginAttempt'
+  DiferenciasLoginAttempt: 'DiferenciasLoginAttempt',
+  LinkPreview: 'LinkPreview'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -213,6 +214,22 @@ export const DiferenciasLoginAttemptScalarFieldEnum = {
 } as const
 
 export type DiferenciasLoginAttemptScalarFieldEnum = (typeof DiferenciasLoginAttemptScalarFieldEnum)[keyof typeof DiferenciasLoginAttemptScalarFieldEnum]
+
+
+export const LinkPreviewScalarFieldEnum = {
+  id: 'id',
+  url: 'url',
+  urlHash: 'urlHash',
+  title: 'title',
+  description: 'description',
+  siteName: 'siteName',
+  imageUrl: 'imageUrl',
+  status: 'status',
+  fetchedAt: 'fetchedAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LinkPreviewScalarFieldEnum = (typeof LinkPreviewScalarFieldEnum)[keyof typeof LinkPreviewScalarFieldEnum]
 
 
 export const SortOrder = {

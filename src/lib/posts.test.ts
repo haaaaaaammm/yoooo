@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getOtrogatoLoginPath, getSafeOtrogatoPath } from "./posts";
+import { parsePageParam } from "./posts";
 
 describe("Otrogato return paths", () => {
   it("accepts only internal Otrogato destinations", () => {
@@ -33,5 +34,18 @@ describe("Otrogato return paths", () => {
     expect(getOtrogatoLoginPath("https://evil.example/otrogato")).toBe(
       "/otrogato"
     );
+  });
+});
+
+describe("parsePageParam", () => {
+  it.each([undefined, "0", "-5", "abc", "999999999999999"])(
+    "safely falls back for %s",
+    (value) => {
+      expect(parsePageParam(value)).toBe(1);
+    }
+  );
+
+  it("accepts reasonable positive integer pages", () => {
+    expect(parsePageParam("30")).toBe(30);
   });
 });

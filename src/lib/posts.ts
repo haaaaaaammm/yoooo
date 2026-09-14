@@ -8,6 +8,7 @@ export const ARCHIVO_POSTS_PER_PAGE = 10;
 export const ARCHIVO_ALBUM_PHOTOS_PER_PAGE = 36;
 export const DIFERENCIAS_CONTENT_MAX_LENGTH = 20_000;
 export const DIFERENCIAS_COMMENT_MAX_LENGTH = 10_000;
+const MAX_REASONABLE_PAGE = 1_000_000;
 
 export function parsePageParam(value: string | string[] | undefined) {
   const rawValue = Array.isArray(value) ? value[0] : value;
@@ -16,7 +17,9 @@ export function parsePageParam(value: string | string[] | undefined) {
     return 1;
   }
 
-  return Number(rawValue);
+  const page = Number(rawValue);
+
+  return Number.isSafeInteger(page) && page <= MAX_REASONABLE_PAGE ? page : 1;
 }
 
 export function getSafeOtrogatoPath(

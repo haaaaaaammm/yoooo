@@ -8,6 +8,7 @@ import {
 } from "@/lib/comment-tree";
 import { POSTS_PER_PAGE } from "@/lib/posts";
 import { getPrisma } from "@/lib/prisma";
+import { addLinkPreviewsToPosts } from "@/lib/link-previews";
 
 type DiferenciasCommentRecord = {
   authorAvatarUrl: string | null;
@@ -93,7 +94,7 @@ export async function getDiferenciasPostsPage(page: number) {
         });
 
   return {
-    posts: posts.map(mapPost),
+    posts: await addLinkPreviewsToPosts(posts.map(mapPost)),
     totalPages,
     totalPosts,
   };
@@ -122,7 +123,7 @@ export async function getDiferenciasPostsByAuthorPage(
         });
 
   return {
-    posts: posts.map(mapPost),
+    posts: await addLinkPreviewsToPosts(posts.map(mapPost)),
     totalPages,
     totalPosts,
   };
@@ -165,8 +166,10 @@ export async function getDiferenciasPostWithThread(id: string) {
     return null;
   }
 
+  const [postWithPreview] = await addLinkPreviewsToPosts([mapPost(post)]);
+
   return {
-    ...mapPost(post),
+    ...postWithPreview,
     thread: buildCommentTree(post.comments.map(mapComment)),
   };
 }
@@ -208,10 +211,12 @@ export async function getDiferenciasCommentPageData(
     return null;
   }
 
+  const [postWithPreview] = await addLinkPreviewsToPosts([mapPost(post)]);
+
   return {
     ancestors: getCommentAncestorChain(comment, commentMap),
     comment,
-    post: mapPost(post),
+    post: postWithPreview,
   };
 }
 

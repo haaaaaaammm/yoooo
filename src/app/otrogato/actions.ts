@@ -17,6 +17,7 @@ import {
   OTROGATO_PATH,
 } from "@/lib/posts";
 import { getPrisma } from "@/lib/prisma";
+import { scheduleLinkPreviewResolution } from "@/lib/link-previews";
 import {
   sendDiferenciasActivityPush,
 } from "@/lib/diferencias-push";
@@ -142,6 +143,7 @@ export async function createPostAction(formData: FormData): Promise<MutationResu
   }
 
   revalidateDiferencias();
+  scheduleLinkPreviewResolution(content);
   scheduleDiferenciasActivityPush({
     actorDisplayName: user.displayName,
     content,
@@ -185,6 +187,7 @@ export async function updatePostAction(
   }
 
   revalidateDiferencias(postId);
+  scheduleLinkPreviewResolution(content);
   return { content, message: "post actualizado", ok: true };
 }
 

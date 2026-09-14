@@ -154,3 +154,18 @@ model DiferenciasLoginAttempt {
   @@index([keyHash, attemptedAt])
   @@index([attemptedAt])
 }
+
+model LinkPreview {
+  id          String   @id @default(cuid())
+  url         String
+  urlHash     String   @unique
+  title       String?
+  description String?
+  siteName    String?
+  imageUrl    String?
+  status      String   @default("ready")
+  fetchedAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([fetchedAt])
+}

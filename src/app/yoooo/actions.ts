@@ -15,6 +15,7 @@ import {
 import { isAdminAuthenticated, loginAdmin, logoutAdmin } from "@/lib/auth";
 import { ADMIN_PATH, ARCHIVO_PATH, PUBLIC_FEED_PATH } from "@/lib/posts";
 import { getPrisma } from "@/lib/prisma";
+import { scheduleLinkPreviewResolution } from "@/lib/link-previews";
 import {
   deleteR2Object,
   uploadArchivoImageToR2,
@@ -57,6 +58,8 @@ export async function createPostAction(formData: FormData) {
   await getPrisma().post.create({
     data: { content },
   });
+
+  scheduleLinkPreviewResolution(content);
 
   revalidatePath(PUBLIC_FEED_PATH);
   revalidatePath(ADMIN_PATH);
@@ -154,6 +157,7 @@ export async function createWalterBazarPostAction(
         customAuthorName,
       },
     });
+    scheduleLinkPreviewResolution(content);
   } catch {
     if (newlyUploadedAvatarKey) {
       try {
@@ -282,6 +286,7 @@ export async function updatePostAction(
       where: { id: postId },
       data: { content },
     });
+    scheduleLinkPreviewResolution(content);
   } catch {
     return { ok: false, reason: "update" };
   }

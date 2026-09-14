@@ -407,7 +407,8 @@ export const ModelName = {
   DiferenciasSession: 'DiferenciasSession',
   DiferenciasPost: 'DiferenciasPost',
   DiferenciasComment: 'DiferenciasComment',
-  DiferenciasLoginAttempt: 'DiferenciasLoginAttempt'
+  DiferenciasLoginAttempt: 'DiferenciasLoginAttempt',
+  LinkPreview: 'LinkPreview'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -423,7 +424,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "post" | "poemarioComment" | "siteSettings" | "archivePost" | "archiveImage" | "diferenciasUser" | "diferenciasPushSubscription" | "diferenciasSession" | "diferenciasPost" | "diferenciasComment" | "diferenciasLoginAttempt"
+    modelProps: "post" | "poemarioComment" | "siteSettings" | "archivePost" | "archiveImage" | "diferenciasUser" | "diferenciasPushSubscription" | "diferenciasSession" | "diferenciasPost" | "diferenciasComment" | "diferenciasLoginAttempt" | "linkPreview"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1241,6 +1242,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    LinkPreview: {
+      payload: Prisma.$LinkPreviewPayload<ExtArgs>
+      fields: Prisma.LinkPreviewFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.LinkPreviewFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LinkPreviewPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.LinkPreviewFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LinkPreviewPayload>
+        }
+        findFirst: {
+          args: Prisma.LinkPreviewFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LinkPreviewPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.LinkPreviewFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LinkPreviewPayload>
+        }
+        findMany: {
+          args: Prisma.LinkPreviewFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LinkPreviewPayload>[]
+        }
+        create: {
+          args: Prisma.LinkPreviewCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LinkPreviewPayload>
+        }
+        createMany: {
+          args: Prisma.LinkPreviewCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.LinkPreviewCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LinkPreviewPayload>[]
+        }
+        delete: {
+          args: Prisma.LinkPreviewDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LinkPreviewPayload>
+        }
+        update: {
+          args: Prisma.LinkPreviewUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LinkPreviewPayload>
+        }
+        deleteMany: {
+          args: Prisma.LinkPreviewDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.LinkPreviewUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.LinkPreviewUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LinkPreviewPayload>[]
+        }
+        upsert: {
+          args: Prisma.LinkPreviewUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LinkPreviewPayload>
+        }
+        aggregate: {
+          args: Prisma.LinkPreviewAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateLinkPreview>
+        }
+        groupBy: {
+          args: Prisma.LinkPreviewGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LinkPreviewGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.LinkPreviewCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LinkPreviewCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1413,6 +1488,22 @@ export const DiferenciasLoginAttemptScalarFieldEnum = {
 } as const
 
 export type DiferenciasLoginAttemptScalarFieldEnum = (typeof DiferenciasLoginAttemptScalarFieldEnum)[keyof typeof DiferenciasLoginAttemptScalarFieldEnum]
+
+
+export const LinkPreviewScalarFieldEnum = {
+  id: 'id',
+  url: 'url',
+  urlHash: 'urlHash',
+  title: 'title',
+  description: 'description',
+  siteName: 'siteName',
+  imageUrl: 'imageUrl',
+  status: 'status',
+  fetchedAt: 'fetchedAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LinkPreviewScalarFieldEnum = (typeof LinkPreviewScalarFieldEnum)[keyof typeof LinkPreviewScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1669,6 +1760,7 @@ export type GlobalOmitConfig = {
   diferenciasPost?: Prisma.DiferenciasPostOmit
   diferenciasComment?: Prisma.DiferenciasCommentOmit
   diferenciasLoginAttempt?: Prisma.DiferenciasLoginAttemptOmit
+  linkPreview?: Prisma.LinkPreviewOmit
 }
 
 /* Types for Logging */

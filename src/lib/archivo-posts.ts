@@ -41,15 +41,20 @@ export function formatArchivoTimestamp(date: Date) {
 
 export async function getArchivoPostsPage(page: number) {
   const prisma = getPrisma();
-  const [totalPosts, posts] = await Promise.all([
-    prisma.archivePost.count(),
-    prisma.archivePost.findMany({
-      include: archivoCompactPostInclude,
-      orderBy: { takenAt: "desc" },
-      skip: (page - 1) * ARCHIVO_POSTS_PER_PAGE,
-      take: ARCHIVO_POSTS_PER_PAGE,
-    }),
-  ]);
+  const totalPosts = await prisma.archivePost.count();
+  const totalPages = Math.ceil(totalPosts / ARCHIVO_POSTS_PER_PAGE);
+  const queryPage = Number.isFinite(page)
+    ? Math.min(Math.max(page, 1), Math.max(totalPages, 1))
+    : 1;
+  const posts =
+    totalPosts === 0
+      ? []
+      : await prisma.archivePost.findMany({
+          include: archivoCompactPostInclude,
+          orderBy: { takenAt: "desc" },
+          skip: (queryPage - 1) * ARCHIVO_POSTS_PER_PAGE,
+          take: ARCHIVO_POSTS_PER_PAGE,
+        });
 
   return {
     posts: posts.map((post) => ({
@@ -57,22 +62,27 @@ export async function getArchivoPostsPage(page: number) {
       coverImage: post.coverImage ?? post.images[0] ?? null,
       imageCount: post._count.images,
     })),
-    totalPages: Math.ceil(totalPosts / ARCHIVO_POSTS_PER_PAGE),
+    totalPages,
     totalPosts,
   };
 }
 
 export async function getAdminArchivoPostsPage(page: number) {
   const prisma = getPrisma();
-  const [totalPosts, posts] = await Promise.all([
-    prisma.archivePost.count(),
-    prisma.archivePost.findMany({
-      include: archivoFullPostInclude,
-      orderBy: { takenAt: "desc" },
-      skip: (page - 1) * ARCHIVO_POSTS_PER_PAGE,
-      take: ARCHIVO_POSTS_PER_PAGE,
-    }),
-  ]);
+  const totalPosts = await prisma.archivePost.count();
+  const totalPages = Math.ceil(totalPosts / ARCHIVO_POSTS_PER_PAGE);
+  const queryPage = Number.isFinite(page)
+    ? Math.min(Math.max(page, 1), Math.max(totalPages, 1))
+    : 1;
+  const posts =
+    totalPosts === 0
+      ? []
+      : await prisma.archivePost.findMany({
+          include: archivoFullPostInclude,
+          orderBy: { takenAt: "desc" },
+          skip: (queryPage - 1) * ARCHIVO_POSTS_PER_PAGE,
+          take: ARCHIVO_POSTS_PER_PAGE,
+        });
 
   return {
     posts: posts.map((post) => ({
@@ -80,7 +90,7 @@ export async function getAdminArchivoPostsPage(page: number) {
       coverImage: post.coverImage ?? post.images[0] ?? null,
       imageCount: post._count.images,
     })),
-    totalPages: Math.ceil(totalPosts / ARCHIVO_POSTS_PER_PAGE),
+    totalPages,
     totalPosts,
   };
 }

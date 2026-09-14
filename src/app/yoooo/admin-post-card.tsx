@@ -4,7 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import CommentCount from "@/app/_components/comment-count";
+import LinkifiedText, {
+  hasLinkifiedText,
+} from "@/app/_components/linkified-text";
+import LinkPreview from "@/app/_components/link-preview";
 import ProfileImage from "@/app/_components/profile-image";
+import type { LinkPreviewData } from "@/lib/link-previews";
 
 import { updatePostAction } from "./actions";
 import DeletePostMenu from "./delete-post-menu";
@@ -16,6 +22,7 @@ type AdminPost = {
   createdAt: string;
   customAuthorAvatarUrl?: string | null;
   customAuthorName?: string | null;
+  preview?: LinkPreviewData | null;
 };
 
 type AdminPostCardProps = {
@@ -66,15 +73,9 @@ export default function AdminPostCard({
   const [isSaving, setIsSaving] = useState(false);
   const createdAt = new Date(post.createdAt);
   const canSave = draft.trim().length > 0 && !isSaving;
+  const hasContentLinks = hasLinkifiedText(content);
   const commentCount =
-    typeof post.commentCount === "number" ? (
-      <span
-        aria-label={`${post.commentCount} comentarios`}
-        className="text-sm leading-5 text-neutral-500"
-      >
-        {post.commentCount}
-      </span>
-    ) : null;
+    typeof post.commentCount === "number" ? post.commentCount : null;
   const timestamp = (
     <time className="text-neutral-500" dateTime={post.createdAt}>
       {formatTimestamp(createdAt)}
@@ -188,32 +189,21 @@ export default function AdminPostCard({
                   </button>
                 </div>
               </form>
-            ) : (
-              href ? (
+            ) : href && !hasContentLinks ? (
                 <Link className="block" href={href}>
                   <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
-                    {content}
+                    <LinkifiedText text={content} />
                   </p>
                 </Link>
-              ) : (
-                <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
-                  {content}
-                </p>
-              )
+            ) : (
+              <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+                <LinkifiedText text={content} />
+              </p>
             )}
-            {!isEditing && commentCount ? (
-              <div className="mt-2 flex items-center gap-2">
-                {href ? (
-                  <Link
-                    aria-label={`${post.commentCount} comentarios`}
-                    className="rounded-full text-sm leading-5 text-neutral-500 transition hover:text-[#ff003c]"
-                    href={href}
-                  >
-                    {post.commentCount}
-                  </Link>
-                ) : (
-                  commentCount
-                )}
+            {!isEditing ? <LinkPreview preview={post.preview} /> : null}
+            {!isEditing && commentCount !== null ? (
+              <div className="mt-1.5 flex items-center">
+                <CommentCount count={commentCount} href={href} />
               </div>
             ) : null}
           </div>

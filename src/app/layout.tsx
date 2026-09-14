@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
+import { SITE_ORIGIN } from "@/lib/site-url";
 import "./globals.css";
 
 
 export const metadata = {
-  metadataBase: new URL("https://haaaaaaammmm.com"),
+  metadataBase: new URL(SITE_ORIGIN),
   title: "yo",
   description: ":pp",
   openGraph: {

@@ -116,6 +116,7 @@ export default async function AdminPoemarioCommentPage({
                 customAuthorAvatarUrl: data.post.customAuthorAvatarUrl,
                 customAuthorName: data.post.customAuthorName,
                 id: data.post.id,
+                preview: data.post.preview,
               }}
               profileImageUrl={profileImageUrl}
             />

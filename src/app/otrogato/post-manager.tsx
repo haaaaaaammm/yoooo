@@ -6,10 +6,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import FeedPostCard from "@/app/_components/feed-post-card";
+import CommentCount from "@/app/_components/comment-count";
 import LinkifiedText, {
   hasLinkifiedText,
 } from "@/app/_components/linkified-text";
+import LinkPreview from "@/app/_components/link-preview";
 import ProfileImage from "@/app/_components/profile-image";
+import type { LinkPreviewData } from "@/lib/link-previews";
 import {
   DIFERENCIAS_CONTENT_MAX_LENGTH,
   OTROGATO_PATH,
@@ -25,6 +28,7 @@ export type ManagedPost = {
   displayName: string;
   id: string;
   isOwner: boolean;
+  preview?: LinkPreviewData | null;
 };
 
 function formatTimestamp(value: string) {
@@ -118,6 +122,7 @@ function PostItem({ post }: { post: ManagedPost }) {
           customAuthorAvatarUrl: post.avatarUrl,
           customAuthorName: post.displayName,
           id: post.id,
+          preview: post.preview,
         }}
       />
     );
@@ -184,14 +189,16 @@ function PostItem({ post }: { post: ManagedPost }) {
               </Link>
             )}
 
+            {!isEditing ? <LinkPreview preview={post.preview} /> : null}
+
             {error ? <p className="mt-2 text-sm text-red-400">{error}</p> : null}
             {!isEditing ? (
-              <Link
-                className="mt-2 inline-block text-sm text-neutral-500 transition hover:text-[#ff003c]"
-                href={`${OTROGATO_PATH}/${post.id}`}
-              >
-                {post.commentCount}
-              </Link>
+              <div className="mt-1.5 flex items-center">
+                <CommentCount
+                  count={post.commentCount}
+                  href={`${OTROGATO_PATH}/${post.id}`}
+                />
+              </div>
             ) : null}
           </div>
 

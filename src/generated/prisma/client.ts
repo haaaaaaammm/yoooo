@@ -96,3 +96,8 @@ export type DiferenciasComment = Prisma.DiferenciasCommentModel
  * 
  */
 export type DiferenciasLoginAttempt = Prisma.DiferenciasLoginAttemptModel
+/**
+ * Model LinkPreview
+ * 
+ */
+export type LinkPreview = Prisma.LinkPreviewModel

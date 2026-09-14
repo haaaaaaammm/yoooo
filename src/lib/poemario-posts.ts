@@ -6,6 +6,7 @@ import {
   getCommentAncestorChain,
   type CommentTreeNode,
 } from "@/lib/comment-tree";
+import { addLinkPreviewsToPosts } from "@/lib/link-previews";
 import { POSTS_PER_PAGE } from "@/lib/posts";
 import { getPrisma } from "@/lib/prisma";
 
@@ -22,31 +23,38 @@ export type PoemarioCommentTree = CommentTreeNode<PoemarioCommentRecord>;
 
 export async function getPoemarioPostsPage(page: number) {
   const prisma = getPrisma();
-  const [totalPosts, posts] = await Promise.all([
-    prisma.post.count(),
-    prisma.post.findMany({
-      include: {
-        _count: {
-          select: { comments: true },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * POSTS_PER_PAGE,
-      take: POSTS_PER_PAGE,
-    }),
-  ]);
+  const totalPosts = await prisma.post.count();
+  const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
+  const queryPage = Number.isFinite(page)
+    ? Math.min(Math.max(page, 1), Math.max(totalPages, 1))
+    : 1;
+  const posts =
+    totalPosts === 0
+      ? []
+      : await prisma.post.findMany({
+          include: {
+            _count: {
+              select: { comments: true },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+          skip: (queryPage - 1) * POSTS_PER_PAGE,
+          take: POSTS_PER_PAGE,
+        });
+
+  const mappedPosts = posts.map((post) => ({
+    commentCount: post._count.comments,
+    content: post.content,
+    createdAt: post.createdAt,
+    customAuthorAvatarUrl: post.customAuthorAvatarUrl,
+    customAuthorName: post.customAuthorName,
+    id: post.id,
+    updatedAt: post.updatedAt,
+  }));
 
   return {
-    posts: posts.map((post) => ({
-      commentCount: post._count.comments,
-      content: post.content,
-      createdAt: post.createdAt,
-      customAuthorAvatarUrl: post.customAuthorAvatarUrl,
-      customAuthorName: post.customAuthorName,
-      id: post.id,
-      updatedAt: post.updatedAt,
-    })),
-    totalPages: Math.ceil(totalPosts / POSTS_PER_PAGE),
+    posts: await addLinkPreviewsToPosts(mappedPosts),
+    totalPages,
     totalPosts,
   };
 }
@@ -86,16 +94,20 @@ export async function getPoemarioPostWithThread(id: string) {
     return null;
   }
 
-  return {
-    commentCount: post._count.comments,
-    content: post.content,
-    createdAt: post.createdAt,
-    customAuthorAvatarUrl: post.customAuthorAvatarUrl,
-    customAuthorName: post.customAuthorName,
-    id: post.id,
-    thread: buildCommentTree(post.comments),
-    updatedAt: post.updatedAt,
-  };
+  const [postWithPreview] = await addLinkPreviewsToPosts([
+    {
+      commentCount: post._count.comments,
+      content: post.content,
+      createdAt: post.createdAt,
+      customAuthorAvatarUrl: post.customAuthorAvatarUrl,
+      customAuthorName: post.customAuthorName,
+      id: post.id,
+      thread: buildCommentTree(post.comments),
+      updatedAt: post.updatedAt,
+    },
+  ]);
+
+  return postWithPreview;
 }
 
 export async function getPoemarioCommentPageData(
@@ -132,10 +144,8 @@ export async function getPoemarioCommentPageData(
     return null;
   }
 
-  return {
-    ancestors: getCommentAncestorChain(comment, commentMap),
-    comment,
-    post: {
+  const [postWithPreview] = await addLinkPreviewsToPosts([
+    {
       commentCount: post._count.comments,
       content: post.content,
       createdAt: post.createdAt,
@@ -144,5 +154,11 @@ export async function getPoemarioCommentPageData(
       id: post.id,
       updatedAt: post.updatedAt,
     },
+  ]);
+
+  return {
+    ancestors: getCommentAncestorChain(comment, commentMap),
+    comment,
+    post: postWithPreview,
   };
 }

@@ -13,11 +13,11 @@ import {
   ADMIN_PATH,
   ARCHIVO_PATH,
   OTROGATO_PATH,
-  POSTS_PER_PAGE,
   PUBLIC_FEED_PATH,
   parsePageParam,
 } from "@/lib/posts";
 import { getProfileImageSettings } from "@/lib/site-settings";
+import { getPaginationHref } from "@/lib/pagination";
 
 import AdminPostCard from "./admin-post-card";
 import ArchivoManager from "./archivo-manager";
@@ -283,10 +283,15 @@ export default async function Home({ searchParams }: AdminPageProps) {
       />
     );
   } else {
-    const { posts, totalPosts } = await getPoemarioPostsPage(page);
-    const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
-
+    const { posts, totalPages } = await getPoemarioPostsPage(page);
     const isWalterBazar = mode === "walter-bazar";
+    const paginationPath = isWalterBazar
+      ? `${ADMIN_PATH}?app=walter-bazar`
+      : ADMIN_PATH;
+
+    if (totalPages > 0 && page > totalPages) {
+      redirect(getPaginationHref(paginationPath, totalPages));
+    }
 
     pageContent = (
       <>
@@ -314,6 +319,7 @@ export default async function Home({ searchParams }: AdminPageProps) {
                     createdAt: post.createdAt.toISOString(),
                     customAuthorAvatarUrl: post.customAuthorAvatarUrl,
                     customAuthorName: post.customAuthorName,
+                    preview: post.preview,
                   }}
                   profileImageUrl={profileImageUrl}
                 />
@@ -321,11 +327,7 @@ export default async function Home({ searchParams }: AdminPageProps) {
             </ol>
           )}
           <NumberedPagination
-            basePath={
-              isWalterBazar
-                ? `${ADMIN_PATH}?app=walter-bazar`
-                : ADMIN_PATH
-            }
+            basePath={paginationPath}
             page={page}
             totalPages={totalPages}
           />

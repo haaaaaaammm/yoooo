@@ -119,6 +119,7 @@ export default async function PoemarioPostPage({
                 customAuthorAvatarUrl: post.customAuthorAvatarUrl,
                 customAuthorName: post.customAuthorName,
                 id: post.id,
+                preview: post.preview,
               }}
               profileImageUrl={profileImageSettings.profileImageUrl}
             />
