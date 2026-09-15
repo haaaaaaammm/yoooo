@@ -74,7 +74,7 @@ describe("Poemario post blink setting", () => {
     mocks.isAdminAuthenticated.mockResolvedValue(true);
   });
 
-  it("stores false by default and true when Parpadear is checked", async () => {
+  it("stores false by default and true when parpadeo is checked", async () => {
     const normalPost = new FormData();
     normalPost.set("content", "normal");
     const blinkingPost = new FormData();
@@ -92,16 +92,53 @@ describe("Poemario post blink setting", () => {
     });
   });
 
-  it("updates the persisted blink value without dropping the content", async () => {
-    mocks.postFindUnique.mockResolvedValue({ id: "post-id" });
-    mocks.postUpdate.mockResolvedValue({});
+  it("changes an existing post from blink=false to blink=true", async () => {
+    mocks.postFindUnique.mockResolvedValue({ id: "post-id", blink: false });
+    mocks.postUpdate.mockResolvedValue({
+      blink: true,
+      content: "same content",
+    });
 
     await expect(
       updatePostAction("post-id", "same content", true)
     ).resolves.toEqual({ blink: true, content: "same content", ok: true });
     expect(mocks.postUpdate).toHaveBeenCalledWith({
       data: { blink: true, content: "same content" },
+      select: { blink: true, content: true },
       where: { id: "post-id" },
+    });
+  });
+
+  it("changes an existing post from blink=true to blink=false", async () => {
+    mocks.postFindUnique.mockResolvedValue({ id: "post-id", blink: true });
+    mocks.postUpdate.mockResolvedValue({
+      blink: false,
+      content: "same content",
+    });
+
+    await expect(
+      updatePostAction("post-id", "same content", false)
+    ).resolves.toEqual({ blink: false, content: "same content", ok: true });
+    expect(mocks.postUpdate).toHaveBeenCalledWith({
+      data: { blink: false, content: "same content" },
+      select: { blink: true, content: true },
+      where: { id: "post-id" },
+    });
+  });
+
+  it("returns the blink value persisted by the database", async () => {
+    mocks.postFindUnique.mockResolvedValue({ id: "post-id" });
+    mocks.postUpdate.mockResolvedValue({
+      blink: false,
+      content: "database content",
+    });
+
+    await expect(
+      updatePostAction("post-id", "submitted content", true)
+    ).resolves.toEqual({
+      blink: false,
+      content: "database content",
+      ok: true,
     });
   });
 

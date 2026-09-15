@@ -9,6 +9,7 @@ import LinkifiedText, {
   hasLinkifiedText,
 } from "@/app/_components/linkified-text";
 import LinkPreview from "@/app/_components/link-preview";
+import { getPoemarioPostBodyClassName } from "@/app/_components/poemario-post-body";
 import PostOptionsMenu from "@/app/_components/post-options-menu";
 import ProfileImage from "@/app/_components/profile-image";
 import type { LinkPreviewData } from "@/lib/link-previews";
@@ -53,7 +54,7 @@ function editErrorMessage(
     case "empty":
       return "Escribe algo antes de guardar.";
     case "invalid":
-      return "El valor de Parpadear no es valido.";
+      return "El valor de parpadeo no es valido.";
     case "not_found":
       return "Ese post ya no existe.";
     case "update":
@@ -83,6 +84,7 @@ export default function AdminPostCard({
   const createdAt = new Date(post.createdAt);
   const canSave = draft.trim().length > 0 && !isSaving;
   const hasContentLinks = hasLinkifiedText(content);
+  const contentClassName = getPoemarioPostBodyClassName(blink);
   const commentCount =
     typeof post.commentCount === "number" ? post.commentCount : null;
   const timestamp = (
@@ -192,7 +194,7 @@ export default function AdminPostCard({
                     onChange={(event) => setDraftBlink(event.target.checked)}
                     type="checkbox"
                   />
-                  Parpadear
+                  parpadeo
                 </label>
                 {error ? (
                   <p className="mt-2 text-sm text-red-400">{error}</p>
@@ -217,12 +219,12 @@ export default function AdminPostCard({
               </form>
             ) : href && !hasContentLinks ? (
               <Link className="block" href={href}>
-                <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+                <p className={contentClassName}>
                   <LinkifiedText text={content} />
                 </p>
               </Link>
             ) : (
-              <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+              <p className={contentClassName}>
                 <LinkifiedText text={content} />
               </p>
             )}

@@ -6,6 +6,7 @@ import LinkifiedText, {
   hasLinkifiedText,
 } from "@/app/_components/linkified-text";
 import LinkPreview from "@/app/_components/link-preview";
+import { getPoemarioPostBodyClassName } from "@/app/_components/poemario-post-body";
 import PostOptionsMenu from "@/app/_components/post-options-menu";
 import ProfileImage from "@/app/_components/profile-image";
 import type { LinkPreviewData } from "@/lib/link-previews";
@@ -59,11 +60,7 @@ export default function FeedPostCard({
     </time>
   );
   const content = (
-    <p
-      className={`mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100${
-        post.blink ? " poemario-blink" : ""
-      }`}
-    >
+    <p className={getPoemarioPostBodyClassName(post.blink)}>
       <LinkifiedText text={post.content} />
     </p>
   );

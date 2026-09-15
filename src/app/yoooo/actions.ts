@@ -296,12 +296,15 @@ export async function updatePostAction(
     return { ok: false, reason: "not_found" };
   }
 
+  let updatedPost: { blink: boolean; content: string };
+
   try {
-    await prisma.post.update({
+    updatedPost = await prisma.post.update({
       where: { id: postId },
       data: { blink, content },
+      select: { blink: true, content: true },
     });
-    scheduleLinkPreviewResolution(content);
+    scheduleLinkPreviewResolution(updatedPost.content);
   } catch {
     return { ok: false, reason: "update" };
   }
@@ -309,7 +312,7 @@ export async function updatePostAction(
   revalidatePath(PUBLIC_FEED_PATH);
   revalidatePath(ADMIN_PATH);
 
-  return { ok: true, blink, content };
+  return { ok: true, ...updatedPost };
 }
 
 export async function createPoemarioCommentAction(
