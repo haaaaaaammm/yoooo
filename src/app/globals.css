@@ -27,6 +27,48 @@
   color: #d01010e3;
 }
 
+.poemario-blink {
+  color: #ff003c;
+  animation: weirdBlink 0.32s steps(1, end) infinite;
+}
+
+.poemario-blink a {
+  color: inherit;
+}
+
+@keyframes weirdBlink {
+  0%,
+  35% {
+    color: #ff003c;
+  }
+
+  36%,
+  42% {
+    color: #000000;
+  }
+
+  43%,
+  74% {
+    color: #ff003c;
+  }
+
+  75%,
+  79% {
+    color: #000000;
+  }
+
+  80%,
+  100% {
+    color: #ff003c;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poemario-blink {
+    animation: none;
+  }
+}
+
 html.archivo-viewport-black,
 html.archivo-viewport-black body,
 body.archivo-viewport-black,

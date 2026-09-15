@@ -49,6 +49,7 @@ export async function getPoemarioPostsPage(page: number) {
         });
 
   const mappedPosts = posts.map((post) => ({
+    blink: post.blink,
     commentCount: post._count.comments,
     content: post.content,
     createdAt: post.createdAt,
@@ -103,6 +104,7 @@ export async function getPoemarioPostWithThread(id: string) {
   const [[postWithPreview], commentsWithPreviews] = await Promise.all([
     addLinkPreviewsToPosts([
       {
+        blink: post.blink,
         commentCount: post._count.comments,
         content: post.content,
         createdAt: post.createdAt,
@@ -158,6 +160,7 @@ export async function getPoemarioCommentPageData(
 
   const [postWithPreview] = await addLinkPreviewsToPosts([
     {
+      blink: post.blink,
       commentCount: post._count.comments,
       content: post.content,
       createdAt: post.createdAt,

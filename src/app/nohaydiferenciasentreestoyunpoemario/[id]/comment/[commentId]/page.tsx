@@ -111,6 +111,7 @@ export default async function PoemarioCommentPage({
             <FeedPostCard
               href={postHref}
               post={{
+                blink: data.post.blink,
                 commentCount: data.post.commentCount,
                 content: data.post.content,
                 createdAt: data.post.createdAt,

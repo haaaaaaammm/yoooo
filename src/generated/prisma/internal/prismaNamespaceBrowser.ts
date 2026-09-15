@@ -84,6 +84,7 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 export const PostScalarFieldEnum = {
   id: 'id',
   content: 'content',
+  blink: 'blink',
   customAuthorName: 'customAuthorName',
   customAuthorAvatarUrl: 'customAuthorAvatarUrl',
   customAuthorAvatarKey: 'customAuthorAvatarKey',

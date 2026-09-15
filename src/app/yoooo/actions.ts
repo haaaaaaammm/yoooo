@@ -50,13 +50,20 @@ export async function createPostAction(formData: FormData) {
   }
 
   const content = String(formData.get("content") ?? "").trim();
+  const rawBlink = formData.get("blink");
+
+  if (rawBlink !== null && rawBlink !== "on") {
+    redirect(`${ADMIN_PATH}?error=invalid`);
+  }
+
+  const blink = rawBlink === "on";
 
   if (!content) {
     redirect(`${ADMIN_PATH}?error=empty`);
   }
 
   await getPrisma().post.create({
-    data: { content },
+    data: { blink, content },
   });
 
   scheduleLinkPreviewResolution(content);
@@ -230,8 +237,11 @@ export async function deletePostAction(formData: FormData) {
 }
 
 type UpdatePostResult =
-  | { ok: true; content: string }
-  | { ok: false; reason: "auth" | "empty" | "not_found" | "update" };
+  | { ok: true; blink: boolean; content: string }
+  | {
+      ok: false;
+      reason: "auth" | "empty" | "invalid" | "not_found" | "update";
+    };
 
 type PoemarioCommentMutationResult =
   | { ok: true; message: string }
@@ -255,13 +265,18 @@ function revalidatePoemarioThread(postId: string, commentId?: string | null) {
 
 export async function updatePostAction(
   postId: string,
-  rawContent: string
+  rawContent: string,
+  blink: boolean
 ): Promise<UpdatePostResult> {
   if (!(await isAdminAuthenticated())) {
     return { ok: false, reason: "auth" };
   }
 
   const content = rawContent.trim();
+
+  if (typeof blink !== "boolean") {
+    return { ok: false, reason: "invalid" };
+  }
 
   if (!postId) {
     return { ok: false, reason: "not_found" };
@@ -284,7 +299,7 @@ export async function updatePostAction(
   try {
     await prisma.post.update({
       where: { id: postId },
-      data: { content },
+      data: { blink, content },
     });
     scheduleLinkPreviewResolution(content);
   } catch {
@@ -294,7 +309,7 @@ export async function updatePostAction(
   revalidatePath(PUBLIC_FEED_PATH);
   revalidatePath(ADMIN_PATH);
 
-  return { ok: true, content };
+  return { ok: true, blink, content };
 }
 
 export async function createPoemarioCommentAction(

@@ -314,6 +314,7 @@ export default async function Home({ searchParams }: AdminPageProps) {
                   href={`${ADMIN_PATH}/poemario/${post.id}`}
                   key={post.id}
                   post={{
+                    blink: post.blink,
                     commentCount: post.commentCount,
                     id: post.id,
                     content: post.content,

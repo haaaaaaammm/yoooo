@@ -105,6 +105,7 @@ export default async function AdminPoemarioPostPage({
             <AdminPostCard
               canonicalPath={`${PUBLIC_FEED_PATH}/${post.id}`}
               post={{
+                blink: post.blink,
                 commentCount: post.commentCount,
                 content: post.content,
                 createdAt: post.createdAt.toISOString(),

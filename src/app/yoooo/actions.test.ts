@@ -6,7 +6,9 @@ const mocks = vi.hoisted(() => ({
   commentFindUnique: vi.fn(),
   commentUpdate: vi.fn(),
   isAdminAuthenticated: vi.fn(),
+  postCreate: vi.fn(),
   postFindUnique: vi.fn(),
+  postUpdate: vi.fn(),
   scheduleLinkPreviewResolution: vi.fn(),
 }));
 
@@ -41,7 +43,11 @@ vi.mock("@/lib/prisma", () => ({
       findUnique: mocks.commentFindUnique,
       update: mocks.commentUpdate,
     },
-    post: { findUnique: mocks.postFindUnique },
+    post: {
+      create: mocks.postCreate,
+      findUnique: mocks.postFindUnique,
+      update: mocks.postUpdate,
+    },
   }),
 }));
 vi.mock("@/lib/r2", () => ({
@@ -55,10 +61,58 @@ vi.mock("@/lib/r2", () => ({
 vi.mock("@/lib/site-settings", () => ({ SITE_SETTINGS_ID: "default" }));
 
 import {
+  createPostAction,
   createPoemarioCommentAction,
   deletePoemarioCommentAction,
+  updatePostAction,
   updatePoemarioCommentAction,
 } from "./actions";
+
+describe("Poemario post blink setting", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.isAdminAuthenticated.mockResolvedValue(true);
+  });
+
+  it("stores false by default and true when Parpadear is checked", async () => {
+    const normalPost = new FormData();
+    normalPost.set("content", "normal");
+    const blinkingPost = new FormData();
+    blinkingPost.set("content", "blinking");
+    blinkingPost.set("blink", "on");
+
+    await createPostAction(normalPost);
+    await createPostAction(blinkingPost);
+
+    expect(mocks.postCreate).toHaveBeenNthCalledWith(1, {
+      data: { blink: false, content: "normal" },
+    });
+    expect(mocks.postCreate).toHaveBeenNthCalledWith(2, {
+      data: { blink: true, content: "blinking" },
+    });
+  });
+
+  it("updates the persisted blink value without dropping the content", async () => {
+    mocks.postFindUnique.mockResolvedValue({ id: "post-id" });
+    mocks.postUpdate.mockResolvedValue({});
+
+    await expect(
+      updatePostAction("post-id", "same content", true)
+    ).resolves.toEqual({ blink: true, content: "same content", ok: true });
+    expect(mocks.postUpdate).toHaveBeenCalledWith({
+      data: { blink: true, content: "same content" },
+      where: { id: "post-id" },
+    });
+  });
+
+  it("rejects a non-boolean update value", async () => {
+    await expect(
+      updatePostAction("post-id", "content", "on" as unknown as boolean)
+    ).resolves.toEqual({ ok: false, reason: "invalid" });
+    expect(mocks.postFindUnique).not.toHaveBeenCalled();
+    expect(mocks.postUpdate).not.toHaveBeenCalled();
+  });
+});
 
 describe("Poemario comment server-action authorization", () => {
   beforeEach(() => {

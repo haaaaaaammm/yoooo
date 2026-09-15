@@ -448,10 +448,6 @@ export type DiferenciasUserScalarRelationFilter = {
   isNot?: Prisma.DiferenciasUserWhereInput
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
 }

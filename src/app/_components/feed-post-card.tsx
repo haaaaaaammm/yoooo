@@ -11,6 +11,7 @@ import ProfileImage from "@/app/_components/profile-image";
 import type { LinkPreviewData } from "@/lib/link-previews";
 
 type FeedPost = {
+  blink?: boolean;
   commentCount?: number;
   id: string;
   content: string;
@@ -58,7 +59,11 @@ export default function FeedPostCard({
     </time>
   );
   const content = (
-    <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+    <p
+      className={`mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100${
+        post.blink ? " poemario-blink" : ""
+      }`}
+    >
       <LinkifiedText text={post.content} />
     </p>
   );

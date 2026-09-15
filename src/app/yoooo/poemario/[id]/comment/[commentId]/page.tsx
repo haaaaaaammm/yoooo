@@ -134,6 +134,7 @@ export default async function AdminPoemarioCommentPage({
               canonicalPath={`${PUBLIC_FEED_PATH}/${data.post.id}`}
               href={adminPostHref}
               post={{
+                blink: data.post.blink,
                 commentCount: data.post.commentCount,
                 content: data.post.content,
                 createdAt: data.post.createdAt.toISOString(),

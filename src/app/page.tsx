@@ -128,33 +128,6 @@ export default function Home() {
           }
         }
 
-        @keyframes weirdBlink {
-          0%,
-          35% {
-            color: #ff003c;
-          }
-
-          36%,
-          42% {
-            color: #000000;
-          }
-
-          43%,
-          74% {
-            color: #ff003c;
-          }
-
-          75%,
-          79% {
-            color: #000000;
-          }
-
-          80%,
-          100% {
-            color: #ff003c;
-          }
-        }
-
         @keyframes arrowBlink {
           0%,
           30% {

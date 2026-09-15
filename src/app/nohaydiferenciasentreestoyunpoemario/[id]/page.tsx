@@ -114,6 +114,7 @@ export default async function PoemarioPostPage({
             <FeedPostCard
               optionsPath={`${PUBLIC_FEED_PATH}/${post.id}`}
               post={{
+                blink: post.blink,
                 commentCount: post.commentCount,
                 content: post.content,
                 createdAt: post.createdAt,

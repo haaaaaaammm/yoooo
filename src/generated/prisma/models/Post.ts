@@ -27,6 +27,7 @@ export type AggregatePost = {
 export type PostMinAggregateOutputType = {
   id: string | null
   content: string | null
+  blink: boolean | null
   customAuthorName: string | null
   customAuthorAvatarUrl: string | null
   customAuthorAvatarKey: string | null
@@ -37,6 +38,7 @@ export type PostMinAggregateOutputType = {
 export type PostMaxAggregateOutputType = {
   id: string | null
   content: string | null
+  blink: boolean | null
   customAuthorName: string | null
   customAuthorAvatarUrl: string | null
   customAuthorAvatarKey: string | null
@@ -47,6 +49,7 @@ export type PostMaxAggregateOutputType = {
 export type PostCountAggregateOutputType = {
   id: number
   content: number
+  blink: number
   customAuthorName: number
   customAuthorAvatarUrl: number
   customAuthorAvatarKey: number
@@ -59,6 +62,7 @@ export type PostCountAggregateOutputType = {
 export type PostMinAggregateInputType = {
   id?: true
   content?: true
+  blink?: true
   customAuthorName?: true
   customAuthorAvatarUrl?: true
   customAuthorAvatarKey?: true
@@ -69,6 +73,7 @@ export type PostMinAggregateInputType = {
 export type PostMaxAggregateInputType = {
   id?: true
   content?: true
+  blink?: true
   customAuthorName?: true
   customAuthorAvatarUrl?: true
   customAuthorAvatarKey?: true
@@ -79,6 +84,7 @@ export type PostMaxAggregateInputType = {
 export type PostCountAggregateInputType = {
   id?: true
   content?: true
+  blink?: true
   customAuthorName?: true
   customAuthorAvatarUrl?: true
   customAuthorAvatarKey?: true
@@ -162,6 +168,7 @@ export type PostGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
 export type PostGroupByOutputType = {
   id: string
   content: string
+  blink: boolean
   customAuthorName: string | null
   customAuthorAvatarUrl: string | null
   customAuthorAvatarKey: string | null
@@ -193,6 +200,7 @@ export type PostWhereInput = {
   NOT?: Prisma.PostWhereInput | Prisma.PostWhereInput[]
   id?: Prisma.StringFilter<"Post"> | string
   content?: Prisma.StringFilter<"Post"> | string
+  blink?: Prisma.BoolFilter<"Post"> | boolean
   customAuthorName?: Prisma.StringNullableFilter<"Post"> | string | null
   customAuthorAvatarUrl?: Prisma.StringNullableFilter<"Post"> | string | null
   customAuthorAvatarKey?: Prisma.StringNullableFilter<"Post"> | string | null
@@ -204,6 +212,7 @@ export type PostWhereInput = {
 export type PostOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  blink?: Prisma.SortOrder
   customAuthorName?: Prisma.SortOrderInput | Prisma.SortOrder
   customAuthorAvatarUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   customAuthorAvatarKey?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -218,6 +227,7 @@ export type PostWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.PostWhereInput[]
   NOT?: Prisma.PostWhereInput | Prisma.PostWhereInput[]
   content?: Prisma.StringFilter<"Post"> | string
+  blink?: Prisma.BoolFilter<"Post"> | boolean
   customAuthorName?: Prisma.StringNullableFilter<"Post"> | string | null
   customAuthorAvatarUrl?: Prisma.StringNullableFilter<"Post"> | string | null
   customAuthorAvatarKey?: Prisma.StringNullableFilter<"Post"> | string | null
@@ -229,6 +239,7 @@ export type PostWhereUniqueInput = Prisma.AtLeast<{
 export type PostOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  blink?: Prisma.SortOrder
   customAuthorName?: Prisma.SortOrderInput | Prisma.SortOrder
   customAuthorAvatarUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   customAuthorAvatarKey?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -245,6 +256,7 @@ export type PostScalarWhereWithAggregatesInput = {
   NOT?: Prisma.PostScalarWhereWithAggregatesInput | Prisma.PostScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Post"> | string
   content?: Prisma.StringWithAggregatesFilter<"Post"> | string
+  blink?: Prisma.BoolWithAggregatesFilter<"Post"> | boolean
   customAuthorName?: Prisma.StringNullableWithAggregatesFilter<"Post"> | string | null
   customAuthorAvatarUrl?: Prisma.StringNullableWithAggregatesFilter<"Post"> | string | null
   customAuthorAvatarKey?: Prisma.StringNullableWithAggregatesFilter<"Post"> | string | null
@@ -255,6 +267,7 @@ export type PostScalarWhereWithAggregatesInput = {
 export type PostCreateInput = {
   id?: string
   content: string
+  blink?: boolean
   customAuthorName?: string | null
   customAuthorAvatarUrl?: string | null
   customAuthorAvatarKey?: string | null
@@ -266,6 +279,7 @@ export type PostCreateInput = {
 export type PostUncheckedCreateInput = {
   id?: string
   content: string
+  blink?: boolean
   customAuthorName?: string | null
   customAuthorAvatarUrl?: string | null
   customAuthorAvatarKey?: string | null
@@ -277,6 +291,7 @@ export type PostUncheckedCreateInput = {
 export type PostUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  blink?: Prisma.BoolFieldUpdateOperationsInput | boolean
   customAuthorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customAuthorAvatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customAuthorAvatarKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -288,6 +303,7 @@ export type PostUpdateInput = {
 export type PostUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  blink?: Prisma.BoolFieldUpdateOperationsInput | boolean
   customAuthorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customAuthorAvatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customAuthorAvatarKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -299,6 +315,7 @@ export type PostUncheckedUpdateInput = {
 export type PostCreateManyInput = {
   id?: string
   content: string
+  blink?: boolean
   customAuthorName?: string | null
   customAuthorAvatarUrl?: string | null
   customAuthorAvatarKey?: string | null
@@ -309,6 +326,7 @@ export type PostCreateManyInput = {
 export type PostUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  blink?: Prisma.BoolFieldUpdateOperationsInput | boolean
   customAuthorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customAuthorAvatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customAuthorAvatarKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -319,6 +337,7 @@ export type PostUpdateManyMutationInput = {
 export type PostUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  blink?: Prisma.BoolFieldUpdateOperationsInput | boolean
   customAuthorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customAuthorAvatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customAuthorAvatarKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -329,6 +348,7 @@ export type PostUncheckedUpdateManyInput = {
 export type PostCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  blink?: Prisma.SortOrder
   customAuthorName?: Prisma.SortOrder
   customAuthorAvatarUrl?: Prisma.SortOrder
   customAuthorAvatarKey?: Prisma.SortOrder
@@ -339,6 +359,7 @@ export type PostCountOrderByAggregateInput = {
 export type PostMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  blink?: Prisma.SortOrder
   customAuthorName?: Prisma.SortOrder
   customAuthorAvatarUrl?: Prisma.SortOrder
   customAuthorAvatarKey?: Prisma.SortOrder
@@ -349,6 +370,7 @@ export type PostMaxOrderByAggregateInput = {
 export type PostMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  blink?: Prisma.SortOrder
   customAuthorName?: Prisma.SortOrder
   customAuthorAvatarUrl?: Prisma.SortOrder
   customAuthorAvatarKey?: Prisma.SortOrder
@@ -363,6 +385,10 @@ export type PostScalarRelationFilter = {
 
 export type StringFieldUpdateOperationsInput = {
   set?: string
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
 }
 
 export type NullableStringFieldUpdateOperationsInput = {
@@ -390,6 +416,7 @@ export type PostUpdateOneRequiredWithoutCommentsNestedInput = {
 export type PostCreateWithoutCommentsInput = {
   id?: string
   content: string
+  blink?: boolean
   customAuthorName?: string | null
   customAuthorAvatarUrl?: string | null
   customAuthorAvatarKey?: string | null
@@ -400,6 +427,7 @@ export type PostCreateWithoutCommentsInput = {
 export type PostUncheckedCreateWithoutCommentsInput = {
   id?: string
   content: string
+  blink?: boolean
   customAuthorName?: string | null
   customAuthorAvatarUrl?: string | null
   customAuthorAvatarKey?: string | null
@@ -426,6 +454,7 @@ export type PostUpdateToOneWithWhereWithoutCommentsInput = {
 export type PostUpdateWithoutCommentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  blink?: Prisma.BoolFieldUpdateOperationsInput | boolean
   customAuthorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customAuthorAvatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customAuthorAvatarKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -436,6 +465,7 @@ export type PostUpdateWithoutCommentsInput = {
 export type PostUncheckedUpdateWithoutCommentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  blink?: Prisma.BoolFieldUpdateOperationsInput | boolean
   customAuthorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customAuthorAvatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customAuthorAvatarKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -477,6 +507,7 @@ export type PostCountOutputTypeCountCommentsArgs<ExtArgs extends runtime.Types.E
 export type PostSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   content?: boolean
+  blink?: boolean
   customAuthorName?: boolean
   customAuthorAvatarUrl?: boolean
   customAuthorAvatarKey?: boolean
@@ -489,6 +520,7 @@ export type PostSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
 export type PostSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   content?: boolean
+  blink?: boolean
   customAuthorName?: boolean
   customAuthorAvatarUrl?: boolean
   customAuthorAvatarKey?: boolean
@@ -499,6 +531,7 @@ export type PostSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
 export type PostSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   content?: boolean
+  blink?: boolean
   customAuthorName?: boolean
   customAuthorAvatarUrl?: boolean
   customAuthorAvatarKey?: boolean
@@ -509,6 +542,7 @@ export type PostSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
 export type PostSelectScalar = {
   id?: boolean
   content?: boolean
+  blink?: boolean
   customAuthorName?: boolean
   customAuthorAvatarUrl?: boolean
   customAuthorAvatarKey?: boolean
@@ -516,7 +550,7 @@ export type PostSelectScalar = {
   updatedAt?: boolean
 }
 
-export type PostOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "customAuthorName" | "customAuthorAvatarUrl" | "customAuthorAvatarKey" | "createdAt" | "updatedAt", ExtArgs["result"]["post"]>
+export type PostOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "blink" | "customAuthorName" | "customAuthorAvatarUrl" | "customAuthorAvatarKey" | "createdAt" | "updatedAt", ExtArgs["result"]["post"]>
 export type PostInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   comments?: boolean | Prisma.Post$commentsArgs<ExtArgs>
   _count?: boolean | Prisma.PostCountOutputTypeDefaultArgs<ExtArgs>
@@ -532,6 +566,7 @@ export type $PostPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     content: string
+    blink: boolean
     customAuthorName: string | null
     customAuthorAvatarUrl: string | null
     customAuthorAvatarKey: string | null
@@ -963,6 +998,7 @@ export interface Prisma__PostClient<T, Null = never, ExtArgs extends runtime.Typ
 export interface PostFieldRefs {
   readonly id: Prisma.FieldRef<"Post", 'String'>
   readonly content: Prisma.FieldRef<"Post", 'String'>
+  readonly blink: Prisma.FieldRef<"Post", 'Boolean'>
   readonly customAuthorName: Prisma.FieldRef<"Post", 'String'>
   readonly customAuthorAvatarUrl: Prisma.FieldRef<"Post", 'String'>
   readonly customAuthorAvatarKey: Prisma.FieldRef<"Post", 'String'>

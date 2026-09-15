@@ -47,7 +47,15 @@ export default function Composer({
             onChange={(event) => setContent(event.target.value)}
             placeholder="en qué piensas y así??"
           />
-          <div className="mt-3 flex items-center justify-end border-t border-neutral-900 pt-3">
+          <div className="mt-3 flex items-center justify-between gap-3 border-t border-neutral-900 pt-3">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-neutral-400">
+              <input
+                className="h-4 w-4 accent-[#ff003c]"
+                name="blink"
+                type="checkbox"
+              />
+              parpadeo
+            </label>
             <PublishButton canSubmit={canSubmit} />
           </div>
         </div>

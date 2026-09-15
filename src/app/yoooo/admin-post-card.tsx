@@ -16,6 +16,7 @@ import type { LinkPreviewData } from "@/lib/link-previews";
 import { deletePostAction, updatePostAction } from "./actions";
 
 type AdminPost = {
+  blink: boolean;
   commentCount?: number;
   id: string;
   content: string;
@@ -43,12 +44,16 @@ function formatTimestamp(date: Date) {
   }).format(date);
 }
 
-function editErrorMessage(reason: "auth" | "empty" | "not_found" | "update") {
+function editErrorMessage(
+  reason: "auth" | "empty" | "invalid" | "not_found" | "update"
+) {
   switch (reason) {
     case "auth":
       return "vuelve a iniciar sesion";
     case "empty":
       return "Escribe algo antes de guardar.";
+    case "invalid":
+      return "El valor de Parpadear no es valido.";
     case "not_found":
       return "Ese post ya no existe.";
     case "update":
@@ -70,6 +75,8 @@ export default function AdminPostCard({
   const router = useRouter();
   const [content, setContent] = useState(post.content);
   const [draft, setDraft] = useState(post.content);
+  const [blink, setBlink] = useState(post.blink);
+  const [draftBlink, setDraftBlink] = useState(post.blink);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -86,12 +93,14 @@ export default function AdminPostCard({
 
   function startEditing() {
     setDraft(content);
+    setDraftBlink(blink);
     setError(null);
     setIsEditing(true);
   }
 
   function cancelEditing() {
     setDraft(content);
+    setDraftBlink(blink);
     setError(null);
     setIsEditing(false);
   }
@@ -110,7 +119,11 @@ export default function AdminPostCard({
     setError(null);
 
     try {
-      const result = await updatePostAction(post.id, trimmedContent);
+      const result = await updatePostAction(
+        post.id,
+        trimmedContent,
+        draftBlink
+      );
 
       if (!result.ok) {
         setError(editErrorMessage(result.reason));
@@ -118,7 +131,9 @@ export default function AdminPostCard({
       }
 
       setContent(result.content);
+      setBlink(result.blink);
       setDraft(result.content);
+      setDraftBlink(result.blink);
       setIsEditing(false);
       router.refresh();
     } catch {
@@ -170,6 +185,15 @@ export default function AdminPostCard({
                   rows={Math.max(3, draft.split("\n").length)}
                   value={draft}
                 />
+                <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-neutral-400">
+                  <input
+                    checked={draftBlink}
+                    className="h-4 w-4 accent-[#ff003c]"
+                    onChange={(event) => setDraftBlink(event.target.checked)}
+                    type="checkbox"
+                  />
+                  Parpadear
+                </label>
                 {error ? (
                   <p className="mt-2 text-sm text-red-400">{error}</p>
                 ) : null}
