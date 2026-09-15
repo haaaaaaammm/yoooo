@@ -59,6 +59,7 @@ function needsCacheRefresh(
 export type LinkPreviewData = {
   authorAvatarUrl?: string | null;
   authorName?: string | null;
+  commentCount?: number | null;
   description?: string | null;
   imageUrl?: string | null;
   kind: "external" | "internal-link" | "internal-repost" | "unavailable";
@@ -71,6 +72,7 @@ export type LinkPreviewData = {
 type PreviewTarget =
   | { kind: "external"; url: string }
   | { id: string; kind: "archivo"; url: string }
+  | { id: string; kind: "otrogato"; url: string }
   | { id: string; kind: "poemario"; url: string }
   | { kind: "internal-link"; private: boolean; url: string };
 
@@ -81,6 +83,22 @@ function getUrlHash(url: string) {
 function getInternalTarget(url: URL): PreviewTarget {
   const pathSegments = url.pathname.split("/").filter(Boolean);
   const [root, second, third] = pathSegments;
+
+  if (root === "otrogato" && second && !third) {
+    let id = second;
+
+    try {
+      id = decodeURIComponent(second);
+    } catch {
+      // A malformed path segment cannot match a database ID.
+    }
+
+    return {
+      id,
+      kind: "otrogato",
+      url: `${SITE_ORIGIN}/otrogato/${encodeURIComponent(id)}`,
+    };
+  }
 
   if (root === "nohaydiferenciasentreestoyunpoemario" && second) {
     return { id: second, kind: "poemario", url: url.toString() };
@@ -355,6 +373,13 @@ export async function addLinkPreviewsToPosts<
             url: target.url,
           }
         : { kind: "unavailable", url: target.url };
+    } else if (target.kind === "otrogato") {
+      preview = {
+        kind: "internal-link",
+        siteName: new URL(SITE_ORIGIN).hostname,
+        title: "private link",
+        url: target.url,
+      };
     } else if (target.kind === "internal-link") {
       preview = {
         kind: "internal-link",

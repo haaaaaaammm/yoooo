@@ -47,7 +47,31 @@ describe("internal link preview classification", () => {
     ).toMatchObject({ id: "album-1", kind: "archivo" });
   });
 
-  it.each(["otrogato", "diferencias", "yoooo"])(
+  it("recognizes only canonical Otrogato post URLs and strips query/hash", () => {
+    expect(
+      classifyPreviewUrl(
+        "https://haaaaaaammmm.com/otrogato/private-id?from=feed#comment-1"
+      )
+    ).toEqual({
+      id: "private-id",
+      kind: "otrogato",
+      url: "https://haaaaaaammmm.com/otrogato/private-id",
+    });
+    expect(
+      classifyPreviewUrl("/otrogato/private-id?from=feed#comment-1")
+    ).toEqual({
+      id: "private-id",
+      kind: "otrogato",
+      url: "https://haaaaaaammmm.com/otrogato/private-id",
+    });
+    expect(
+      classifyPreviewUrl(
+        "https://haaaaaaammmm.com/otrogato/private-id/comment/comment-id"
+      )
+    ).toMatchObject({ kind: "internal-link", private: true });
+  });
+
+  it.each(["diferencias", "yoooo"])(
     "classifies %s as a private generic link without a content identifier",
     (route) => {
       expect(

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import CommentCount from "@/app/_components/comment-count";
 import LinkPreviewImage from "@/app/_components/link-preview-image";
 import ProfileImage from "@/app/_components/profile-image";
 import type { LinkPreviewData } from "@/lib/link-previews";
@@ -91,7 +92,8 @@ export default function LinkPreview({
                 className="shrink-0 text-neutral-500"
                 dateTime={preview.publishedAt}
               >
-                · {formatTimestamp(preview.publishedAt)}
+                {"\u00b7 "}
+                {formatTimestamp(preview.publishedAt)}
               </time>
             ) : null}
           </div>
@@ -104,6 +106,11 @@ export default function LinkPreview({
             <p className="mt-1 line-clamp-4 whitespace-pre-wrap break-words text-sm leading-5 text-neutral-300">
               {preview.description}
             </p>
+          ) : null}
+          {typeof preview.commentCount === "number" ? (
+            <div className="mt-1 flex items-center">
+              <CommentCount count={preview.commentCount} />
+            </div>
           ) : null}
         </div>
         {preview.imageUrl ? (

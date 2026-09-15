@@ -8,7 +8,7 @@ import {
 } from "@/lib/comment-tree";
 import { POSTS_PER_PAGE } from "@/lib/posts";
 import { getPrisma } from "@/lib/prisma";
-import { addLinkPreviewsToPosts } from "@/lib/link-previews";
+import { addAuthenticatedOtrogatoPreviewsToPosts } from "@/lib/otrogato-link-previews";
 
 type DiferenciasCommentRecord = {
   authorAvatarUrl: string | null;
@@ -94,7 +94,7 @@ export async function getDiferenciasPostsPage(page: number) {
         });
 
   return {
-    posts: await addLinkPreviewsToPosts(posts.map(mapPost)),
+    posts: await addAuthenticatedOtrogatoPreviewsToPosts(posts.map(mapPost)),
     totalPages,
     totalPosts,
   };
@@ -123,7 +123,7 @@ export async function getDiferenciasPostsByAuthorPage(
         });
 
   return {
-    posts: await addLinkPreviewsToPosts(posts.map(mapPost)),
+    posts: await addAuthenticatedOtrogatoPreviewsToPosts(posts.map(mapPost)),
     totalPages,
     totalPosts,
   };
@@ -166,7 +166,9 @@ export async function getDiferenciasPostWithThread(id: string) {
     return null;
   }
 
-  const [postWithPreview] = await addLinkPreviewsToPosts([mapPost(post)]);
+  const [postWithPreview] = await addAuthenticatedOtrogatoPreviewsToPosts([
+    mapPost(post),
+  ]);
 
   return {
     ...postWithPreview,
@@ -211,7 +213,9 @@ export async function getDiferenciasCommentPageData(
     return null;
   }
 
-  const [postWithPreview] = await addLinkPreviewsToPosts([mapPost(post)]);
+  const [postWithPreview] = await addAuthenticatedOtrogatoPreviewsToPosts([
+    mapPost(post),
+  ]);
 
   return {
     ancestors: getCommentAncestorChain(comment, commentMap),
