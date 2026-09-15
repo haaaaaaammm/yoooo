@@ -53,7 +53,7 @@ function editErrorMessage(
     case "empty":
       return "Escribe algo antes de guardar.";
     case "invalid":
-      return "El valor de Parpadeo no es valido.";
+      return "El valor de Parpadear no es valido.";
     case "not_found":
       return "Ese post ya no existe.";
     case "update":
@@ -192,7 +192,7 @@ export default function AdminPostCard({
                     onChange={(event) => setDraftBlink(event.target.checked)}
                     type="checkbox"
                   />
-                  Parpadeo
+                  Parpadear
                 </label>
                 {error ? (
                   <p className="mt-2 text-sm text-red-400">{error}</p>
