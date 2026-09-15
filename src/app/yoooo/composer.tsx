@@ -54,7 +54,7 @@ export default function Composer({
                 name="blink"
                 type="checkbox"
               />
-              parpadeo
+              Parpadeo
             </label>
             <PublishButton canSubmit={canSubmit} />
           </div>

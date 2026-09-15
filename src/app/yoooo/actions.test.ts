@@ -74,7 +74,7 @@ describe("Poemario post blink setting", () => {
     mocks.isAdminAuthenticated.mockResolvedValue(true);
   });
 
-  it("stores false by default and true when Parpadear is checked", async () => {
+  it("stores false by default and true when Parpadeo is checked", async () => {
     const normalPost = new FormData();
     normalPost.set("content", "normal");
     const blinkingPost = new FormData();
