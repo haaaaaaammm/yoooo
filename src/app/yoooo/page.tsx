@@ -310,6 +310,7 @@ export default async function Home({ searchParams }: AdminPageProps) {
             <ol>
               {posts.map((post) => (
                 <AdminPostCard
+                  canonicalPath={`${PUBLIC_FEED_PATH}/${post.id}`}
                   href={`${ADMIN_PATH}/poemario/${post.id}`}
                   key={post.id}
                   post={{

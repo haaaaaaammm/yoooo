@@ -118,6 +118,39 @@ export default function LinkPreview({
   }
 
   const domain = new URL(preview.url).hostname.replace(/^www\./, "");
+  const isAppleMusic = domain === "music.apple.com";
+
+  if (isAppleMusic) {
+    return (
+      <PreviewLink
+        className="mt-3 flex min-w-0 overflow-hidden rounded-2xl border border-neutral-800 transition hover:border-neutral-700 hover:bg-neutral-950"
+        preview={preview}
+      >
+        {preview.imageUrl ? (
+          <LinkPreviewImage
+            alt=""
+            className="h-28 w-28 shrink-0 border-r border-neutral-800 object-cover sm:h-32 sm:w-32"
+            src={preview.imageUrl}
+          />
+        ) : null}
+        <div className="min-w-0 flex-1 self-center space-y-1 p-3">
+          {preview.title ? (
+            <p className="line-clamp-2 break-words text-sm font-semibold text-neutral-100">
+              {preview.title}
+            </p>
+          ) : null}
+          {preview.description ? (
+            <p className="line-clamp-2 break-words text-sm leading-5 text-neutral-400">
+              {preview.description}
+            </p>
+          ) : null}
+          <p className="text-xs text-neutral-500">
+            {preview.siteName ?? "Apple Music"}
+          </p>
+        </div>
+      </PreviewLink>
+    );
+  }
 
   return (
     <PreviewLink

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import {
   getCommentThreadNodeClassName,
 } from "@/app/_components/comment-thread-layout";
+import CommentCount from "@/app/_components/comment-count";
 import ProfileImage from "@/app/_components/profile-image";
 import { ADMIN_PATH } from "@/lib/posts";
 
@@ -253,13 +254,11 @@ function CommentItem({
 
             {!isEditing ? (
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <Link
-                  aria-label={`${directReplyCount} respuestas`}
-                  className="rounded-full px-3 py-1.5 text-sm text-neutral-500 transition hover:text-[#ff003c]"
+                <CommentCount
+                  count={directReplyCount}
                   href={commentHref}
-                >
-                  {directReplyCount}
-                </Link>
+                  kind="reply"
+                />
                 <button
                   className="rounded-full px-3 py-1.5 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10"
                   onClick={() => setIsReplying((current) => !current)}

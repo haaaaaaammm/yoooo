@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import CopyLinkButton from "@/app/_components/copy-link-button";
-import FeedPostCard from "@/app/_components/feed-post-card";
 import LiveRefresh from "@/app/_components/live-refresh";
 import { getDiferenciasSessionUser } from "@/lib/diferencias-auth";
 import {
@@ -13,6 +12,7 @@ import {
 import { getOtrogatoLoginPath, OTROGATO_PATH } from "@/lib/posts";
 
 import CommentManager, { type ManagedComment } from "./comment-manager";
+import PostManager from "../post-manager";
 
 export const dynamic = "force-dynamic";
 
@@ -81,9 +81,20 @@ export default async function OtrogatoPostPage({
         </header>
 
         <section aria-label="Post">
-          <ol>
-            <FeedPostCard post={post} />
-          </ol>
+          <PostManager
+            posts={[
+              {
+                avatarUrl: post.customAuthorAvatarUrl,
+                commentCount: post.commentCount,
+                content: post.content,
+                createdAt: post.createdAt.toISOString(),
+                displayName: post.customAuthorName ?? user.displayName,
+                id: post.id,
+                isOwner: post.authorId === user.id,
+                preview: post.preview,
+              },
+            ]}
+          />
         </section>
 
         <CommentManager

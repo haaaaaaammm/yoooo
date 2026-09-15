@@ -1,16 +1,16 @@
 "use client";
 
-import type { FormEvent } from "react";
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState, type FormEvent } from "react";
 
-import FeedPostCard from "@/app/_components/feed-post-card";
 import CommentCount from "@/app/_components/comment-count";
+import FeedPostCard from "@/app/_components/feed-post-card";
 import LinkifiedText, {
   hasLinkifiedText,
 } from "@/app/_components/linkified-text";
 import LinkPreview from "@/app/_components/link-preview";
+import PostOptionsMenu from "@/app/_components/post-options-menu";
 import ProfileImage from "@/app/_components/profile-image";
 import type { LinkPreviewData } from "@/lib/link-previews";
 import {
@@ -44,24 +44,11 @@ function formatTimestamp(value: string) {
 
 function PostItem({ post }: { post: ManagedPost }) {
   const router = useRouter();
-  const menuRef = useRef<HTMLDivElement>(null);
   const [content, setContent] = useState(post.content);
   const [draft, setDraft] = useState(post.content);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, setIsPending] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  useEffect(() => {
-    function close(event: PointerEvent) {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
-  }, []);
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -88,10 +75,6 @@ function PostItem({ post }: { post: ManagedPost }) {
   }
 
   async function remove() {
-    if (!window.confirm("delete?")) {
-      return;
-    }
-
     setIsPending(true);
     setError(null);
 
@@ -202,40 +185,15 @@ function PostItem({ post }: { post: ManagedPost }) {
             ) : null}
           </div>
 
-          <div className="relative z-10 shrink-0" ref={menuRef}>
-            <button
-              aria-expanded={menuOpen}
-              aria-label="Open post menu"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-[#ff003c] transition hover:bg-[#ff003c]/10"
-              onClick={() => setMenuOpen((current) => !current)}
-              type="button"
-            >
-              ...
-            </button>
-            {menuOpen ? (
-              <div className="absolute right-0 top-full z-20 mt-1 w-40 overflow-hidden rounded-xl border border-neutral-800 bg-black shadow-xl shadow-black">
-                <button
-                  className="block w-full px-4 py-2 text-left text-sm text-[#ff003c] hover:bg-[#ff003c]/10"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setDraft(content);
-                    setIsEditing(true);
-                  }}
-                  type="button"
-                >
-                  editar
-                </button>
-                <button
-                  className="block w-full px-4 py-2 text-left text-sm text-[#ff003c] hover:bg-[#ff003c]/10 disabled:text-neutral-500"
-                  disabled={isPending}
-                  onClick={remove}
-                  type="button"
-                >
-                  {isPending ? "deleteando" : "deletealo"}
-                </button>
-              </div>
-            ) : null}
-          </div>
+          <PostOptionsMenu
+            canonicalPath={`${OTROGATO_PATH}/${post.id}`}
+            isDeleting={isPending}
+            onDelete={remove}
+            onEdit={() => {
+              setDraft(content);
+              setIsEditing(true);
+            }}
+          />
         </div>
       </article>
     </li>

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import AdminPostLink from "@/app/_components/admin-post-link";
 import LinkifiedText from "@/app/_components/linkified-text";
 import NumberedPagination from "@/app/_components/numbered-pagination";
+import PostOptionsMenu from "@/app/_components/post-options-menu";
 import { ARCHIVO_ALBUM_KIND } from "@/lib/archivo";
 import {
   formatArchivoTimestamp,
@@ -13,7 +14,6 @@ import {
 import { ADMIN_PATH, ARCHIVO_PATH, parsePageParam } from "@/lib/posts";
 
 import ArchivoAlbumCard from "./archivo-album-card";
-import ArchivoCardMenu from "./archivo-card-menu";
 import ArchivoCarousel from "./archivo-carousel";
 
 export const dynamic = "force-dynamic";
@@ -130,7 +130,9 @@ export default async function ArchivoPage({ searchParams }: ArchivoPageProps) {
                           >
                             {formatArchivoTimestamp(post.takenAt)}
                           </time>
-                          <ArchivoCardMenu path={`${ARCHIVO_PATH}/${post.id}`} />
+                          <PostOptionsMenu
+                            canonicalPath={`${ARCHIVO_PATH}/${post.id}`}
+                          />
                         </div>
 
                         <ArchivoCarousel

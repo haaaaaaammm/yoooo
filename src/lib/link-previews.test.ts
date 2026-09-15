@@ -1,19 +1,34 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ getPrisma: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  after: vi.fn(),
+  fetchExternalLinkPreview: vi.fn(),
+  getPrisma: vi.fn(),
+}));
 
 vi.mock("server-only", () => ({}));
-vi.mock("next/server", () => ({ after: vi.fn() }));
+vi.mock("next/server", () => ({ after: mocks.after }));
+vi.mock("./link-preview-fetch", () => ({
+  fetchExternalLinkPreview: mocks.fetchExternalLinkPreview,
+}));
 vi.mock("./prisma", () => ({ getPrisma: mocks.getPrisma }));
 
 import {
   addLinkPreviewsToPosts,
   classifyPreviewUrl,
+  scheduleLinkPreviewResolution,
 } from "./link-previews";
 
 describe("internal link preview classification", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.fetchExternalLinkPreview.mockResolvedValue({
+      description: "Artist",
+      imageUrl: "https://is1-ssl.mzstatic.com/art.jpg",
+      siteName: "Apple Music",
+      title: "Song",
+      url: "https://music.apple.com/mx/album/song/1?i=2",
+    });
   });
   it("recognizes public Poemario posts", () => {
     expect(
@@ -123,5 +138,35 @@ describe("internal link preview classification", () => {
     expect(
       classifyPreviewUrl("https://haaaaaaammmm.com.evil.example/otrogato/id")
     ).toMatchObject({ kind: "external" });
+  });
+
+  it("retries an Apple Music failure from the previous resolver version", async () => {
+    const upsert = vi.fn().mockResolvedValue({});
+    mocks.getPrisma.mockReturnValue({
+      linkPreview: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            fetchedAt: new Date(),
+            status: "failed",
+            urlHash:
+              "f6f3316d9c445115f9343d90b17f4b331f28a287d880e927ebcc17300a60311d",
+          },
+        ]),
+        upsert,
+      },
+    });
+
+    scheduleLinkPreviewResolution(
+      "https://music.apple.com/mx/album/song/1?i=2"
+    );
+    const scheduledWork = mocks.after.mock.calls[0]?.[0];
+    await scheduledWork?.();
+
+    expect(mocks.fetchExternalLinkPreview).toHaveBeenCalledOnce();
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ status: "ready:apple-v3" }),
+      })
+    );
   });
 });

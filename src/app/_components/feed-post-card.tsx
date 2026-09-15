@@ -6,6 +6,7 @@ import LinkifiedText, {
   hasLinkifiedText,
 } from "@/app/_components/linkified-text";
 import LinkPreview from "@/app/_components/link-preview";
+import PostOptionsMenu from "@/app/_components/post-options-menu";
 import ProfileImage from "@/app/_components/profile-image";
 import type { LinkPreviewData } from "@/lib/link-previews";
 
@@ -22,6 +23,7 @@ type FeedPost = {
 type FeedPostCardProps = {
   action?: ReactNode;
   href?: string;
+  optionsPath?: string;
   post: FeedPost;
   profileImageUrl?: string | null;
 };
@@ -40,6 +42,7 @@ function formatTimestamp(date: Date) {
 export default function FeedPostCard({
   action,
   href,
+  optionsPath,
   post,
   profileImageUrl,
 }: FeedPostCardProps) {
@@ -61,6 +64,10 @@ export default function FeedPostCard({
   );
   const commentCount =
     typeof post.commentCount === "number" ? post.commentCount : null;
+  const canonicalPath = optionsPath ?? href;
+  const postAction =
+    action ??
+    (canonicalPath ? <PostOptionsMenu canonicalPath={canonicalPath} /> : null);
 
   return (
     <li className="border-b border-neutral-800 transition hover:bg-neutral-950">
@@ -106,7 +113,7 @@ export default function FeedPostCard({
               </div>
             ) : null}
           </div>
-          {action}
+          {postAction}
         </div>
       </article>
     </li>

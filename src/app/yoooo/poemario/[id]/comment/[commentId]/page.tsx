@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import FeedPostCard from "@/app/_components/feed-post-card";
 import { PoemarioCommentBody } from "@/app/_components/poemario-comment-thread";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { getPoemarioCommentPageData } from "@/lib/poemario-posts";
@@ -10,6 +9,7 @@ import { ADMIN_PATH, PUBLIC_FEED_PATH } from "@/lib/posts";
 import { getProfileImageSettings } from "@/lib/site-settings";
 
 import CommentThreadManager from "../../comment-thread-manager";
+import AdminPostCard from "../../../../admin-post-card";
 
 export const dynamic = "force-dynamic";
 
@@ -107,12 +107,13 @@ export default async function AdminPoemarioCommentPage({
 
         <section aria-label="Post context">
           <ol>
-            <FeedPostCard
+            <AdminPostCard
+              canonicalPath={`${PUBLIC_FEED_PATH}/${data.post.id}`}
               href={adminPostHref}
               post={{
                 commentCount: data.post.commentCount,
                 content: data.post.content,
-                createdAt: data.post.createdAt,
+                createdAt: data.post.createdAt.toISOString(),
                 customAuthorAvatarUrl: data.post.customAuthorAvatarUrl,
                 customAuthorName: data.post.customAuthorName,
                 id: data.post.id,

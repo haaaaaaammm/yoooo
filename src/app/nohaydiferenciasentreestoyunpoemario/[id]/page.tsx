@@ -112,6 +112,7 @@ export default async function PoemarioPostPage({
         <section aria-label="Post">
           <ol>
             <FeedPostCard
+              optionsPath={`${PUBLIC_FEED_PATH}/${post.id}`}
               post={{
                 commentCount: post.commentCount,
                 content: post.content,

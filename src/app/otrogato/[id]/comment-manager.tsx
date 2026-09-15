@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import {
   getCommentThreadNodeClassName,
 } from "@/app/_components/comment-thread-layout";
+import CommentCount from "@/app/_components/comment-count";
 import LinkifiedText from "@/app/_components/linkified-text";
 import ProfileImage from "@/app/_components/profile-image";
 import {
@@ -221,12 +222,11 @@ function CommentItem({
 
             {!isEditing ? (
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <Link
-                  className="rounded-full px-3 py-1.5 text-sm text-neutral-500 transition hover:text-[#ff003c]"
+                <CommentCount
+                  count={comment.replies.length}
                   href={href}
-                >
-                  {comment.replies.length}
-                </Link>
+                  kind="reply"
+                />
                 <button
                   className="rounded-full px-3 py-1.5 text-sm text-[#ff003c] hover:bg-[#ff003c]/10"
                   onClick={() => setIsReplying((current) => !current)}

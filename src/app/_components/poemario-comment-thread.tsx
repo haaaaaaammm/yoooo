@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import CommentCount from "@/app/_components/comment-count";
 import {
   getCommentThreadNodeClassName,
 } from "@/app/_components/comment-thread-layout";
@@ -123,13 +124,11 @@ export function PoemarioCommentBody({
           )}
 
           <div className="mt-2 flex items-center gap-2">
-            <Link
-              aria-label={`${directReplyCount} respuestas`}
-              className="rounded-full text-sm leading-5 text-neutral-500 transition hover:text-[#ff003c]"
+            <CommentCount
+              count={directReplyCount}
               href={commentHref}
-            >
-              {directReplyCount}
-            </Link>
+              kind="reply"
+            />
           </div>
         </div>
       </div>

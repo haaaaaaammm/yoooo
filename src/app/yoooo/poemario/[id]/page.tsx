@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import FeedPostCard from "@/app/_components/feed-post-card";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { getPoemarioPostWithThread } from "@/lib/poemario-posts";
 import { ADMIN_PATH, PUBLIC_FEED_PATH } from "@/lib/posts";
 import { getProfileImageSettings } from "@/lib/site-settings";
 
 import CommentThreadManager from "./comment-thread-manager";
+import AdminPostCard from "../../admin-post-card";
 
 export const dynamic = "force-dynamic";
 
@@ -99,11 +99,12 @@ export default async function AdminPoemarioPostPage({
 
         <section aria-label="Original post">
           <ol>
-            <FeedPostCard
+            <AdminPostCard
+              canonicalPath={`${PUBLIC_FEED_PATH}/${post.id}`}
               post={{
                 commentCount: post.commentCount,
                 content: post.content,
-                createdAt: post.createdAt,
+                createdAt: post.createdAt.toISOString(),
                 customAuthorAvatarUrl: post.customAuthorAvatarUrl,
                 customAuthorName: post.customAuthorName,
                 id: post.id,

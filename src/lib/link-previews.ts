@@ -11,9 +11,49 @@ import { getFirstPreviewUrl } from "./text-links";
 const SUCCESS_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
 const FAILURE_TTL_MS = 24 * 60 * 60 * 1_000;
 const MAX_BACKGROUND_PREVIEWS = 3;
+const APPLE_MUSIC_CACHE_STATUS_VERSION = "apple-v3";
+
+function isAppleMusicUrl(value: string) {
+  try {
+    return new URL(value).hostname.toLowerCase() === "music.apple.com";
+  } catch {
+    return false;
+  }
+}
+
+function isReadyStatus(status: string) {
+  return status === "ready" || status.startsWith("ready:");
+}
 
 function getCacheMaxAge(status: string) {
-  return status === "ready" ? SUCCESS_TTL_MS : FAILURE_TTL_MS;
+  return isReadyStatus(status) ? SUCCESS_TTL_MS : FAILURE_TTL_MS;
+}
+
+function getResolvedStatus(url: string, hasMetadata: boolean) {
+  if (!isAppleMusicUrl(url)) {
+    return hasMetadata ? "ready" : "failed";
+  }
+
+  return `${hasMetadata ? "ready" : "failed"}:${APPLE_MUSIC_CACHE_STATUS_VERSION}`;
+}
+
+function needsCacheRefresh(
+  url: string,
+  cached: { fetchedAt: Date; status: string } | undefined,
+  now: number
+) {
+  if (!cached) {
+    return true;
+  }
+
+  if (
+    isAppleMusicUrl(url) &&
+    !cached.status.endsWith(`:${APPLE_MUSIC_CACHE_STATUS_VERSION}`)
+  ) {
+    return true;
+  }
+
+  return now - cached.fetchedAt.getTime() > getCacheMaxAge(cached.status);
 }
 
 export type LinkPreviewData = {
@@ -91,6 +131,7 @@ async function resolveAndCacheExternalPreview(
         metadata.siteName ||
         metadata.imageUrl
     );
+    const status = getResolvedStatus(url, hasMetadata);
 
     await prisma.linkPreview.upsert({
       create: {
@@ -98,7 +139,7 @@ async function resolveAndCacheExternalPreview(
         fetchedAt: new Date(),
         imageUrl: metadata.imageUrl,
         siteName: metadata.siteName,
-        status: hasMetadata ? "ready" : "failed",
+        status,
         title: metadata.title,
         url,
         urlHash,
@@ -108,21 +149,23 @@ async function resolveAndCacheExternalPreview(
         fetchedAt: new Date(),
         imageUrl: metadata.imageUrl,
         siteName: metadata.siteName,
-        status: hasMetadata ? "ready" : "failed",
+        status,
         title: metadata.title,
         url,
       },
       where: { urlHash },
     });
   } catch {
+    const status = getResolvedStatus(url, false);
+
     await prisma.linkPreview.upsert({
-      create: { fetchedAt: new Date(), status: "failed", url, urlHash },
+      create: { fetchedAt: new Date(), status, url, urlHash },
       update: {
         description: null,
         fetchedAt: new Date(),
         imageUrl: null,
         siteName: null,
-        status: "failed",
+        status,
         title: null,
         url,
       },
@@ -146,10 +189,7 @@ async function refreshExternalPreviewsIfNeeded(urls: string[]) {
   const urlsToFetch = uniqueUrls.filter((url) => {
     const cached = cacheByHash.get(getUrlHash(url));
 
-    return (
-      !cached ||
-      now - cached.fetchedAt.getTime() > getCacheMaxAge(cached.status)
-    );
+    return needsCacheRefresh(url, cached, now);
   });
 
   await Promise.allSettled(
@@ -266,13 +306,12 @@ export async function addLinkPreviewsToPosts<
 
     if (target.kind === "external") {
       const cached = cacheByHash.get(getUrlHash(target.url));
-      const maxAge = cached ? getCacheMaxAge(cached.status) : 0;
 
-      if (!cached || now - cached.fetchedAt.getTime() > maxAge) {
+      if (needsCacheRefresh(target.url, cached, now)) {
         urlsToRefresh.push(target.url);
       }
 
-      if (cached?.status === "ready") {
+      if (cached && isReadyStatus(cached.status)) {
         preview = {
           description: cached.description,
           imageUrl: cached.imageUrl,

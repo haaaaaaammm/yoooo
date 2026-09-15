@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 
 import LinkifiedText from "@/app/_components/linkified-text";
+import PostOptionsMenu from "@/app/_components/post-options-menu";
 
-import ArchivoCardMenu from "./archivo-card-menu";
 import PhotoLightbox, { type LightboxImage } from "./photo-lightbox";
 
 type ArchivoAlbumCardProps = {
@@ -47,7 +47,7 @@ export default function ArchivoAlbumCard({
         </time>
         <div className="flex flex-none items-center gap-1">
           <span className="text-sm text-neutral-500">album</span>
-          <ArchivoCardMenu path={href} />
+          <PostOptionsMenu canonicalPath={href} />
         </div>
       </div>
 

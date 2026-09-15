@@ -2,18 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useState, type FormEvent } from "react";
 
 import CommentCount from "@/app/_components/comment-count";
 import LinkifiedText, {
   hasLinkifiedText,
 } from "@/app/_components/linkified-text";
 import LinkPreview from "@/app/_components/link-preview";
+import PostOptionsMenu from "@/app/_components/post-options-menu";
 import ProfileImage from "@/app/_components/profile-image";
 import type { LinkPreviewData } from "@/lib/link-previews";
 
-import { updatePostAction } from "./actions";
-import DeletePostMenu from "./delete-post-menu";
+import { deletePostAction, updatePostAction } from "./actions";
 
 type AdminPost = {
   commentCount?: number;
@@ -26,6 +26,7 @@ type AdminPost = {
 };
 
 type AdminPostCardProps = {
+  canonicalPath: string;
   href?: string;
   post: AdminPost;
   profileImageUrl?: string | null;
@@ -56,6 +57,7 @@ function editErrorMessage(reason: "auth" | "empty" | "not_found" | "update") {
 }
 
 export default function AdminPostCard({
+  canonicalPath,
   href,
   post,
   profileImageUrl,
@@ -190,11 +192,11 @@ export default function AdminPostCard({
                 </div>
               </form>
             ) : href && !hasContentLinks ? (
-                <Link className="block" href={href}>
-                  <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
-                    <LinkifiedText text={content} />
-                  </p>
-                </Link>
+              <Link className="block" href={href}>
+                <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
+                  <LinkifiedText text={content} />
+                </p>
+              </Link>
             ) : (
               <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-6 text-neutral-100">
                 <LinkifiedText text={content} />
@@ -208,7 +210,12 @@ export default function AdminPostCard({
             ) : null}
           </div>
 
-          <DeletePostMenu onEdit={startEditing} postId={post.id} />
+          <PostOptionsMenu
+            canonicalPath={canonicalPath}
+            deleteAction={deletePostAction}
+            deleteValue={post.id}
+            onEdit={startEditing}
+          />
         </div>
       </article>
     </li>
