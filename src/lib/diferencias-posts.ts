@@ -6,6 +6,8 @@ import {
   getCommentAncestorChain,
   type CommentTreeNode,
 } from "@/lib/comment-tree";
+import { addAuthenticatedOtrogatoPreviewsToComments } from "@/lib/comment-link-previews";
+import type { LinkPreviewData } from "@/lib/link-previews";
 import { POSTS_PER_PAGE } from "@/lib/posts";
 import { getPrisma } from "@/lib/prisma";
 import { addAuthenticatedOtrogatoPreviewsToPosts } from "@/lib/otrogato-link-previews";
@@ -23,7 +25,7 @@ type DiferenciasCommentRecord = {
 };
 
 export type DiferenciasCommentTree =
-  CommentTreeNode<DiferenciasCommentRecord>;
+  CommentTreeNode<DiferenciasCommentRecord & { preview: LinkPreviewData | null }>;
 
 function mapComment(comment: {
   author: { avatarUrl: string | null; displayName: string };
@@ -166,13 +168,16 @@ export async function getDiferenciasPostWithThread(id: string) {
     return null;
   }
 
-  const [postWithPreview] = await addAuthenticatedOtrogatoPreviewsToPosts([
-    mapPost(post),
+  const [[postWithPreview], commentsWithPreviews] = await Promise.all([
+    addAuthenticatedOtrogatoPreviewsToPosts([mapPost(post)]),
+    addAuthenticatedOtrogatoPreviewsToComments(
+      post.comments.map(mapComment)
+    ),
   ]);
 
   return {
     ...postWithPreview,
-    thread: buildCommentTree(post.comments.map(mapComment)),
+    thread: buildCommentTree(commentsWithPreviews),
   };
 }
 
@@ -204,9 +209,11 @@ export async function getDiferenciasCommentPageData(
     return null;
   }
 
-  const { commentMap } = buildCommentTreeWithMap(
-    post.comments.map(mapComment)
-  );
+  const commentsWithPreviews =
+    await addAuthenticatedOtrogatoPreviewsToComments(
+      post.comments.map(mapComment)
+    );
+  const { commentMap } = buildCommentTreeWithMap(commentsWithPreviews);
   const comment = commentMap.get(normalizedCommentId);
 
   if (!comment || comment.postId !== post.id) {

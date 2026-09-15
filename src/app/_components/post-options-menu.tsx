@@ -9,15 +9,27 @@ import { getPostOptionItems } from "@/lib/post-options";
 type DeleteFormAction = (formData: FormData) => void | Promise<void>;
 
 type PostOptionsMenuProps = {
+  ariaLabel?: string;
   canonicalPath: string;
+  deleteConfirmMessage?: string;
   deleteAction?: DeleteFormAction;
+  deleteLabel?: string;
   deleteValue?: string;
+  deletingLabel?: string;
   isDeleting?: boolean;
   onDelete?: () => void | Promise<void>;
   onEdit?: () => void;
 };
 
-function DeleteFormButton() {
+function DeleteFormButton({
+  confirmMessage,
+  deleteLabel,
+  deletingLabel,
+}: {
+  confirmMessage: string;
+  deleteLabel: string;
+  deletingLabel: string;
+}) {
   const { pending } = useFormStatus();
 
   return (
@@ -25,22 +37,26 @@ function DeleteFormButton() {
       className="block w-full px-4 py-2.5 text-left text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10 disabled:text-neutral-500"
       disabled={pending}
       onClick={(event) => {
-        if (!window.confirm("delete?")) {
+        if (!window.confirm(confirmMessage)) {
           event.preventDefault();
         }
       }}
       role="menuitem"
       type="submit"
     >
-      {pending ? "deleteando" : "deletealo"}
+      {pending ? deletingLabel : deleteLabel}
     </button>
   );
 }
 
 export default function PostOptionsMenu({
+  ariaLabel = "Open post menu",
   canonicalPath,
+  deleteConfirmMessage = "delete?",
   deleteAction,
+  deleteLabel = "deletealo",
   deleteValue,
+  deletingLabel = "deleteando",
   isDeleting = false,
   onDelete,
   onEdit,
@@ -115,7 +131,7 @@ export default function PostOptionsMenu({
   }
 
   async function deletePost() {
-    if (!onDelete || !window.confirm("delete?")) {
+    if (!onDelete || !window.confirm(deleteConfirmMessage)) {
       return;
     }
 
@@ -139,7 +155,7 @@ export default function PostOptionsMenu({
       <button
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label="Open post menu"
+        aria-label={ariaLabel}
         className="-mr-2 -mt-1 flex h-10 w-10 items-center justify-center rounded-full text-neutral-500 transition hover:bg-[#ff003c]/10 hover:text-[#ff003c] focus:outline-none focus-visible:bg-[#ff003c]/10 focus-visible:text-[#ff003c]"
         onClick={() => {
           setCopied(false);
@@ -181,7 +197,11 @@ export default function PostOptionsMenu({
           {options.includes("delete") && deleteAction && deleteValue ? (
             <form action={deleteAction}>
               <input name="postId" type="hidden" value={deleteValue} />
-              <DeleteFormButton />
+              <DeleteFormButton
+                confirmMessage={deleteConfirmMessage}
+                deleteLabel={deleteLabel}
+                deletingLabel={deletingLabel}
+              />
             </form>
           ) : null}
 
@@ -193,7 +213,7 @@ export default function PostOptionsMenu({
               role="menuitem"
               type="button"
             >
-              {isDeleting || pendingDelete ? "deleteando" : "deletealo"}
+              {isDeleting || pendingDelete ? deletingLabel : deleteLabel}
             </button>
           ) : null}
         </div>

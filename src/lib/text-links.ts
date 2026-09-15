@@ -105,10 +105,7 @@ export function getFirstPreviewUrl(text: string) {
     return null;
   }
 
-  const url = new URL(part.href, SITE_ORIGIN);
-  url.hash = "";
-
-  return url.toString();
+  return new URL(part.href, SITE_ORIGIN).toString();
 }
 
 export function hasLinkifiedText(text: string) {

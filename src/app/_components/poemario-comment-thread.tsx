@@ -4,10 +4,14 @@ import CommentCount from "@/app/_components/comment-count";
 import {
   getCommentThreadNodeClassName,
 } from "@/app/_components/comment-thread-layout";
+import LinkPreview from "@/app/_components/link-preview";
 import LinkifiedText, {
   hasLinkifiedText,
 } from "@/app/_components/linkified-text";
+import PostOptionsMenu from "@/app/_components/post-options-menu";
 import ProfileImage from "@/app/_components/profile-image";
+import { getPoemarioCommentCanonicalPath } from "@/lib/comment-links";
+import type { LinkPreviewData } from "@/lib/link-previews";
 import { PUBLIC_FEED_PATH } from "@/lib/posts";
 
 export type DisplayCommentTree = {
@@ -17,6 +21,7 @@ export type DisplayCommentTree = {
   id: string;
   parentId: string | null;
   postId: string;
+  preview?: LinkPreviewData | null;
   replies: DisplayCommentTree[];
   text: string;
   updatedAt: Date;
@@ -72,6 +77,10 @@ export function PoemarioCommentBody({
   profileImageUrl,
 }: PoemarioCommentBodyProps) {
   const commentHref = href ?? getCommentHref(comment, basePath);
+  const canonicalPath = getPoemarioCommentCanonicalPath(
+    comment.postId,
+    comment.id
+  );
   const authorName = comment.authorName?.trim() || defaultAuthorName;
   const authorProfileImageUrl = comment.authorName?.trim()
     ? comment.authorAvatarUrl
@@ -102,6 +111,7 @@ export function PoemarioCommentBody({
           ? "min-w-0 max-w-full rounded-2xl bg-neutral-950/70 px-3 py-4"
           : "min-w-0 max-w-full py-4"
       }
+      id={`comment-${comment.id}`}
     >
       <div className="flex min-w-0 items-start gap-3">
         <ProfileImage
@@ -123,6 +133,8 @@ export function PoemarioCommentBody({
             </Link>
           )}
 
+          <LinkPreview preview={comment.preview} />
+
           <div className="mt-2 flex items-center gap-2">
             <CommentCount
               count={directReplyCount}
@@ -131,6 +143,10 @@ export function PoemarioCommentBody({
             />
           </div>
         </div>
+        <PostOptionsMenu
+          ariaLabel="Open comment menu"
+          canonicalPath={canonicalPath}
+        />
       </div>
     </article>
   );

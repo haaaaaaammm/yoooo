@@ -8,7 +8,14 @@ import {
   getCommentThreadNodeClassName,
 } from "@/app/_components/comment-thread-layout";
 import CommentCount from "@/app/_components/comment-count";
+import LinkPreview from "@/app/_components/link-preview";
+import LinkifiedText, {
+  hasLinkifiedText,
+} from "@/app/_components/linkified-text";
+import PostOptionsMenu from "@/app/_components/post-options-menu";
 import ProfileImage from "@/app/_components/profile-image";
+import { getPoemarioCommentCanonicalPath } from "@/lib/comment-links";
+import type { LinkPreviewData } from "@/lib/link-previews";
 import { ADMIN_PATH } from "@/lib/posts";
 
 import {
@@ -22,6 +29,7 @@ type AdminPoemarioComment = {
   id: string;
   parentId: string | null;
   postId: string;
+  preview: LinkPreviewData | null;
   replies: AdminPoemarioComment[];
   text: string;
   updatedAt: string;
@@ -150,7 +158,25 @@ function CommentItem({
   const [isReplying, setIsReplying] = useState(false);
   const isHighlighted = comment.id === highlightedCommentId;
   const commentHref = getAdminCommentHref(comment);
+  const canonicalPath = getPoemarioCommentCanonicalPath(
+    comment.postId,
+    comment.id
+  );
   const directReplyCount = comment.replies.length;
+  const hasCommentLinks = hasLinkifiedText(comment.text);
+  const heading = (
+    <div className="text-sm leading-5 [overflow-wrap:anywhere]">
+      <span className="font-semibold text-white">humberto</span>{" "}
+      <time className="text-neutral-500" dateTime={comment.createdAt}>
+        {formatTimestamp(comment.createdAt)}
+      </time>
+    </div>
+  );
+  const body = (
+    <p className="mt-1 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[15px] leading-6 text-neutral-100">
+      <LinkifiedText text={comment.text} />
+    </p>
+  );
 
   async function addReply(text: string) {
     const result = await createPoemarioCommentAction(
@@ -181,10 +207,6 @@ function CommentItem({
   }
 
   async function deleteComment() {
-    if (!window.confirm("borrar comentario y sus respuestas?")) {
-      return;
-    }
-
     setError(null);
 
     try {
@@ -203,7 +225,10 @@ function CommentItem({
   }
 
   return (
-    <li className={getCommentThreadNodeClassName(depth)}>
+    <li
+      className={getCommentThreadNodeClassName(depth)}
+      id={`comment-${comment.id}`}
+    >
       <article
         className={
           isHighlighted
@@ -219,12 +244,7 @@ function CommentItem({
           <div className="min-w-0 flex-1">
             {isEditing ? (
               <div>
-                <div className="text-sm leading-5 [overflow-wrap:anywhere]">
-                  <span className="font-semibold text-white">humberto</span>{" "}
-                  <time className="text-neutral-500" dateTime={comment.createdAt}>
-                    {formatTimestamp(comment.createdAt)}
-                  </time>
-                </div>
+                {heading}
                 <div className="mt-3">
                   <CommentForm
                     autoFocus
@@ -236,18 +256,22 @@ function CommentItem({
                   />
                 </div>
               </div>
+            ) : hasCommentLinks ? (
+              <>
+                <Link className="block min-w-0" href={commentHref}>
+                  {heading}
+                </Link>
+                {body}
+                <LinkPreview preview={comment.preview} />
+              </>
             ) : (
-              <Link className="block min-w-0" href={commentHref}>
-                <div className="text-sm leading-5 [overflow-wrap:anywhere]">
-                  <span className="font-semibold text-white">humberto</span>{" "}
-                  <time className="text-neutral-500" dateTime={comment.createdAt}>
-                    {formatTimestamp(comment.createdAt)}
-                  </time>
-                </div>
-                <p className="mt-1 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[15px] leading-6 text-neutral-100">
-                  {comment.text}
-                </p>
-              </Link>
+              <>
+                <Link className="block min-w-0" href={commentHref}>
+                  {heading}
+                  {body}
+                </Link>
+                <LinkPreview preview={comment.preview} />
+              </>
             )}
 
             {error ? <p className="mt-2 text-sm text-red-400">{error}</p> : null}
@@ -266,20 +290,6 @@ function CommentItem({
                 >
                   reply
                 </button>
-                <button
-                  className="rounded-full px-3 py-1.5 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10"
-                  onClick={() => setIsEditing(true)}
-                  type="button"
-                >
-                  editar
-                </button>
-                <button
-                  className="rounded-full px-3 py-1.5 text-sm text-[#ff003c] transition hover:bg-[#ff003c]/10"
-                  onClick={deleteComment}
-                  type="button"
-                >
-                  borrar
-                </button>
               </div>
             ) : null}
             {isReplying ? (
@@ -293,8 +303,16 @@ function CommentItem({
                 />
               </div>
             ) : null}
-
           </div>
+          <PostOptionsMenu
+            ariaLabel="Open comment menu"
+            canonicalPath={canonicalPath}
+            deleteConfirmMessage="borrar comentario y sus respuestas?"
+            deleteLabel="borrar"
+            deletingLabel="borrando"
+            onDelete={deleteComment}
+            onEdit={() => setIsEditing(true)}
+          />
         </div>
       </article>
 

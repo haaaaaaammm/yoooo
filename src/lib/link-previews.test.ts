@@ -47,7 +47,7 @@ describe("internal link preview classification", () => {
     ).toMatchObject({ id: "album-1", kind: "archivo" });
   });
 
-  it("recognizes only canonical Otrogato post URLs and strips query/hash", () => {
+  it("recognizes canonical Otrogato posts, strips query, and preserves comment anchors", () => {
     expect(
       classifyPreviewUrl(
         "https://haaaaaaammmm.com/otrogato/private-id?from=feed#comment-1"
@@ -55,14 +55,14 @@ describe("internal link preview classification", () => {
     ).toEqual({
       id: "private-id",
       kind: "otrogato",
-      url: "https://haaaaaaammmm.com/otrogato/private-id",
+      url: "https://haaaaaaammmm.com/otrogato/private-id#comment-1",
     });
     expect(
       classifyPreviewUrl("/otrogato/private-id?from=feed#comment-1")
     ).toEqual({
       id: "private-id",
       kind: "otrogato",
-      url: "https://haaaaaaammmm.com/otrogato/private-id",
+      url: "https://haaaaaaammmm.com/otrogato/private-id#comment-1",
     });
     expect(
       classifyPreviewUrl(
@@ -162,6 +162,13 @@ describe("internal link preview classification", () => {
     expect(
       classifyPreviewUrl("https://haaaaaaammmm.com.evil.example/otrogato/id")
     ).toMatchObject({ kind: "external" });
+  });
+
+  it("strips fragments from external cache targets", () => {
+    expect(classifyPreviewUrl("https://example.com/page#section")).toEqual({
+      kind: "external",
+      url: "https://example.com/page",
+    });
   });
 
   it("retries an Apple Music failure from the previous resolver version", async () => {

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { isAdminAuthenticated } from "@/lib/auth";
+import type { LinkPreviewData } from "@/lib/link-previews";
 import { getPoemarioPostWithThread } from "@/lib/poemario-posts";
 import { ADMIN_PATH, PUBLIC_FEED_PATH } from "@/lib/posts";
 import { getProfileImageSettings } from "@/lib/site-settings";
@@ -33,6 +34,7 @@ type SerializedPoemarioComment = {
   id: string;
   parentId: string | null;
   postId: string;
+  preview: LinkPreviewData | null;
   replies: SerializedPoemarioComment[];
   text: string;
   updatedAt: string;
@@ -46,6 +48,7 @@ function serializeComments(
     id: comment.id,
     parentId: comment.parentId,
     postId: comment.postId,
+    preview: comment.preview,
     replies: serializeComments(comment.replies),
     text: comment.text,
     updatedAt: comment.updatedAt.toISOString(),

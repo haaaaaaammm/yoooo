@@ -6,7 +6,11 @@ import {
   getCommentAncestorChain,
   type CommentTreeNode,
 } from "@/lib/comment-tree";
-import { addLinkPreviewsToPosts } from "@/lib/link-previews";
+import { addLinkPreviewsToComments } from "@/lib/comment-link-previews";
+import {
+  addLinkPreviewsToPosts,
+  type LinkPreviewData,
+} from "@/lib/link-previews";
 import { POSTS_PER_PAGE } from "@/lib/posts";
 import { getPrisma } from "@/lib/prisma";
 
@@ -19,7 +23,9 @@ type PoemarioCommentRecord = {
   updatedAt: Date;
 };
 
-export type PoemarioCommentTree = CommentTreeNode<PoemarioCommentRecord>;
+export type PoemarioCommentTree = CommentTreeNode<
+  PoemarioCommentRecord & { preview: LinkPreviewData | null }
+>;
 
 export async function getPoemarioPostsPage(page: number) {
   const prisma = getPrisma();
@@ -94,20 +100,25 @@ export async function getPoemarioPostWithThread(id: string) {
     return null;
   }
 
-  const [postWithPreview] = await addLinkPreviewsToPosts([
-    {
-      commentCount: post._count.comments,
-      content: post.content,
-      createdAt: post.createdAt,
-      customAuthorAvatarUrl: post.customAuthorAvatarUrl,
-      customAuthorName: post.customAuthorName,
-      id: post.id,
-      thread: buildCommentTree(post.comments),
-      updatedAt: post.updatedAt,
-    },
+  const [[postWithPreview], commentsWithPreviews] = await Promise.all([
+    addLinkPreviewsToPosts([
+      {
+        commentCount: post._count.comments,
+        content: post.content,
+        createdAt: post.createdAt,
+        customAuthorAvatarUrl: post.customAuthorAvatarUrl,
+        customAuthorName: post.customAuthorName,
+        id: post.id,
+        updatedAt: post.updatedAt,
+      },
+    ]),
+    addLinkPreviewsToComments(post.comments),
   ]);
 
-  return postWithPreview;
+  return {
+    ...postWithPreview,
+    thread: buildCommentTree(commentsWithPreviews),
+  };
 }
 
 export async function getPoemarioCommentPageData(
@@ -137,7 +148,8 @@ export async function getPoemarioCommentPageData(
     return null;
   }
 
-  const { commentMap } = buildCommentTreeWithMap(post.comments);
+  const commentsWithPreviews = await addLinkPreviewsToComments(post.comments);
+  const { commentMap } = buildCommentTreeWithMap(commentsWithPreviews);
   const comment = commentMap.get(normalizedCommentId);
 
   if (!comment || comment.postId !== post.id) {

@@ -96,7 +96,9 @@ function getInternalTarget(url: URL): PreviewTarget {
     return {
       id,
       kind: "otrogato",
-      url: `${SITE_ORIGIN}/otrogato/${encodeURIComponent(id)}`,
+      url: `${SITE_ORIGIN}/otrogato/${encodeURIComponent(id)}${
+        url.hash.startsWith("#comment-") ? url.hash : ""
+      }`,
     };
   }
 
@@ -130,9 +132,12 @@ function getInternalTarget(url: URL): PreviewTarget {
 export function classifyPreviewUrl(value: string): PreviewTarget {
   const url = new URL(value, SITE_ORIGIN);
 
-  return isOwnSiteUrl(url)
-    ? getInternalTarget(url)
-    : { kind: "external", url: url.toString() };
+  if (isOwnSiteUrl(url)) {
+    return getInternalTarget(url);
+  }
+
+  url.hash = "";
+  return { kind: "external", url: url.toString() };
 }
 
 async function resolveAndCacheExternalPreview(

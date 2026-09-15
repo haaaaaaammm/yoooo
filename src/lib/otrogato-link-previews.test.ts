@@ -151,4 +151,16 @@ describe("authenticated Otrogato link previews", () => {
     expect(mocks.getDiferenciasSessionUser).not.toHaveBeenCalled();
     expect(mocks.findMany).not.toHaveBeenCalled();
   });
+
+  it("preserves a canonical comment anchor on the private preview card", async () => {
+    mocks.getDiferenciasSessionUser.mockResolvedValue({ id: "andrea-id" });
+
+    const [post] = await addAuthenticatedOtrogatoPreviewsToPosts([
+      { content: "/otrogato/andrea-post#comment-reply-1" },
+    ]);
+
+    expect(post.preview?.url).toBe(
+      "https://haaaaaaammmm.com/otrogato/andrea-post#comment-reply-1"
+    );
+  });
 });

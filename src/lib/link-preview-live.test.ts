@@ -19,6 +19,22 @@ describe.skipIf(!liveUrl)("live link preview diagnostic", () => {
         expect(metadata.description).toBeTruthy();
         expect(metadata.imageUrl).toMatch(/^https?:\/\//);
       }
+
+      if (process.env.LINK_PREVIEW_EXPECT_TITLE) {
+        expect(metadata.title).toBe(process.env.LINK_PREVIEW_EXPECT_TITLE);
+      }
+
+      if (process.env.LINK_PREVIEW_EXPECT_DESCRIPTION) {
+        expect(metadata.description).toBe(
+          process.env.LINK_PREVIEW_EXPECT_DESCRIPTION
+        );
+      }
+
+      if (process.env.LINK_PREVIEW_EXPECT_SITE_NAME) {
+        expect(metadata.siteName).toBe(
+          process.env.LINK_PREVIEW_EXPECT_SITE_NAME
+        );
+      }
     },
     15_000
   );

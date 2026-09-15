@@ -22,4 +22,12 @@ describe("text links", () => {
       getFirstPreviewUrl("https://first.example/a https://second.example/b")
     ).toBe("https://first.example/a");
   });
+
+  it("retains an internal comment anchor for preview classification", () => {
+    expect(
+      getFirstPreviewUrl("see /otrogato/private-post#comment-reply-1")
+    ).toBe(
+      "https://haaaaaaammmm.com/otrogato/private-post#comment-reply-1"
+    );
+  });
 });

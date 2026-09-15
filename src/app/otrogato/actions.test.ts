@@ -1,8 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  commentCreate: vi.fn(),
+  commentDelete: vi.fn(),
+  commentFindUnique: vi.fn(),
+  commentUpdate: vi.fn(),
   deleteMany: vi.fn(),
   getDiferenciasSessionUser: vi.fn(),
+  postFindUnique: vi.fn(),
+  scheduleLinkPreviewResolution: vi.fn(),
   updateMany: vi.fn(),
 }));
 
@@ -19,7 +25,7 @@ vi.mock("@/lib/diferencias-push", () => ({
   sendDiferenciasActivityPush: vi.fn(),
 }));
 vi.mock("@/lib/link-previews", () => ({
-  scheduleLinkPreviewResolution: vi.fn(),
+  scheduleLinkPreviewResolution: mocks.scheduleLinkPreviewResolution,
 }));
 vi.mock("@/lib/posts", () => ({
   DIFERENCIAS_COMMENT_MAX_LENGTH: 10_000,
@@ -29,8 +35,15 @@ vi.mock("@/lib/posts", () => ({
 }));
 vi.mock("@/lib/prisma", () => ({
   getPrisma: () => ({
+    diferenciasComment: {
+      create: mocks.commentCreate,
+      delete: mocks.commentDelete,
+      findUnique: mocks.commentFindUnique,
+      update: mocks.commentUpdate,
+    },
     diferenciasPost: {
       deleteMany: mocks.deleteMany,
+      findUnique: mocks.postFindUnique,
       updateMany: mocks.updateMany,
     },
   }),
@@ -41,7 +54,13 @@ vi.mock("@/lib/r2", () => ({
   validateProfileImageFile: vi.fn(),
 }));
 
-import { deletePostAction, updatePostAction } from "./actions";
+import {
+  createCommentAction,
+  deleteCommentAction,
+  deletePostAction,
+  updateCommentAction,
+  updatePostAction,
+} from "./actions";
 
 describe("Otrogato post ownership guards", () => {
   beforeEach(() => {
@@ -98,5 +117,89 @@ describe("Otrogato post ownership guards", () => {
     await expect(
       updatePostAction("walter-post-id", "owner edit")
     ).resolves.toMatchObject({ ok: true });
+  });
+});
+
+describe("Otrogato comment ownership guards", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getDiferenciasSessionUser.mockResolvedValue({
+      displayName: "Andrea",
+      id: "andrea-id",
+    });
+  });
+
+  it.each(["walter-comment-id", "walter-nested-reply-id"])(
+    "rejects Andrea's direct edit and delete attempts against %s",
+    async (commentId) => {
+      mocks.commentFindUnique.mockResolvedValue(null);
+
+      await expect(
+        updateCommentAction(commentId, "unauthorized edit")
+      ).resolves.toMatchObject({ ok: false });
+      await expect(deleteCommentAction(commentId)).resolves.toMatchObject({
+        ok: false,
+      });
+
+      expect(mocks.commentFindUnique).toHaveBeenCalledWith({
+        select: { postId: true },
+        where: { authorId: "andrea-id", id: commentId },
+      });
+      expect(mocks.commentUpdate).not.toHaveBeenCalled();
+      expect(mocks.commentDelete).not.toHaveBeenCalled();
+    }
+  );
+
+  it("rejects direct comment mutations without a session", async () => {
+    mocks.getDiferenciasSessionUser.mockResolvedValue(null);
+
+    await expect(
+      updateCommentAction("comment-id", "unauthenticated edit")
+    ).resolves.toMatchObject({ ok: false });
+    await expect(deleteCommentAction("comment-id")).resolves.toMatchObject({
+      ok: false,
+    });
+    expect(mocks.commentFindUnique).not.toHaveBeenCalled();
+  });
+
+  it("retains the owner's edit and delete capabilities", async () => {
+    mocks.getDiferenciasSessionUser.mockResolvedValue({
+      displayName: "Walter",
+      id: "walter-id",
+    });
+    mocks.commentFindUnique.mockResolvedValue({ postId: "post-id" });
+    mocks.commentUpdate.mockResolvedValue({});
+    mocks.commentDelete.mockResolvedValue({});
+
+    await expect(
+      updateCommentAction("comment-id", "owner edit")
+    ).resolves.toMatchObject({ ok: true });
+    await expect(deleteCommentAction("comment-id")).resolves.toMatchObject({
+      ok: true,
+    });
+
+    expect(mocks.commentUpdate).toHaveBeenCalledWith({
+      data: { text: "owner edit" },
+      where: { authorId: "walter-id", id: "comment-id" },
+    });
+    expect(mocks.commentDelete).toHaveBeenCalledWith({
+      where: { authorId: "walter-id", id: "comment-id" },
+    });
+    expect(mocks.scheduleLinkPreviewResolution).toHaveBeenCalledWith(
+      "owner edit"
+    );
+  });
+
+  it("schedules the first-link preview after creating a comment", async () => {
+    mocks.postFindUnique.mockResolvedValue({ id: "post-id" });
+    mocks.commentCreate.mockResolvedValue({ id: "comment-id" });
+
+    await expect(
+      createCommentAction("post-id", null, "https://example.com/new")
+    ).resolves.toMatchObject({ ok: true });
+
+    expect(mocks.scheduleLinkPreviewResolution).toHaveBeenCalledWith(
+      "https://example.com/new"
+    );
   });
 });

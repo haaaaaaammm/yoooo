@@ -9,12 +9,13 @@ import {
   getCommentThreadNodeClassName,
 } from "@/app/_components/comment-thread-layout";
 import CommentCount from "@/app/_components/comment-count";
+import LinkPreview from "@/app/_components/link-preview";
 import LinkifiedText from "@/app/_components/linkified-text";
+import PostOptionsMenu from "@/app/_components/post-options-menu";
 import ProfileImage from "@/app/_components/profile-image";
-import {
-  DIFERENCIAS_COMMENT_MAX_LENGTH,
-  OTROGATO_PATH,
-} from "@/lib/posts";
+import { getOtrogatoCommentCanonicalPath } from "@/lib/comment-links";
+import type { LinkPreviewData } from "@/lib/link-previews";
+import { DIFERENCIAS_COMMENT_MAX_LENGTH } from "@/lib/posts";
 
 import {
   createCommentAction,
@@ -30,6 +31,7 @@ export type ManagedComment = {
   id: string;
   parentId: string | null;
   postId: string;
+  preview: LinkPreviewData | null;
   replies: ManagedComment[];
   text: string;
   updatedAt: string;
@@ -131,7 +133,7 @@ function CommentItem({
   const [isReplying, setIsReplying] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const isOwner = comment.authorId === currentUserId;
-  const href = `${OTROGATO_PATH}/${comment.postId}#comment-${encodeURIComponent(comment.id)}`;
+  const href = getOtrogatoCommentCanonicalPath(comment.postId, comment.id);
 
   async function reply(text: string) {
     const result = await createCommentAction(comment.postId, comment.id, text);
@@ -156,10 +158,6 @@ function CommentItem({
   }
 
   async function remove() {
-    if (!window.confirm("borrar comentario y sus respuestas?")) {
-      return;
-    }
-
     setIsDeleting(true);
     setError(null);
 
@@ -213,9 +211,12 @@ function CommentItem({
                 />
               </div>
             ) : (
-              <p className="mt-1 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[15px] leading-6 text-neutral-100">
-                <LinkifiedText text={comment.text} />
-              </p>
+              <>
+                <p className="mt-1 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[15px] leading-6 text-neutral-100">
+                  <LinkifiedText text={comment.text} />
+                </p>
+                <LinkPreview preview={comment.preview} />
+              </>
             )}
 
             {error ? <p className="mt-2 text-sm text-red-400">{error}</p> : null}
@@ -234,25 +235,6 @@ function CommentItem({
                 >
                   reply
                 </button>
-                {isOwner ? (
-                  <>
-                    <button
-                      className="rounded-full px-3 py-1.5 text-sm text-[#ff003c] hover:bg-[#ff003c]/10"
-                      onClick={() => setIsEditing(true)}
-                      type="button"
-                    >
-                      editar
-                    </button>
-                    <button
-                      className="rounded-full px-3 py-1.5 text-sm text-[#ff003c] hover:bg-[#ff003c]/10 disabled:text-neutral-500"
-                      disabled={isDeleting}
-                      onClick={remove}
-                      type="button"
-                    >
-                      {isDeleting ? "borrando" : "borrar"}
-                    </button>
-                  </>
-                ) : null}
               </div>
             ) : null}
 
@@ -267,6 +249,16 @@ function CommentItem({
               </div>
             ) : null}
           </div>
+          <PostOptionsMenu
+            ariaLabel="Open comment menu"
+            canonicalPath={href}
+            deleteConfirmMessage="borrar comentario y sus respuestas?"
+            deleteLabel="borrar"
+            deletingLabel="borrando"
+            isDeleting={isDeleting}
+            onDelete={isOwner ? remove : undefined}
+            onEdit={isOwner ? () => setIsEditing(true) : undefined}
+          />
         </div>
       </article>
 

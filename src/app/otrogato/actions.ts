@@ -333,6 +333,7 @@ export async function createCommentAction(
     return { message: "No se pudo guardar el comentario.", ok: false };
   }
 
+  scheduleLinkPreviewResolution(text);
   revalidateDiferencias(postId);
   scheduleDiferenciasActivityPush({
     actorDisplayName: user.displayName,
@@ -383,6 +384,7 @@ export async function updateCommentAction(
     return { message: "No se pudo editar el comentario.", ok: false };
   }
 
+  scheduleLinkPreviewResolution(text);
   revalidateDiferencias(comment.postId);
   return { message: "comentario actualizado", ok: true };
 }

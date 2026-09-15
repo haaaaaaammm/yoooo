@@ -41,7 +41,7 @@ export default function RootLayout({
     <html lang="en">
         <meta name="theme-color" content="#000000" />
       <body
-       
+       className="bg-black"
       >
         {children}
         <Analytics />

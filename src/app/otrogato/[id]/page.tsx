@@ -34,6 +34,7 @@ function serializeComment(comment: DiferenciasCommentTree): ManagedComment {
     id: comment.id,
     parentId: comment.parentId,
     postId: comment.postId,
+    preview: comment.preview,
     replies: comment.replies.map(serializeComment),
     text: comment.text,
     updatedAt: comment.updatedAt.toISOString(),

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { PoemarioCommentBody } from "@/app/_components/poemario-comment-thread";
 import { isAdminAuthenticated } from "@/lib/auth";
+import type { LinkPreviewData } from "@/lib/link-previews";
 import { getPoemarioCommentPageData } from "@/lib/poemario-posts";
 import { ADMIN_PATH, PUBLIC_FEED_PATH } from "@/lib/posts";
 import { getProfileImageSettings } from "@/lib/site-settings";
@@ -34,27 +34,50 @@ type SerializedPoemarioComment = {
   id: string;
   parentId: string | null;
   postId: string;
+  preview: LinkPreviewData | null;
   replies: SerializedPoemarioComment[];
   text: string;
   updatedAt: string;
 };
 
-function serializeComment(
+function serializeCommentFields(
   comment: CommentPageData["comment"]
-): SerializedPoemarioComment {
+): Omit<SerializedPoemarioComment, "replies"> {
   return {
     createdAt: comment.createdAt.toISOString(),
     id: comment.id,
     parentId: comment.parentId,
     postId: comment.postId,
-    replies: comment.replies.map(serializeComment),
+    preview: comment.preview,
     text: comment.text,
     updatedAt: comment.updatedAt.toISOString(),
   };
 }
 
-function getAdminCommentHref(comment: { id: string; postId: string }) {
-  return `${ADMIN_PATH}/poemario/${comment.postId}/comment/${comment.id}`;
+function serializeComment(
+  comment: CommentPageData["comment"]
+): SerializedPoemarioComment {
+  return {
+    ...serializeCommentFields(comment),
+    replies: comment.replies.map(serializeComment),
+  };
+}
+
+function serializeAncestorChain(
+  ancestors: CommentPageData["ancestors"]
+): SerializedPoemarioComment[] {
+  let chain: SerializedPoemarioComment[] = [];
+
+  for (const ancestor of [...ancestors].reverse()) {
+    chain = [
+      {
+        ...serializeCommentFields(ancestor),
+        replies: chain,
+      },
+    ];
+  }
+
+  return chain;
 }
 
 export default async function AdminPoemarioCommentPage({
@@ -125,22 +148,12 @@ export default async function AdminPoemarioCommentPage({
         </section>
 
         {data.ancestors.length > 0 ? (
-          <section
-            aria-label="Parent comments"
-            className="border-b border-neutral-800 px-4 py-2"
-          >
-            <ol>
-              {data.ancestors.map((comment) => (
-                <li className="border-l border-neutral-800 pl-3" key={comment.id}>
-                  <PoemarioCommentBody
-                    comment={comment}
-                    href={getAdminCommentHref(comment)}
-                    profileImageUrl={profileImageUrl}
-                  />
-                </li>
-              ))}
-            </ol>
-          </section>
+          <CommentThreadManager
+            comments={serializeAncestorChain(data.ancestors)}
+            postId={data.post.id}
+            profileImageUrl={profileImageUrl}
+            showComposer={false}
+          />
         ) : null}
 
         <CommentThreadManager

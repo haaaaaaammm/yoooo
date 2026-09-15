@@ -345,6 +345,7 @@ export async function createPoemarioCommentAction(
     return { ok: false, message: "No se pudo guardar el comentario." };
   }
 
+  scheduleLinkPreviewResolution(text);
   revalidatePoemarioThread(postId, parentId);
 
   return { ok: true, message: "comentario guardado" };
@@ -383,6 +384,7 @@ export async function updatePoemarioCommentAction(
     return { ok: false, message: "No se pudo editar el comentario." };
   }
 
+  scheduleLinkPreviewResolution(text);
   revalidatePoemarioThread(comment.postId, commentId);
 
   return { ok: true, message: "comentario actualizado" };

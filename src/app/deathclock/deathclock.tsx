@@ -46,7 +46,7 @@ export default function DeathClock () {
   const { days, hours, minutes, seconds } = msToDHMS(remainingMs);
 
   return (
-    <div className="min-h-dvh bg-white flex items-center justify-center">
+    <div className="min-h-dvh bg-black flex items-center justify-center">
       <div className="text-center red ">
         <div
           className="leading-none seg tracking-tight "
