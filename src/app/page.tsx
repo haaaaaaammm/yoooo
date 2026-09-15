@@ -19,19 +19,20 @@ export default function Home() {
           <Link
             key={link.href}
             href={link.href}
-            className="weird-link hover:underline block"
+            className="weird-link hover:underline"
             style={{
               animationDelay: `${index * -0.07}s`,
             }}
           >
-            {link.text}{" "}
+            <span className="link-text">{link.text}</span>
+
             <span
               className="arrow"
               style={{
                 animationDelay: `${index * -0.11}s`,
               }}
             >
-              {"<--------------------------"}
+              {"<------------------------------------------"}
             </span>
           </Link>
         ))}
@@ -44,65 +45,87 @@ export default function Home() {
         alt="name"
         width={300}
         height={300}
-         className="glitch-image"
+        className="glitch-image"
       />
 
       <style>{`
         .weird-link {
           color: #ff003c;
           animation: weirdBlink 0.32s steps(1, end) infinite;
+
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          width: fit-content;
+          max-width: 100%;
         }
-          .glitch-image {
-  animation: imageGlitch 0.27s steps(1, end) infinite;
-}
 
-@keyframes imageGlitch {
-  0%,
-  28% {
-    opacity: 1;
-    transform: translate(0, 0);
-  }
-
-  29%,
-  32% {
-    opacity: 0.15;
-    transform: translate(-2px, 0);
-  }
-
-  33%,
-  58% {
-    opacity: 1;
-    transform: translate(0, 0);
-  }
-
-  59%,
-  61% {
-    opacity: 0;
-    transform: translate(3px, -1px);
-  }
-
-  62%,
-  83% {
-    opacity: 1;
-    transform: translate(0, 0);
-  }
-
-  84%,
-  87% {
-    opacity: 0.4;
-    transform: translate(-1px, 1px);
-  }
-
-  88%,
-  100% {
-    opacity: 1;
-    transform: translate(0, 0);
-  }
-}
+        .link-text {
+          min-width: 0;
+          flex-shrink: 1;
+        }
 
         .arrow {
           display: inline-block;
+
+          white-space: nowrap;
+          overflow: hidden;
+
+          width: clamp(140px, 35vw, 350px);
+          min-width: 80px;
+
+          flex-shrink: 1;
+
           animation: arrowBlink 0.21s steps(1, end) infinite;
+        }
+
+        .glitch-image {
+          animation: imageGlitch 0.27s steps(1, end) infinite;
+        }
+
+        @keyframes imageGlitch {
+          0%,
+          28% {
+            opacity: 1;
+            transform: translate(0, 0);
+          }
+
+          29%,
+          32% {
+            opacity: 0.15;
+            transform: translate(-2px, 0);
+          }
+
+          33%,
+          58% {
+            opacity: 1;
+            transform: translate(0, 0);
+          }
+
+          59%,
+          61% {
+            opacity: 0;
+            transform: translate(3px, -1px);
+          }
+
+          62%,
+          83% {
+            opacity: 1;
+            transform: translate(0, 0);
+          }
+
+          84%,
+          87% {
+            opacity: 0.4;
+            transform: translate(-1px, 1px);
+          }
+
+          88%,
+          100% {
+            opacity: 1;
+            transform: translate(0, 0);
+          }
         }
 
         @keyframes weirdBlink {
@@ -161,6 +184,18 @@ export default function Home() {
           100% {
             color: inherit;
             transform: translateX(0);
+          }
+        }
+
+        @media (max-width: 640px) {
+          .weird-link {
+            width: 100%;
+          }
+
+          .arrow {
+            flex: 1;
+            width: auto;
+            min-width: 100px;
           }
         }
       `}</style>
